@@ -27,33 +27,33 @@ export default function Home() {
 
         <div id="preview" className="mockupWrap" aria-label="Azora preview">
           <div className="floatCard floatCardLeft" aria-hidden="true">
-            <span>Breath hold training</span>
-            <strong>Build longer, steadier holds</strong>
+            <span>Train your breath</span>
+            <strong>Build calm with guided breath holds</strong>
           </div>
 
           <div className="floatCard floatCardRight" aria-hidden="true">
-            <span>Stress signal</span>
-            <strong>Track how your body responds</strong>
+            <span>See stress shift</span>
+            <strong>Watch your body respond in real time</strong>
           </div>
 
           <div className="floatCard floatCardMidLeft" aria-hidden="true">
-            <span>Body awareness</span>
-            <strong>Turn breath holds into feedback</strong>
+            <span>Feel more in control</span>
+            <strong>Use your breath to reset faster</strong>
           </div>
 
           <div className="floatCard floatCardMidRight" aria-hidden="true">
-            <span>Sleep support</span>
-            <strong>Practice calmer breathing at night</strong>
+            <span>Wind down easier</span>
+            <strong>Practice breathing for better nights</strong>
           </div>
 
           <div className="floatCard floatCardBottomLeft" aria-hidden="true">
-            <span>Calm down fast</span>
-            <strong>Use the body’s reset response</strong>
+            <span>Quick daily reset</span>
+            <strong>A calmer check-in when the day spikes</strong>
           </div>
 
           <div className="floatCard floatCardBottomRight" aria-hidden="true">
-            <span>Low friction</span>
-            <strong>A quick check-in you can finish</strong>
+            <span>Simple habit</span>
+            <strong>Less tracking, more useful feedback</strong>
           </div>
 
           <div className="phone" aria-hidden="true">

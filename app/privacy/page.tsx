@@ -14,7 +14,7 @@ export default function PrivacyPolicy() {
 
         <section className="space-y-6">
           <p>
-            At <strong>Azora</strong>, we take your privacy seriously. This Privacy Policy explains how we collect, use, and protect your information when you use the Azora mobile application (the "App").
+            At <strong>Azora</strong>, we take your privacy seriously. This Privacy Policy explains how we collect, use, and protect your information when you use the Azora mobile application (the &quot;App&quot;).
           </p>
 
           <h2 className="text-2xl font-bold">1. Information We Collect</h2>

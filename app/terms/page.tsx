@@ -8,13 +8,13 @@ export default function TermsAndConditions() {
           <Link href="/" className="text-sm font-bold text-[#666c68] hover:text-[#2c7a67] transition-colors">
             ← Back to Home
           </Link>
-          <h1 className="text-4xl md:text-5xl mt-6 mb-4">Terms & Conditions</h1>
+          <h1 className="text-4xl md:text-5xl mt-6 mb-4">Terms &amp; Conditions</h1>
           <p className="text-[#666c68]">Last updated: April 25, 2026</p>
         </header>
 
         <section className="space-y-6 text-[#666c68]">
           <p>
-            Welcome to <strong>Azora</strong>, operated by <strong>300 Labs</strong> (“Company”, “we”, “us”, or “our”). These Terms & Conditions (“Terms”) govern your use of the Azora mobile application (the “App”).
+            Welcome to <strong>Azora</strong>, operated by <strong>300 Labs</strong> (&quot;Company&quot;, &quot;we&quot;, &quot;us&quot;, or &quot;our&quot;). These Terms &amp; Conditions (&quot;Terms&quot;) govern your use of the Azora mobile application (the &quot;App&quot;).
           </p>
           <p>By accessing or using Azora, you agree to these Terms.</p>
 
@@ -43,13 +43,13 @@ export default function TermsAndConditions() {
           <h2 className="text-xl font-bold text-[#1a1c1a]">4. User Accounts</h2>
           <p>To use certain features, you must create an account. You agree to provide accurate information, keep your credentials secure, and be responsible for all activity under your account. We reserve the right to suspend or terminate accounts for misuse.</p>
 
-          <h2 className="text-xl font-bold text-[#1a1c1a]">5. Data Collection & Usage</h2>
+          <h2 className="text-xl font-bold text-[#1a1c1a]">5. Data Collection &amp; Usage</h2>
           <p>We collect heart rate, HRV metrics, breath-hold session data, and app usage analytics. Your data is stored securely using Supabase, used to improve the App, and analyzed using PostHog. We do <strong>not sell your personal health data</strong>. For more details, see our <Link href="/privacy" className="text-[#2c7a67] font-bold">Privacy Policy</Link>.</p>
 
-          <h2 className="text-xl font-bold text-[#1a1c1a]">6. Camera & Sensor Usage</h2>
+          <h2 className="text-xl font-bold text-[#1a1c1a]">6. Camera &amp; Sensor Usage</h2>
           <p>Azora uses your device’s camera and flash to estimate heart rate and HRV via photoplethysmography (PPG). By using these features, you consent to this processing.</p>
 
-          <h2 className="text-xl font-bold text-[#1a1c1a]">7. Subscriptions & Payments</h2>
+          <h2 className="text-xl font-bold text-[#1a1c1a]">7. Subscriptions &amp; Payments</h2>
           <p>Azora offers optional auto-renewing subscriptions managed through Apple (Weekly/Yearly plans, free trials).</p>
           <ul className="list-disc pl-5">
             <li><strong>Billing:</strong> Payment is charged to your Apple ID at confirmation of purchase. Subscriptions automatically renew unless canceled at least 24 hours before the end of the current period.</li>
@@ -69,7 +69,7 @@ export default function TermsAndConditions() {
           <p>To the maximum extent permitted by law, 300 Labs is not liable for any health decisions made based on the App, inaccuracies, or any indirect/consequential damages. Your use of the App is at your own risk.</p>
 
           <h2 className="text-xl font-bold text-[#1a1c1a]">12. Disclaimer of Warranties</h2>
-          <p>The App is provided “as is” and “as available” without warranties of any kind. We do not guarantee the App will be error-free or meet your expectations.</p>
+          <p>The App is provided &quot;as is&quot; and &quot;as available&quot; without warranties of any kind. We do not guarantee the App will be error-free or meet your expectations.</p>
 
           <h2 className="text-xl font-bold text-[#1a1c1a]">13. Termination</h2>
           <p>We may suspend or terminate your access at any time if you violate these Terms.</p>

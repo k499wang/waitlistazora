@@ -9,6 +9,7 @@ import imgHome from "./assets/IMG_0140 (1).webp";
 import imgResults from "./assets/IMG_0143.webp";
 import imgBreathing from "./assets/IMG_0144.webp";
 import iconApp from "./assets/iconApp.png";
+import imgHeartRateHold from "./assets/heart_rate_hold_circle_removed.png";
 
 const attributionStorageKey = "azora_attribution";
 
@@ -61,7 +62,7 @@ const faqData = [
   },
   {
     q: "What devices support Azora?",
-    a: "Azora is available on iPhone. For the richest experience, we recommend devices with a rear camera and flash. Azora also integrates with Apple Health.",
+    a: "Azora is available on iPhone. For the richest experience, we recommend devices with a rear camera and flash.",
   },
   {
     q: "Is my health data private?",
@@ -251,30 +252,21 @@ export default function Home() {
               Find your calm in every heartbeat
             </h2>
             <p className="subhead" style={{ marginTop: "0.5rem", color: "var(--text-secondary)" }}>
-              Azora listens to your body's subtle rhythms through your camera. By tracking heart rate 
+              Azora listens to your body&apos;s subtle rhythms through your camera. By tracking heart rate 
               variability during your practice, we help you visualize your journey toward deep relaxation and inner balance.
             </p>
           </div>
 
           <div className="signalsLayout">
-            <div className="signalsMonitor reveal" ref={setRef(1)} aria-hidden="true">
-              <div className="monitorRing">
-                <span>72</span>
-                <small>BPM</small>
-              </div>
-              <div className="monitorWave">
-                <span /><span /><span /><span /><span /><span /><span /><span /><span /><span />
-                <span /><span /><span /><span /><span /><span /><span /><span /><span /><span />
-              </div>
-              <div className="monitorStats">
-                <div>
-                  <span>RMSSD</span>
-                  <strong>46 ms</strong>
-                </div>
-                <div>
-                  <span>AVG HRV</span>
-                  <strong>58 ms</strong>
-                </div>
+            <div className="signalsVisual reveal" ref={setRef(1)}>
+              <div className="signalsImageWrapper">
+                <Image
+                  src={imgHeartRateHold}
+                  alt="Azora breath hold screen showing live heart rate and hold timer"
+                  fill
+                  className="signalsImage"
+                  sizes="(max-width: 980px) 70vw, 360px"
+                />
               </div>
             </div>
 
@@ -294,48 +286,6 @@ export default function Home() {
                 <strong>Mindfulness Progress</strong>
                 <p>Observe how regular practice shifts your baseline, building a more resilient and centered version of yourself.</p>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── TESTIMONIALS ── */}
-      <section className="testimonialSection" aria-labelledby="testimonials-title">
-        <div className="container">
-          <div className="sectionHeader reveal" ref={setRef(9)}>
-            <span className="label" style={{ color: "var(--brand)" }}>Kind words</span>
-            <h2 id="testimonials-title" className="headline" style={{ marginTop: "0.75rem" }}>
-              Loved by people who breathe
-            </h2>
-          </div>
-
-          <div className="testimonialGrid">
-            <div className="testimonialCard reveal" ref={setRef(10)}>
-              <p className="testimonialQuote">
-                &ldquo;I have tried every meditation app out there. Azora is the first one
-                that actually shows me what is happening in my body while I breathe.&rdquo;
-              </p>
-              <div className="testimonialAuthor">Kevin W.</div>
-              <div className="testimonialRole">Founder, early adopter</div>
-            </div>
-
-            <div className="testimonialCard reveal reveal-delay-1" ref={setRef(11)}>
-              <p className="testimonialQuote">
-                &ldquo;The box breathing guide carried me through the most demanding week
-                of my career. Watching my heart rate settle in real time is nothing
-                short of remarkable.&rdquo;
-              </p>
-              <div className="testimonialAuthor">Sarah M.</div>
-              <div className="testimonialRole">Product designer</div>
-            </div>
-
-            <div className="testimonialCard reveal reveal-delay-2" ref={setRef(12)}>
-              <p className="testimonialQuote">
-                &ldquo;Every morning before my run, I open Azora. The breath holds have
-                measurably improved my endurance and how quickly I recover.&rdquo;
-              </p>
-              <div className="testimonialAuthor">James T.</div>
-              <div className="testimonialRole">Marathon runner</div>
             </div>
           </div>
         </div>

@@ -1,0 +1,27 @@
+[
+  {
+    "event": "app_store_clicked",
+    "description": "User clicks the App Store download button",
+    "file": "app/page.tsx"
+  },
+  {
+    "event": "faq_item_expanded",
+    "description": "User expands an FAQ accordion item",
+    "file": "app/page.tsx"
+  },
+  {
+    "event": "waitlist_signup_submitted",
+    "description": "User submits the waitlist form with their email (client-side)",
+    "file": "app/waitlist-form.tsx"
+  },
+  {
+    "event": "waitlist_signup_completed",
+    "description": "Waitlist signup was successfully saved to the database (server-side)",
+    "file": "app/api/waitlist/route.ts"
+  },
+  {
+    "event": "waitlist_signup_failed",
+    "description": "Waitlist signup failed to save (server-side)",
+    "file": "app/api/waitlist/route.ts"
+  }
+]

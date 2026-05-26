@@ -3,8 +3,8 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Azora Waitlist",
-  description: "Join the Azora waitlist for early access."
+  title: "Azora — Breathe Better",
+  description: "Join the waitlist for guided breath holds, live heart-rate insights, and calmer daily resets."
 };
 
 export default function RootLayout({

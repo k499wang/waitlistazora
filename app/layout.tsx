@@ -1,8 +1,41 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
+import { faqData } from "./faq-data";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://azora.app";
+const appStoreUrl =
+  "https://apps.apple.com/us/app/azora-breathwork-for-wellness/id6763631574";
+
+const softwareApplicationLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Azora",
+  applicationCategory: "HealthApplication",
+  operatingSystem: "iOS",
+  url: siteUrl,
+  downloadUrl: appStoreUrl,
+  description:
+    "Azora is a breathwork companion that measures your heart rate through your iPhone camera (PPG), guides evidence-based breathing techniques, and reveals patterns in your stress and recovery.",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+  },
+};
+
+const faqPageLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqData.map((item) => ({
+    "@type": "Question",
+    name: item.q,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: item.a,
+    },
+  })),
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -61,6 +94,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(softwareApplicationLd),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqPageLd) }}
+        />
         {children}
         <Analytics />
       </body>

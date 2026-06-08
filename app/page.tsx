@@ -3,30 +3,19 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import posthog from "posthog-js";
-import { attributionFromRecord } from "@/lib/attribution";
+import { appStoreUrl, getStoredAttribution } from "@/lib/client-attribution";
+import { faqData } from "./faq-data";
 import starsBg from "./assets/2066.jpg";
 import imgHome from "./assets/IMG_0161.webp";
 import imgResults from "./assets/IMG_0140 (1).webp";
 import imgBreathing from "./assets/IMG_0158.webp";
 import iconApp from "./assets/iconApp.png";
 
-const attributionStorageKey = "azora_attribution";
-
-function getStoredAttribution() {
-  try {
-    return attributionFromRecord(
-      JSON.parse(window.localStorage.getItem(attributionStorageKey) || "{}")
-    );
-  } catch {
-    return {};
-  }
-}
-
 function StoreButtons({ center = false }: { center?: boolean }) {
   return (
     <div className="heroActions" style={center ? { justifyContent: "center" } : undefined}>
       <a
-        href="https://apps.apple.com/us/app/azora-breathwork-for-wellness/id6763631574"
+        href={appStoreUrl}
         className="storeBtn"
         target="_blank"
         rel="noopener noreferrer"
@@ -45,29 +34,6 @@ function StoreButtons({ center = false }: { center?: boolean }) {
     </div>
   );
 }
-
-const faqData = [
-  {
-    q: "What is Azora?",
-    a: "Azora is a breathwork companion that uses your phone's camera to measure heart rate in real time, guides you through evidence-based breathing techniques, and reveals patterns in your stress and recovery.",
-  },
-  {
-    q: "How does heart-rate tracking work?",
-    a: "Through photoplethysmography (PPG), Azora reads your pulse via the camera and flash during a session. No wearables, no straps — just place your finger over the lens and watch your live BPM, stress index, and recovery metrics unfold.",
-  },
-  {
-    q: "Is Azora free to use?",
-    a: "Azora is free to download, with core breathing exercises and basic tracking available at no cost. Advanced analytics, personalized programs, and unlimited history are part of Azora Premium.",
-  },
-  {
-    q: "What devices support Azora?",
-    a: "Azora is available on iPhone. For the richest experience, we recommend devices with a rear camera and flash.",
-  },
-  {
-    q: "Is my health data private?",
-    a: "Your physiological data never leaves your device unless you choose to enable cloud sync. We do not sell, share, or monetize your health information in any form.",
-  },
-];
 
 function FaqItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
@@ -406,6 +372,11 @@ export default function Home() {
               <h3>Choose your exercises</h3>
             </div>
           </div>
+
+          <p className="toolsLink reveal" ref={setRef(9)}>
+            New to breathwork?{" "}
+            <a href="/box-breathing">Try box breathing free in your browser →</a>
+          </p>
         </div>
       </section>
 

@@ -30,26 +30,28 @@ export async function getOrCreateFunnelSession(
   if (input.cookieSessionId) {
     const { data: existing, error } = await admin
       .from("web_funnel_sessions")
-      .select("id")
+      .select("id, user_id")
       .eq("id", input.cookieSessionId)
-      .eq("user_id", input.userId)
       .maybeSingle();
 
     if (error) {
       throw error;
     }
 
+    // Claim the session if it's anonymous (user_id=null) or already owned.
     if (existing) {
-      const { error: updateError } = await admin
-        .from("web_funnel_sessions")
-        .update({ status: "checkout_started" })
-        .eq("id", existing.id);
+      if (!existing.user_id || existing.user_id === input.userId) {
+        const { error: updateError } = await admin
+          .from("web_funnel_sessions")
+          .update({ user_id: input.userId, status: "checkout_started" })
+          .eq("id", existing.id);
 
-      if (updateError) {
-        throw updateError;
+        if (updateError) {
+          throw updateError;
+        }
+
+        return existing.id;
       }
-
-      return existing.id;
     }
   }
 
@@ -73,4 +75,72 @@ export async function getOrCreateFunnelSession(
   }
 
   return created.id;
+}
+
+interface AnonymousSessionInput {
+  cookieSessionId?: string | null;
+  funnelSlug: string;
+  landingPath: string;
+  initialUrl: string;
+  referrer?: string | null;
+  userAgent?: string | null;
+  ipCountry?: string | null;
+}
+
+/**
+ * Resolve the anonymous (pre-auth) funnel session for a browser. Reuses the
+ * session named by the cookie when it still exists, otherwise creates a fresh
+ * anonymous row. Returns the id plus whether a new row was created so the
+ * caller knows to (re)set the cookie.
+ *
+ * Both the landing beacon and the answer-persist route go through this so they
+ * can't create competing sessions for the same browser.
+ */
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export async function getOrCreateAnonymousFunnelSession(
+  admin: SupabaseClient,
+  input: AnonymousSessionInput,
+): Promise<{ sessionId: string; created: boolean }> {
+  // Only look up a cookie that's a well-formed UUID. A garbage value (stale
+  // cookie, tampering) would otherwise make the uuid-typed query throw and
+  // drop the answer instead of falling through to creating a fresh session.
+  if (input.cookieSessionId && UUID_RE.test(input.cookieSessionId)) {
+    const { data: existing, error } = await admin
+      .from("web_funnel_sessions")
+      .select("id")
+      .eq("id", input.cookieSessionId)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    if (existing) {
+      return { sessionId: existing.id, created: false };
+    }
+  }
+
+  const { data: created, error: insertError } = await admin
+    .from("web_funnel_sessions")
+    .insert({
+      anonymous_id: crypto.randomUUID(),
+      user_id: null,
+      funnel_slug: input.funnelSlug,
+      landing_path: input.landingPath,
+      initial_url: input.initialUrl,
+      referrer: input.referrer ?? null,
+      user_agent: input.userAgent ?? null,
+      ip_country: input.ipCountry ?? null,
+      status: "started",
+    })
+    .select("id")
+    .single();
+
+  if (insertError) {
+    throw insertError;
+  }
+
+  return { sessionId: created.id, created: true };
 }

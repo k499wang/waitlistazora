@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { resolveCheckout } from "@/lib/checkout/offers";
+import { getPostHogClient } from "@/lib/posthog-server";
 import {
   FUNNEL_SESSION_COOKIE,
   FUNNEL_SESSION_COOKIE_MAX_AGE,
@@ -13,7 +14,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 // Server-side checkout entry point. Never build the RevenueCat URL on the
 // client. Flow:
 //   1. read Supabase session -> redirect to /login if absent
-//   2. ensure profiles.user_id exists
+//   2. verify profiles.user_id exists (fail closed if missing)
 //   3. create/attach a web_funnel_sessions row
 //   4. build the RevenueCat Web Purchase Link (Supabase user.id = RC app user id)
 //   5. insert a web_checkout_intents row (status=redirected) before redirecting
@@ -50,14 +51,24 @@ async function handleCheckoutStart(req: Request): Promise<Response> {
 
   const admin = createAdminSupabaseClient();
 
-  // Ensure a profiles row exists (web_checkout_intents.user_id FK + the
-  // RevenueCat App User ID contract both depend on it).
-  const { error: profileError } = await admin
+  // Verify a profiles row exists. The web_checkout_intents.user_id FK + the
+  // RevenueCat App User ID contract both depend on it. Fail closed — if the
+  // mobile app hasn't created this profile, the web funnel should not silently
+  // create one.
+  const { data: profile, error: profileError } = await admin
     .from("profiles")
-    .upsert({ user_id: user.id }, { onConflict: "user_id", ignoreDuplicates: true });
+    .select("user_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
   if (profileError) {
     throw profileError;
+  }
+
+  if (!profile) {
+    return NextResponse.redirect(
+      new URL("/login?error=Profile+not+found.+Please+sign+up+in+the+app+first.", req.url),
+    );
   }
 
   const cookieStore = await cookies();
@@ -86,8 +97,51 @@ async function handleCheckoutStart(req: Request): Promise<Response> {
     throw intentError;
   }
 
+  // Passthrough UTM params to the RevenueCat URL so campaign data flows into
+  // revenue reporting (not needed by Meta — handled separately by CAPI).
+  let purchaseUrl = checkout.purchaseUrl;
+  try {
+    const { data: attribution } = await admin
+      .from("web_funnel_attribution")
+      .select("utm_source, utm_medium, utm_campaign, utm_term, utm_content")
+      .eq("session_id", sessionId)
+      .maybeSingle();
+
+    if (attribution) {
+      const url = new URL(purchaseUrl);
+      for (const key of ["utm_source","utm_medium","utm_campaign","utm_term","utm_content"]) {
+        const value = (attribution as Record<string,unknown>)[key];
+        if (typeof value === "string" && value) {
+          url.searchParams.set(key, value);
+        }
+      }
+      purchaseUrl = url.toString();
+    }
+  } catch {
+    // Best-effort — continue without UTM passthrough.
+  }
+
+  // Fire web_checkout_started (InitiateCheckout equivalent) via PostHog.
+  try {
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: user.id,
+      event: "web_checkout_started",
+      properties: {
+        offer_id: checkout.offer.offerId,
+        environment: checkout.environment,
+        session_id: sessionId,
+        funnel_slug: checkout.offer.offerId,
+        $set: { email: user.email },
+      },
+    });
+    posthog.flush();
+  } catch {
+    // Best-effort analytics — never block the checkout redirect.
+  }
+
   // 303 so a POST form submit redirects as a GET to the external checkout.
-  const response = NextResponse.redirect(checkout.purchaseUrl, 303);
+  const response = NextResponse.redirect(purchaseUrl, 303);
   response.cookies.set(FUNNEL_SESSION_COOKIE, sessionId, {
     httpOnly: true,
     sameSite: "lax",

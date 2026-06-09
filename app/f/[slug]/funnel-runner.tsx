@@ -1,18 +1,49 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import posthog from "posthog-js";
 
 import { OFFERS } from "@/lib/checkout/offers";
 import { OFFER_DISPLAY } from "@/lib/checkout/offer-display";
 import { LivePrice } from "@/app/pricing/live-price";
 import type { FunnelConfig } from "@/lib/funnels/types";
 
-// Client step machine for a funnel. Answers are held in component state and
-// flow into checkout via the selected offer. (Durable answer persistence to
-// web_funnel_answers is a later phase — see docs/plan.md.)
+// Client step machine for a funnel. Answers are persisted to
+// web_funnel_answers via POST /api/funnel-answer on every selection so they
+// survive the OAuth redirect and can personalize onboarding later.
 export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const funnelViewFired = useRef(false);
+  const leadFired = useRef(false);
+
+  // Fire Meta Lead if redirected from auth with ?lead=1.
+  // sessionStorage prevents double-firing on page refresh.
+  useEffect(() => {
+    if (leadFired.current) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("lead") !== "1") return;
+    if (sessionStorage.getItem("meta_lead_fired")) return;
+    leadFired.current = true;
+    sessionStorage.setItem("meta_lead_fired", "1");
+    (window as any).fbq?.("track", "Lead");
+    const url = new URL(window.location.href);
+    url.searchParams.delete("lead");
+    window.history.replaceState(null, "", url.toString());
+  }, []);
+
+  // Fire web_funnel_viewed + Meta ViewContent once on first render.
+  useEffect(() => {
+    if (funnelViewFired.current) return;
+    funnelViewFired.current = true;
+    posthog.capture("web_funnel_viewed", {
+      funnel_slug: funnel.slug,
+      funnel_name: funnel.name,
+    });
+    (window as any).fbq?.("track", "ViewContent", {
+      content_name: funnel.name,
+    });
+  }, [funnel.slug, funnel.name]);
 
   const step = funnel.steps[index];
   const isLast = index >= funnel.steps.length - 1;
@@ -24,6 +55,19 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
 
   function choose(stepId: string, optionId: string) {
     setAnswers((prev) => ({ ...prev, [stepId]: optionId }));
+
+    // Persist the answer server-side so it survives the OAuth redirect.
+    fetch("/api/funnel-answer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        step_id: stepId,
+        answer: { option_id: optionId },
+        funnel_slug: funnel.slug,
+      }),
+      keepalive: true,
+    }).catch(() => {});
+
     if (!isLast) advance();
   }
 
@@ -136,7 +180,15 @@ function OfferStep({
         </div>
         <p className="priceBillingNote">{display.billingNote}</p>
 
-        <form action={`/checkout/start?offer=${offer.key}`} method="post">
+        <form
+          action={`/checkout/start?offer=${offer.key}`}
+          method="post"
+          onSubmit={() => {
+            (window as any).fbq?.("track", "InitiateCheckout", {
+              content_name: offer.key,
+            });
+          }}
+        >
           <button type="submit" className="funnelPrimaryBtn">
             Start free trial
           </button>

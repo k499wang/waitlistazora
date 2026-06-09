@@ -156,6 +156,22 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
 export default function Home() {
   const [navScrolled, setNavScrolled] = useState(false);
   const revealRefs = useRef<(HTMLElement | null)[]>([]);
+  const leadFired = useRef(false);
+
+  // Fire Meta Lead if redirected from auth with ?lead=1.
+  // sessionStorage prevents double-firing on page refresh.
+  useEffect(() => {
+    if (leadFired.current) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("lead") !== "1") return;
+    if (sessionStorage.getItem("meta_lead_fired")) return;
+    leadFired.current = true;
+    sessionStorage.setItem("meta_lead_fired", "1");
+    (window as any).fbq?.("track", "Lead");
+    const url = new URL(window.location.href);
+    url.searchParams.delete("lead");
+    window.history.replaceState(null, "", url.toString());
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setNavScrolled(window.scrollY > 40);

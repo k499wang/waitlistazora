@@ -8,7 +8,11 @@ export const attributionKeys = [
   "utm_content",
   "utm_term",
   "landing_page",
-  "referrer"
+  "referrer",
+  // Meta / Facebook click-tracking params
+  "fbclid",
+  "_fbp",
+  "_fbc"
 ] as const;
 
 export type AttributionKey = (typeof attributionKeys)[number];

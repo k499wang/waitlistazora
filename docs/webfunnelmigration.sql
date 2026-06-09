@@ -175,6 +175,12 @@ create index if not exists web_checkout_intents_revenuecat_transaction_idx
   on public.web_checkout_intents (revenuecat_transaction_id)
   where revenuecat_transaction_id is not null;
 
+alter table public.web_checkout_intents
+  add column if not exists purchase_event_sent_at timestamptz;
+
+comment on column public.web_checkout_intents.purchase_event_sent_at is
+  'Timestamp when the purchase analytics event (PostHog / Meta CAPI) was first sent. Used for idempotency so repeat status polls do not double-fire.';
+
 alter table public.web_funnel_sessions enable row level security;
 alter table public.web_funnel_attribution enable row level security;
 alter table public.web_funnel_answers enable row level security;

@@ -3,7 +3,14 @@
 import type { ReactNode } from "react";
 import { useRef } from "react";
 
+import { EmbeddedCheckoutButton } from "./embedded-checkout-button";
 import { trackMetaEvent } from "./meta-pixel-events";
+
+// Flag-gated rollout: when on, checkout runs embedded on our own domain via the
+// RevenueCat Web Billing SDK; when off, it falls back to the pay.rev.cat redirect
+// (POST /checkout/start). Read as a literal so Next inlines it at build time.
+const EMBEDDED_CHECKOUT =
+  process.env.NEXT_PUBLIC_EMBEDDED_CHECKOUT === "true";
 
 export function CheckoutForm({
   action,
@@ -17,6 +24,14 @@ export function CheckoutForm({
   children: ReactNode;
 }) {
   const submittedRef = useRef(false);
+
+  if (EMBEDDED_CHECKOUT) {
+    return (
+      <EmbeddedCheckoutButton offerKey={offerKey} className={className}>
+        {children}
+      </EmbeddedCheckoutButton>
+    );
+  }
 
   return (
     <form

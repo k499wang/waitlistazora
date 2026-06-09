@@ -39,6 +39,8 @@ export async function GET(request: NextRequest) {
     eventSourceUrl: `${url.origin}/auth/finalize`,
     clientIp: request.headers.get("x-forwarded-for"),
     clientUserAgent: request.headers.get("user-agent"),
+    fbpCookie: request.cookies.get("_fbp")?.value ?? null,
+    fbcCookie: request.cookies.get("_fbc")?.value ?? null,
   });
 
   // Lead is fired server-side in applyPostLogin (CAPI), so just forward to the

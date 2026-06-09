@@ -7,6 +7,14 @@ interface PostLoginContext {
   eventSourceUrl?: string | null;
   clientIp?: string | null;
   clientUserAgent?: string | null;
+  /**
+   * _fbp/_fbc cookies read off the auth request — fallback match keys for when
+   * the landing beacon never persisted attribution (blocked /api/session-init,
+   * bounce before the 600ms timer). DB values win: they carry the first-touch
+   * click timestamp.
+   */
+  fbpCookie?: string | null;
+  fbcCookie?: string | null;
 }
 
 // x-forwarded-for can be a comma-separated chain (client, proxy1, proxy2…).
@@ -49,9 +57,10 @@ export async function applyPostLogin(
     // Best-effort DB preparation — checkout will enforce/create the profile again.
   }
 
-  // Read persisted fbp/fbc for the Lead match keys. Best-effort.
-  let fbp: string | null = null;
-  let fbc: string | null = null;
+  // Read persisted fbp/fbc for the Lead match keys, falling back to the
+  // cookies on the auth request itself. Best-effort.
+  let fbp: string | null = context?.fbpCookie ?? null;
+  let fbc: string | null = context?.fbcCookie ?? null;
   if (sessionId) {
     try {
       const { data: attribution } = await admin
@@ -60,8 +69,12 @@ export async function applyPostLogin(
         .eq("session_id", sessionId)
         .maybeSingle();
       if (attribution) {
-        fbp = typeof attribution.fbp === "string" ? attribution.fbp : null;
-        fbc = typeof attribution.fbc === "string" ? attribution.fbc : null;
+        if (typeof attribution.fbp === "string" && attribution.fbp) {
+          fbp = attribution.fbp;
+        }
+        if (typeof attribution.fbc === "string" && attribution.fbc) {
+          fbc = attribution.fbc;
+        }
       }
     } catch {
       // Best-effort — fire Lead with whatever match keys we have.

@@ -17,7 +17,7 @@
 // the authoritative one and may differ from what this returns. Always keep a
 // hardcoded fallback in the UI.
 
-import { Purchases } from "@revenuecat/purchases-js";
+import { ErrorCode, Purchases, PurchasesError } from "@revenuecat/purchases-js";
 
 import type { OfferKey } from "./offers";
 
@@ -65,6 +65,80 @@ export function getLiveOfferPrices(): Promise<LiveOfferPrices> {
     });
   }
   return pricesPromise;
+}
+
+export type PurchaseOutcome =
+  | { status: "completed" }
+  | { status: "cancelled" }
+  | { status: "error"; message: string };
+
+/**
+ * Run an embedded RevenueCat Web Billing purchase on our own domain.
+ *
+ * Configures the SDK with the REAL Supabase app user id (unlike loadPrices,
+ * which uses an anonymous id for catalog reads) so the resulting RevenueCat
+ * app_user_id equals user.id by contract — this is what the web-checkout webhook
+ * matches the open intent against. Re-configuring is safe: the SDK simply
+ * replaces its singleton with a fresh instance bound to this user (no alias).
+ *
+ * Loads the discount-bearing offering by identifier (NOT the `current` offering)
+ * and purchases its package for the given offer. Presents RevenueCat's payment
+ * UI as a modal. Never throws — resolves to a discriminated outcome so the caller
+ * can branch on cancel vs error.
+ */
+export async function purchaseEmbeddedOffering(input: {
+  appUserId: string;
+  offeringIdentifier: string;
+  offerKey: OfferKey;
+  email?: string | null;
+}): Promise<PurchaseOutcome> {
+  if (!BILLING_KEY) {
+    return { status: "error", message: "Checkout is not configured." };
+  }
+
+  try {
+    const purchases = Purchases.configure({
+      apiKey: BILLING_KEY as string,
+      appUserId: input.appUserId,
+    });
+
+    const offerings = await purchases.getOfferings();
+    const offering = offerings.all[input.offeringIdentifier];
+    if (!offering) {
+      return {
+        status: "error",
+        message: `Offering ${input.offeringIdentifier} is unavailable.`,
+      };
+    }
+
+    const packageIdentifier = PACKAGE_IDENTIFIER[input.offerKey];
+    const rcPackage = offering.availablePackages.find(
+      (p) => p.identifier === packageIdentifier,
+    );
+    if (!rcPackage) {
+      return {
+        status: "error",
+        message: `No ${input.offerKey} package on ${input.offeringIdentifier}.`,
+      };
+    }
+
+    await purchases.purchase({
+      rcPackage,
+      customerEmail: input.email ?? undefined,
+    });
+
+    return { status: "completed" };
+  } catch (err) {
+    if (err instanceof PurchasesError && err.errorCode === ErrorCode.UserCancelledError) {
+      return { status: "cancelled" };
+    }
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[revenuecat-web] purchase failed:", err);
+    }
+    const message =
+      err instanceof Error ? err.message : "Something went wrong during checkout.";
+    return { status: "error", message };
+  }
 }
 
 async function loadPrices(): Promise<LiveOfferPrices> {

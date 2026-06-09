@@ -6,6 +6,7 @@ import posthog from "posthog-js";
 import { OFFERS } from "@/lib/checkout/offers";
 import { OFFER_DISPLAY } from "@/lib/checkout/offer-display";
 import { CheckoutForm } from "@/app/components/checkout-form";
+import { RESUME_PARAM } from "@/app/components/embedded-checkout-button";
 import { trackMetaEvent } from "@/app/components/meta-pixel-events";
 import { LivePrice } from "@/app/pricing/live-price";
 import type { FunnelConfig, FunnelStep } from "@/lib/funnels/types";
@@ -62,6 +63,19 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
       content_name: funnel.name,
     });
   }, [funnel.slug, funnel.name]);
+
+  // Post-login checkout resume: an offer click while logged out bounces through
+  // /login and lands back here with ?resume_checkout=<offer>. The runner always
+  // starts at step 1, so jump straight to the offer step — otherwise the
+  // EmbeddedCheckoutButton that auto-resumes the purchase never mounts. The
+  // button itself strips the param and re-starts checkout without re-firing the
+  // InitiateCheckout pixel (it already fired on the pre-login click).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has(RESUME_PARAM)) return;
+    const offerStep = funnel.steps.find((s) => s.kind === "offer");
+    if (offerStep) setCurrentId(offerStep.id);
+  }, [funnel.steps]);
 
   const step = funnel.steps.find((s) => s.id === currentId)!;
 

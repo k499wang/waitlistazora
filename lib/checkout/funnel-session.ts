@@ -37,7 +37,7 @@ export async function getOrCreateFunnelSession(
   if (input.cookieSessionId) {
     const { data: existing, error } = await admin
       .from("web_funnel_sessions")
-      .select("id, user_id, ip_address")
+      .select("id, user_id, ip_address, user_agent")
       .eq("id", input.cookieSessionId)
       .maybeSingle();
 
@@ -53,9 +53,11 @@ export async function getOrCreateFunnelSession(
           .update({
             user_id: input.userId,
             status: "checkout_started",
-            // Backfill the landing IP only when it wasn't captured earlier
-            // (e.g. the landing beacon was blocked); never clobber a real one.
+            // Backfill landing IP / user-agent only when they weren't captured
+            // earlier (e.g. the landing beacon was blocked); never clobber the
+            // real landing values. The CAPI webhook reads both off this row.
             ip_address: existing.ip_address ?? input.ipAddress ?? null,
+            user_agent: existing.user_agent ?? input.userAgent ?? null,
           })
           .eq("id", existing.id);
 

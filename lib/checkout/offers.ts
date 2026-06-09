@@ -22,6 +22,15 @@ export interface OfferDefinition {
   key: OfferKey;
   /** Stable RevenueCat offer_id, stored on web_checkout_intents.offer_id. */
   offerId: string;
+  /**
+   * RevenueCat *offering* identifier the Web Billing SDK loads for the embedded
+   * checkout path (`Purchases.getOfferings().all[offeringIdentifier]`). The
+   * discounts live on these offerings, so the SDK must purchase the package from
+   * here — not the `current` offering. Same value as `offerId` by convention,
+   * but kept distinct so the redirect-link contract and the SDK lookup can drift
+   * independently if RevenueCat ever renames one.
+   */
+  offeringIdentifier: string;
   /** Human-facing label (display only). */
   displayName: string;
   /** Env var holding the sandbox Web Purchase Link base URL. */
@@ -34,6 +43,7 @@ export const OFFERS: Record<OfferKey, OfferDefinition> = {
   annual: {
     key: "annual",
     offerId: "web_annual_discount",
+    offeringIdentifier: "web_annual_discount",
     displayName: "Azora Pro Annual",
     sandboxEnvVar: "REVENUECAT_WEB_PURCHASE_LINK_ANNUAL_SANDBOX",
     prodEnvVar: "REVENUECAT_WEB_PURCHASE_LINK_ANNUAL_PROD",
@@ -41,6 +51,7 @@ export const OFFERS: Record<OfferKey, OfferDefinition> = {
   weekly: {
     key: "weekly",
     offerId: "web_weekly_discount",
+    offeringIdentifier: "web_weekly_discount",
     displayName: "Azora Pro Weekly",
     sandboxEnvVar: "REVENUECAT_WEB_PURCHASE_LINK_WEEKLY_SANDBOX",
     prodEnvVar: "REVENUECAT_WEB_PURCHASE_LINK_WEEKLY_PROD",

@@ -50,6 +50,11 @@ describe("offer registry contract", () => {
     expect(getOffer("annual").offerId).toBe("web_annual_discount");
     expect(getOffer("weekly").offerId).toBe("web_weekly_discount");
   });
+
+  it("exposes the SDK offering identifier for the embedded checkout path", () => {
+    expect(getOffer("annual").offeringIdentifier).toBe("web_annual_discount");
+    expect(getOffer("weekly").offeringIdentifier).toBe("web_weekly_discount");
+  });
 });
 
 describe("resolveEnvironment", () => {

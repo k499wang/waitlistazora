@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error("[track-landing] failed:", error);
+    console.error("[session-init] failed:", error);
     return NextResponse.json({ ok: false }, { status: 500 });
   }
 }

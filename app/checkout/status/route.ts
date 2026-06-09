@@ -4,7 +4,6 @@ import { ENTITLEMENT_ID } from "@/lib/checkout/offers";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getPostHogClient } from "@/lib/posthog-server";
-import { sendPurchaseEvent } from "@/lib/meta-capi";
 
 // Read-only status endpoint polled by /checkout/success. Resolves the
 // authenticated user from the session cookie, then reads that user's own
@@ -55,7 +54,7 @@ export async function GET(request: NextRequest) {
 
   const { data: intent, error: intentError } = await admin
     .from("web_checkout_intents")
-    .select("id, session_id, status, offer_id, environment, purchased_at, revenuecat_event_id, purchase_event_sent_at, price_amount, currency")
+    .select("id, status, offer_id, environment, purchased_at, revenuecat_event_id, purchase_event_sent_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -78,8 +77,11 @@ export async function GET(request: NextRequest) {
   const isPro = computeIsPro(subscription);
   const purchased = intent?.status === "purchased" || isPro;
 
-  // Fire web_purchase_confirmed + Meta CAPI Purchase once per intent (idempotent).
-  // This runs on the first poll that sees purchased; repeat polls skip it.
+  // Fire the PostHog web_purchase_confirmed event once per intent, on the first
+  // poll that sees the purchase. The Meta CAPI Purchase is NOT fired here — it
+  // is sent server-to-server from the RevenueCat web-checkout webhook so it
+  // doesn't depend on the user returning to this page. See the webhook + the
+  // meta_capi_sent_at column.
   if (purchased && intent && !intent.purchase_event_sent_at) {
     try {
       const posthog = getPostHogClient();
@@ -93,45 +95,9 @@ export async function GET(request: NextRequest) {
           $set: { email: user.email },
         },
       });
-      posthog.flush();
+      await posthog.flush();
 
-      // Read persisted fbp/fbc from the attribution row so they survive
-      // OAuth redirects and cookie expiration. Fall back to request cookies
-      // for sessions created before this was implemented.
-      let persistedFbp: string | null = null;
-      let persistedFbc: string | null = null;
-      try {
-        const { data: attribution } = await admin
-          .from("web_funnel_attribution")
-          .select("fbp, fbc")
-          .eq("session_id", intent.session_id)
-          .maybeSingle();
-
-        if (attribution) {
-          persistedFbp = typeof attribution.fbp === "string" ? attribution.fbp : null;
-          persistedFbc = typeof attribution.fbc === "string" ? attribution.fbc : null;
-        }
-      } catch {
-        // Best-effort — fall back to request cookies below.
-      }
-
-      // Meta CAPI Purchase — fire-and-forget alongside PostHog.
-      sendPurchaseEvent({
-        externalId: user.id,
-        email: user.email,
-        fbp: persistedFbp ?? request.cookies.get("_fbp")?.value ?? null,
-        fbc: persistedFbc ?? request.cookies.get("_fbc")?.value ?? null,
-        clientIp: request.headers.get("x-forwarded-for") ?? null,
-        clientUserAgent: request.headers.get("user-agent") ?? null,
-        eventSourceUrl: request.nextUrl.origin + "/checkout/success",
-        value: typeof intent.price_amount === "number" ? intent.price_amount : null,
-        currency: typeof intent.currency === "string" ? intent.currency : null,
-        eventId: `purchase_${intent.id}`,
-      }).catch(() => {
-        // Best-effort — Meta CAPI failures are silent.
-      });
-
-      // Stamp the intent so repeat polls never double-send.
+      // Stamp the intent so repeat polls never double-fire PostHog.
       await admin
         .from("web_checkout_intents")
         .update({ purchase_event_sent_at: new Date().toISOString() })

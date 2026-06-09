@@ -6,6 +6,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export const FUNNEL_SESSION_COOKIE = "wf_session_id";
 export const FUNNEL_SESSION_COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
+// Short-lived cookie that carries the post-login `next` path across an OAuth
+// provider round-trip (Supabase doesn't reliably preserve a nested `next`
+// query param). Set just before redirecting to the provider; read + cleared in
+// /auth/callback.
+export const LOGIN_NEXT_COOKIE = "wf_login_next";
+
 interface FunnelSessionInput {
   userId: string;
   funnelSlug: string;

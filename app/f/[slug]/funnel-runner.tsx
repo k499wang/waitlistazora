@@ -5,6 +5,8 @@ import posthog from "posthog-js";
 
 import { OFFERS } from "@/lib/checkout/offers";
 import { OFFER_DISPLAY } from "@/lib/checkout/offer-display";
+import { CheckoutForm } from "@/app/components/checkout-form";
+import { trackMetaEvent } from "@/app/components/meta-pixel-events";
 import { LivePrice } from "@/app/pricing/live-price";
 import type { FunnelConfig } from "@/lib/funnels/types";
 
@@ -15,22 +17,6 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const funnelViewFired = useRef(false);
-  const leadFired = useRef(false);
-
-  // Fire Meta Lead if redirected from auth with ?lead=1.
-  // sessionStorage prevents double-firing on page refresh.
-  useEffect(() => {
-    if (leadFired.current) return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("lead") !== "1") return;
-    if (sessionStorage.getItem("meta_lead_fired")) return;
-    leadFired.current = true;
-    sessionStorage.setItem("meta_lead_fired", "1");
-    (window as any).fbq?.("track", "Lead");
-    const url = new URL(window.location.href);
-    url.searchParams.delete("lead");
-    window.history.replaceState(null, "", url.toString());
-  }, []);
 
   // Fire web_funnel_viewed + Meta ViewContent once on first render.
   useEffect(() => {
@@ -40,7 +26,7 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
       funnel_slug: funnel.slug,
       funnel_name: funnel.name,
     });
-    (window as any).fbq?.("track", "ViewContent", {
+    trackMetaEvent("ViewContent", {
       content_name: funnel.name,
     });
   }, [funnel.slug, funnel.name]);
@@ -180,19 +166,14 @@ function OfferStep({
         </div>
         <p className="priceBillingNote">{display.billingNote}</p>
 
-        <form
+        <CheckoutForm
           action={`/checkout/start?offer=${offer.key}`}
-          method="post"
-          onSubmit={() => {
-            (window as any).fbq?.("track", "InitiateCheckout", {
-              content_name: offer.key,
-            });
-          }}
+          offerKey={offer.key}
         >
           <button type="submit" className="funnelPrimaryBtn">
             Start free trial
           </button>
-        </form>
+        </CheckoutForm>
         <p className="priceTrialLine">{display.trialLine}</p>
       </div>
 

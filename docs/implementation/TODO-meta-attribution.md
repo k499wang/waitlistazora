@@ -55,9 +55,9 @@ parallel to capture their tracking data:
 2. Registers all as PostHog super properties (auto-attached to every event)
 3. Fires `influencer_link_landed` PostHog event
 4. After 600ms (to let the Meta Pixel set `_fbp`), POSTs to
-   `/api/track-landing` to persist attribution server-side
+   `/api/session-init` to persist attribution server-side
 
-**Server-side (app/api/track-landing/route.ts):**
+**Server-side (app/api/session-init/route.ts):**
 1. Creates a `web_funnel_sessions` row with `user_id = null` (anonymous),
    `anonymous_id = random UUID`, `landing_path`, `initial_url`, `referrer`,
    `user_agent`, `ip_country`
@@ -96,14 +96,14 @@ anonymous events from before auth to the authenticated user.
 |---|---|---|
 | `PageView` | `layout.tsx` (base code) | Every page load (automatic) |
 | `ViewContent` | `funnel-runner.tsx` | Funnel first render |
-| `Lead` | `funnel-runner.tsx` / `page.tsx` | After OAuth (via `?lead=1` query param + sessionStorage guard) |
 | `InitiateCheckout` | `funnel-runner.tsx` | Form `onSubmit` before checkout redirect |
 
-**Server CAPI** (fired from `checkout/status/route.ts` via `lib/meta-capi.ts`):
+**Server CAPI** (via `lib/meta-capi.ts`):
 
 | Meta event | Where | When |
 |---|---|---|
-| `Purchase` | `checkout/status/route.ts` | First poll after webhook confirms purchase |
+| `Lead` | `lib/auth/post-login.ts` (auth callback + finalize) | On every successful login. Server-side because the post-login destination is often a redirect route (`/checkout/start`) or external (RevenueCat), where a browser Pixel can't fire. event_id `lead_<user.id>`. |
+| `Purchase` | RevenueCat web-checkout webhook | Server-to-server when the purchase reconciles. event_id `purchase_<intent.id>`. |
 
 The CAPI Purchase payload includes:
 - Hashed email (SHA-256)
@@ -123,7 +123,7 @@ polls see the stamp and skip. One purchase = one event each.
 
 The `wf_session_id` cookie ties everything together:
 
-1. **Landing** (`/api/track-landing`) → creates anonymous session + attribution
+1. **Landing** (`/api/session-init`) → creates anonymous session + attribution
 2. **Auth** (`/auth/callback`) → attaches `user_id` to the session
 3. **Checkout** (`/checkout/start`) → `getOrCreateFunnelSession` finds the
    session by cookie, claims it (updates user_id + status)
@@ -152,10 +152,10 @@ stores them on the transaction → revenue-by-campaign reporting.
 | File | Change |
 |---|---|
 | `lib/attribution.ts` | Added `fbclid`, `_fbp`, `_fbc` to attribution keys |
-| `instrumentation-client.ts` | Captures fbclid from URL, _fbp from cookie, builds _fbc; POSTs to `/api/track-landing` after 600ms |
+| `instrumentation-client.ts` | Captures fbclid from URL, _fbp from cookie, builds _fbc; POSTs to `/api/session-init` after 600ms |
 | `app/layout.tsx` | Installed Meta Pixel base code via `next/script` + `<noscript>` fallback |
 | `lib/meta-capi.ts` | **New** — SHA-256 hashing, CAPI payload builder, POSTs to Facebook Graph API |
-| `app/api/track-landing/route.ts` | **New** — Creates anonymous session + attribution on landing |
+| `app/api/session-init/route.ts` | **New** — Creates anonymous session + attribution on landing |
 | `app/api/funnel-answer/route.ts` | **New** — Persists quiz answers to `web_funnel_answers` |
 | `app/f/[slug]/funnel-runner.tsx` | Fires `web_funnel_viewed` + Meta `ViewContent` + `Lead` + `InitiateCheckout`; persists answers to API |
 | `app/auth/callback/route.ts` | Fires `web_email_captured`; attaches user_id to session; appends `?lead=1` to redirect |

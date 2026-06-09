@@ -5,6 +5,20 @@ import {
   hasAttribution
 } from "@/lib/attribution";
 
+declare global {
+  interface Window {
+    fbq?: (
+      command: "track",
+      eventName: string,
+      params?: Record<string, unknown>,
+      options?: {
+        eventCallback?: () => void;
+        eventTimeout?: number;
+      },
+    ) => void;
+  }
+}
+
 posthog.init(process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN!, {
   api_host: "/ingest",
   ui_host: "https://us.posthog.com",
@@ -32,6 +46,10 @@ function buildFbc(fbclid: string): string {
 const searchParams = new URLSearchParams(window.location.search);
 const attribution = attributionFromSearchParams(searchParams);
 
+// Note: Meta `Lead` is fired server-side via CAPI from the auth callback
+// (see lib/auth/post-login.ts), not from the browser — so it doesn't depend on
+// landing on a renderable page and can't double-count.
+
 // Fill Meta params from URL / cookies when they aren't already in attribution.
 const fbclid = searchParams.get("fbclid");
 const fbp = getCookie("_fbp");
@@ -48,7 +66,8 @@ if (fbclid && !attribution._fbc) {
 
 // ── Persist attribution server-side ──────────────────────────────────────────
 // Wait 600ms for the Meta Pixel to fire and set _fbp, then POST the landing
-// data to /api/track-landing so fbclid/_fbp/_fbc survive OAuth + cookie expiry.
+// data to /api/session-init so fbclid/_fbp/_fbc survive OAuth + cookie expiry.
+// (Named generically — not "track" — so ad/tracker blocklists don't drop it.)
 setTimeout(() => {
   const payload: Record<string, string> = {};
   const params = new URLSearchParams(window.location.search);
@@ -63,7 +82,7 @@ setTimeout(() => {
   payload.referrer = document.referrer;
 
   if (Object.values(payload).some((v) => v && v !== "")) {
-    fetch("/api/track-landing", {
+    fetch("/api/session-init", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),

@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
@@ -16,7 +15,6 @@ type Mode = "signin" | "signup";
 // On success the Supabase session lands in cookies and the user continues to
 // `next`. The Supabase user.id is the RevenueCat App User ID by contract.
 export function LoginForm({ next, initialError }: { next: string; initialError?: string }) {
-  const router = useRouter();
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,12 +32,22 @@ export function LoginForm({ next, initialError }: { next: string; initialError?:
     setPending("google");
     try {
       const supabase = createBrowserSupabaseClient();
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      // Stash `next` in a cookie — Supabase doesn't reliably preserve a nested
+      // `next` query param through the Google round-trip. /auth/callback reads
+      // this cookie back. Use a bare callback URL as redirectTo.
+      document.cookie = `wf_login_next=${encodeURIComponent(next)}; path=/; max-age=600; samesite=lax`;
+      const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: callbackUrl() },
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          skipBrowserRedirect: true,
+        },
       });
       if (oauthError) throw oauthError;
-      // The browser is redirected by Supabase; nothing else to do here.
+      if (!data.url) {
+        throw new Error("Google sign-in did not return a redirect URL.");
+      }
+      window.location.assign(data.url);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Google sign-in failed.");
       setPending(null);
@@ -77,8 +85,11 @@ export function LoginForm({ next, initialError }: { next: string; initialError?:
         if (signInError) throw signInError;
       }
 
-      router.push(next);
-      router.refresh();
+      // Route through /auth/finalize (full navigation) so password logins run
+      // the same post-login side effects as OAuth — web_email_captured, the
+      // session claim, and the server-side Meta CAPI Lead.
+      window.location.assign(`/auth/finalize?next=${encodeURIComponent(next)}`);
+      return;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Authentication failed.");
     } finally {

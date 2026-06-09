@@ -1,8 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-import { FUNNEL_SESSION_COOKIE } from "@/lib/checkout/funnel-session";
-import { getPostHogClient } from "@/lib/posthog-server";
-import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { applyPostLogin } from "@/lib/auth/post-login";
+import {
+  FUNNEL_SESSION_COOKIE,
+  LOGIN_NEXT_COOKIE,
+} from "@/lib/checkout/funnel-session";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 // OAuth / magic-link / email-confirmation callback. Supabase (PKCE) redirects
@@ -10,17 +12,32 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 // writes into cookies. Then we forward to the original `next` destination.
 export const dynamic = "force-dynamic";
 
-function safeNext(next: string | null): string {
+function safeNext(next: string | null | undefined): string {
   if (next && next.startsWith("/") && !next.startsWith("//")) {
     return next;
   }
   return "/";
 }
 
+// Prefer the `next` stashed in a cookie before the OAuth redirect — Supabase
+// doesn't reliably preserve a nested `next` query param through the provider
+// round-trip. Fall back to the query param (magic-link / email confirmation).
+function resolveNext(request: NextRequest, url: URL): string {
+  const cookieNext = request.cookies.get(LOGIN_NEXT_COOKIE)?.value;
+  if (cookieNext) {
+    try {
+      return safeNext(decodeURIComponent(cookieNext));
+    } catch {
+      // fall through to the query param
+    }
+  }
+  return safeNext(url.searchParams.get("next"));
+}
+
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
-  const next = safeNext(url.searchParams.get("next"));
+  const next = resolveNext(request, url);
   const errorDescription = url.searchParams.get("error_description");
 
   if (errorDescription) {
@@ -44,46 +61,23 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Fire web_email_captured (Lead equivalent) via PostHog server-side.
-  // Also attach user_id to the anonymous web_funnel_session so attribution
-  // (fbclid, _fbp, _fbc) is linked to the authenticated user for CAPI.
-  try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (user) {
-      const posthog = getPostHogClient();
-      posthog.capture({
-        distinctId: user.id,
-        event: "web_email_captured",
-        properties: {
-          email: user.email,
-          provider: user.app_metadata?.provider ?? null,
-          $set: { email: user.email },
-        },
-      });
-      posthog.flush();
-
-      // Attach user_id to the anonymous funnel session.
-      const sessionId = request.cookies.get(FUNNEL_SESSION_COOKIE)?.value;
-      if (sessionId) {
-        const admin = createAdminSupabaseClient();
-        await admin
-          .from("web_funnel_sessions")
-          .update({ user_id: user.id, status: "authenticated" })
-          .eq("id", sessionId)
-          .is("user_id", null);
-      }
-    }
-  } catch {
-    // Best-effort analytics — never block the auth redirect.
+  // Run the shared post-login side effects: web_email_captured, attach user_id
+  // to the funnel session, and fire the Meta CAPI Lead server-side.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
+    await applyPostLogin(user, request.cookies.get(FUNNEL_SESSION_COOKIE)?.value, {
+      eventSourceUrl: `${url.origin}/auth/callback`,
+      clientIp: request.headers.get("x-forwarded-for"),
+      clientUserAgent: request.headers.get("user-agent"),
+    });
   }
 
-  // Append &lead=1 so the browser-side Meta Pixel can fire Lead on the
-  // destination page.
-  const target = new URL(next, url.origin);
-  target.searchParams.set("lead", "1");
-
-  return NextResponse.redirect(target);
+  // Lead is fired server-side in applyPostLogin (CAPI), so just forward to the
+  // intended destination — no ?lead=1 / interstitial needed.
+  const response = NextResponse.redirect(new URL(next, url.origin));
+  // Clear the one-shot next cookie now that we've consumed it.
+  response.cookies.set(LOGIN_NEXT_COOKIE, "", { path: "/", maxAge: 0 });
+  return response;
 }

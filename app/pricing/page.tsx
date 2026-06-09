@@ -5,6 +5,7 @@ import {
   OFFER_DISPLAY,
   OFFER_DISPLAY_ORDER,
 } from "@/lib/checkout/offer-display";
+import { CheckoutForm } from "@/app/components/checkout-form";
 import { TopBar } from "@/app/components/top-bar";
 import { LivePrice } from "./live-price";
 
@@ -84,11 +85,14 @@ export default function PricingPage() {
                   </div>
                   <p className="priceBillingNote">{display.billingNote}</p>
 
-                  <form action={`/checkout/start?offer=${offer.key}`} method="post">
+                  <CheckoutForm
+                    action={`/checkout/start?offer=${offer.key}`}
+                    offerKey={offer.key}
+                  >
                     <button type="submit" className="priceCta">
                       Get {offer.displayName}
                     </button>
-                  </form>
+                  </CheckoutForm>
                   <p className="priceTrialLine">{display.trialLine}</p>
 
                   <ul className="priceFeatures">

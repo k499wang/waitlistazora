@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
+import { ensureWebProfile } from "@/lib/auth/profile";
 import { resolveCheckout } from "@/lib/checkout/offers";
 import { getPostHogClient } from "@/lib/posthog-server";
 import {
@@ -51,23 +52,12 @@ async function handleCheckoutStart(req: Request): Promise<Response> {
 
   const admin = createAdminSupabaseClient();
 
-  // Verify a profiles row exists. The web_checkout_intents.user_id FK + the
-  // RevenueCat App User ID contract both depend on it. Fail closed — if the
-  // mobile app hasn't created this profile, the web funnel should not silently
-  // create one.
-  const { data: profile, error: profileError } = await admin
-    .from("profiles")
-    .select("user_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (profileError) {
-    throw profileError;
-  }
-
-  if (!profile) {
+  try {
+    await ensureWebProfile(admin, user);
+  } catch (error) {
+    console.error("[checkout/start] profile ensure failed:", error);
     return NextResponse.redirect(
-      new URL("/login?error=Profile+not+found.+Please+sign+up+in+the+app+first.", req.url),
+      new URL("/login?error=Could+not+prepare+checkout.+Please+try+again.", req.url),
     );
   }
 
@@ -135,7 +125,7 @@ async function handleCheckoutStart(req: Request): Promise<Response> {
         $set: { email: user.email },
       },
     });
-    posthog.flush();
+    await posthog.flush();
   } catch {
     // Best-effort analytics — never block the checkout redirect.
   }

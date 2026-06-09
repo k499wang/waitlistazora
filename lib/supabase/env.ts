@@ -6,8 +6,9 @@
 // path that predates the auth setup.
 
 export function supabaseUrl(): string {
-  const value =
-    process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
+  const value = (
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL
+  )?.trim();
 
   if (!value) {
     throw new Error(
@@ -19,7 +20,7 @@ export function supabaseUrl(): string {
 }
 
 export function supabaseAnonKey(): string {
-  const value = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const value = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
 
   if (!value) {
     throw new Error("Missing required env var NEXT_PUBLIC_SUPABASE_ANON_KEY.");
@@ -29,7 +30,7 @@ export function supabaseAnonKey(): string {
 }
 
 export function supabaseServiceRoleKey(): string {
-  const value = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const value = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 
   if (!value) {
     throw new Error("Missing required env var SUPABASE_SERVICE_ROLE_KEY.");

@@ -144,3 +144,88 @@ export async function sendPurchaseEvent(
 
   return { ok: res.ok, status: res.status };
 }
+
+export interface MetaLeadParams {
+  /** Supabase user.id — used as Meta external_id (hashed) for strong matching. */
+  externalId: string;
+  /** User's email — hashed with SHA-256 before sending. */
+  email?: string | null;
+  fbp?: string | null;
+  fbc?: string | null;
+  clientIp?: string | null;
+  clientUserAgent?: string | null;
+  eventSourceUrl?: string | null;
+  /** Stable event ID for Meta-side deduplication. */
+  eventId?: string | null;
+}
+
+/**
+ * Send a Lead event to Meta Conversions API at authentication time.
+ *
+ * Fired server-side (from the auth callback) instead of via the browser Pixel
+ * so it doesn't depend on the user landing on a page that renders — the
+ * post-login destination is often a redirect route (/checkout/start) or an
+ * external site (RevenueCat), where a browser Pixel can never fire.
+ *
+ * external_id is hashed to stay consistent with the webhook Purchase event.
+ * Never throws — callers treat it as best-effort.
+ */
+export async function sendLeadEvent(
+  params: MetaLeadParams,
+): Promise<{ ok: boolean; status: number }> {
+  if (!PIXEL_ID || !ACCESS_TOKEN) {
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[meta-capi] META_PIXEL_ID or META_CAPI_ACCESS_TOKEN not set — skipping Lead");
+    }
+    return { ok: false, status: 0 };
+  }
+
+  const userData: Record<string, string> = {};
+  if (params.email) {
+    userData.em = hashSha256(params.email);
+  }
+  userData.external_id = hashSha256(params.externalId);
+  if (params.fbp) userData.fbp = params.fbp;
+  if (params.fbc) userData.fbc = params.fbc;
+  if (params.clientIp) userData.client_ip_address = params.clientIp;
+  if (params.clientUserAgent) userData.client_user_agent = params.clientUserAgent;
+
+  const event: Record<string, unknown> = {
+    event_name: "Lead",
+    event_time: Math.floor(Date.now() / 1000),
+    action_source: "website",
+    event_source_url: params.eventSourceUrl ?? "",
+    user_data: userData,
+  };
+  if (params.eventId) {
+    event.event_id = params.eventId;
+  }
+
+  const body: { data: Record<string, unknown>[]; test_event_code?: string } = {
+    data: [event],
+  };
+  if (TEST_EVENT_CODE) {
+    body.test_event_code = TEST_EVENT_CODE;
+  }
+
+  const url = `https://graph.facebook.com/${API_VERSION}/${PIXEL_ID}/events?access_token=${ACCESS_TOKEN}`;
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch (error) {
+    console.error("[meta-capi] Lead event request failed:", error);
+    return { ok: false, status: 0 };
+  }
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    console.error("[meta-capi] Lead event rejected:", res.status, text.slice(0, 500));
+  }
+
+  return { ok: res.ok, status: res.status };
+}

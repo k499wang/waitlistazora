@@ -179,7 +179,13 @@ alter table public.web_checkout_intents
   add column if not exists purchase_event_sent_at timestamptz;
 
 comment on column public.web_checkout_intents.purchase_event_sent_at is
-  'Timestamp when the purchase analytics event (PostHog / Meta CAPI) was first sent. Used for idempotency so repeat status polls do not double-fire.';
+  'Timestamp when the PostHog web_purchase_confirmed event was first sent from /checkout/status. Idempotency guard so repeat status polls do not double-fire.';
+
+alter table public.web_checkout_intents
+  add column if not exists meta_capi_sent_at timestamptz;
+
+comment on column public.web_checkout_intents.meta_capi_sent_at is
+  'Timestamp when the Meta CAPI Purchase event was sent from the RevenueCat web-checkout webhook (server-to-server, the authoritative source). Idempotency guard so webhook retries do not double-send.';
 
 alter table public.web_funnel_sessions enable row level security;
 alter table public.web_funnel_attribution enable row level security;

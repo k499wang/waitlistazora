@@ -3,12 +3,13 @@ import type { FunnelConfig } from "./types";
 // Typed funnel registry. Add new funnels here; the [slug] route resolves them
 // by slug and 404s on unknown/non-active funnels.
 //
-// Calm Reset funnel structure (16 screens):
-//   10 questions → 3 proof interstitials (every ~3 question screens) →
+// Calm Reset funnel structure (17 screens):
+//   10 questions → 3 proof info screens (every ~3 question screens) →
 //   1 building interstitial → result → offer
 //
-// Branching: goal (stress vs. sleep) → 1 branch follow-up → 8 common questions.
-// Interstitials auto-advance; they're intentional pauses, not friction.
+// Branching: goal (stress / sleep / general) → 1 branch follow-up → 9 common questions.
+// Info screens are intentional stops with a visual + Continue button; the building
+// interstitial auto-advances with a spinner.
 
 const FUNNELS: Record<string, FunnelConfig> = {
   "calm-reset": {
@@ -18,7 +19,7 @@ const FUNNELS: Record<string, FunnelConfig> = {
     intro:
       "A few gentle questions to build your calm — guided by your heart rate, no wearables needed.",
     steps: [
-      // ── Q1: Goal (branches: stress or sleep) ──────────────────────────
+      // ── Q1: Goal (branches: stress, sleep, or general) ───────────────
       {
         kind: "single_choice",
         id: "goal",
@@ -39,6 +40,24 @@ const FUNNELS: Record<string, FunnelConfig> = {
             emoji: "🌙",
             label: "I want to sleep deeply",
             nextId: "sleep_mind",
+          },
+          {
+            id: "wellness",
+            emoji: "✨",
+            label: "I want to feel better overall",
+            nextId: "general_feel",
+          },
+          {
+            id: "focus",
+            emoji: "🎯",
+            label: "I want to sharpen my focus",
+            nextId: "general_feel",
+          },
+          {
+            id: "explore",
+            emoji: "🔍",
+            label: "I'm just exploring — curious what this is",
+            nextId: "general_feel",
           },
         ],
       },
@@ -113,6 +132,41 @@ const FUNNELS: Record<string, FunnelConfig> = {
         ],
       },
 
+      // ── Q2c: General path (wellness, focus, explore) ──────────────────
+      {
+        kind: "single_choice",
+        id: "general_feel",
+        question: "How are you feeling lately?",
+        subtext:
+          "No need to overthink it. Just go with what feels true right now.",
+        options: [
+          {
+            id: "drained",
+            emoji: "🪫",
+            label: "Drained — running on empty most days",
+            nextId: "me_time",
+          },
+          {
+            id: "scattered",
+            emoji: "🌪️",
+            label: "Scattered — my attention is everywhere",
+            nextId: "me_time",
+          },
+          {
+            id: "flat",
+            emoji: "🫥",
+            label: "A bit flat — not bad, not great, just… there",
+            nextId: "me_time",
+          },
+          {
+            id: "okay",
+            emoji: "🌤️",
+            label: "Actually okay — just want to stay that way",
+            nextId: "me_time",
+          },
+        ],
+      },
+
       // ── Q3: Self-care frequency ───────────────────────────────────────
       {
         kind: "single_choice",
@@ -139,10 +193,11 @@ const FUNNELS: Record<string, FunnelConfig> = {
         ],
       },
 
-      // ── INTERSTITIAL 1: Science proof ─────────────────────────────────
+      // ── INFO 1: Science proof ─────────────────────────────────────────
       {
-        kind: "interstitial",
+        kind: "info",
         id: "science_proof",
+        icon: "🔬",
         title: "The science is clear",
         body:
           "Over 2,000 peer-reviewed studies confirm that slowing your exhale " +
@@ -237,10 +292,11 @@ const FUNNELS: Record<string, FunnelConfig> = {
         ],
       },
 
-      // ── INTERSTITIAL 2: PPG heart rate ────────────────────────────────
+      // ── INFO 2: PPG heart rate ────────────────────────────────────────
       {
-        kind: "interstitial",
+        kind: "info",
         id: "ppg_heart",
+        icon: "📱",
         title: "Your phone knows your heart",
         body:
           "Azora uses photoplethysmography — PPG — the same light-based " +
@@ -339,10 +395,11 @@ const FUNNELS: Record<string, FunnelConfig> = {
         ],
       },
 
-      // ── INTERSTITIAL 3: Social proof ──────────────────────────────────
+      // ── INFO 3: Social proof ──────────────────────────────────────────
       {
-        kind: "interstitial",
+        kind: "info",
         id: "social_proof",
+        icon: "👥",
         title: "You're in good company",
         body:
           "Over 100,000 people use Azora to reset their nervous system. " +

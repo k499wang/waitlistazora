@@ -1595,7 +1595,8 @@ body {
 
 .funnelInterstitial,
 .funnelResult,
-.funnelOffer { text-align: center; }
+.funnelOffer,
+.funnelInfo { text-align: center; }
 
 .funnelResult { position: relative; }
 
@@ -1631,6 +1632,38 @@ body {
   from { transform: scale(0); opacity: 0; }
   60% { transform: scale(1.15); }
   to { transform: scale(1); opacity: 1; }
+}
+
+/* ── Funnel info screen (proof / education) ── */
+.funnelInfoIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 1.25rem;
+  border-radius: 50%;
+  background: var(--brand-soft);
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.funnelInfo .funnelQuestion {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.funnelInfo .funnelSubtext {
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 1.75rem;
+}
+
+.funnelInfo .funnelPrimaryBtn {
+  max-width: 220px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* ── Funnel reassurance toast (Calm-style) ── */

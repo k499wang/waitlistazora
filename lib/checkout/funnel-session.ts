@@ -20,6 +20,7 @@ interface FunnelSessionInput {
   cookieSessionId?: string | null;
   referrer?: string | null;
   userAgent?: string | null;
+  ipAddress?: string | null;
 }
 
 /**
@@ -36,7 +37,7 @@ export async function getOrCreateFunnelSession(
   if (input.cookieSessionId) {
     const { data: existing, error } = await admin
       .from("web_funnel_sessions")
-      .select("id, user_id")
+      .select("id, user_id, ip_address")
       .eq("id", input.cookieSessionId)
       .maybeSingle();
 
@@ -49,7 +50,13 @@ export async function getOrCreateFunnelSession(
       if (!existing.user_id || existing.user_id === input.userId) {
         const { error: updateError } = await admin
           .from("web_funnel_sessions")
-          .update({ user_id: input.userId, status: "checkout_started" })
+          .update({
+            user_id: input.userId,
+            status: "checkout_started",
+            // Backfill the landing IP only when it wasn't captured earlier
+            // (e.g. the landing beacon was blocked); never clobber a real one.
+            ip_address: existing.ip_address ?? input.ipAddress ?? null,
+          })
           .eq("id", existing.id);
 
         if (updateError) {
@@ -71,6 +78,7 @@ export async function getOrCreateFunnelSession(
       initial_url: input.initialUrl,
       referrer: input.referrer ?? null,
       user_agent: input.userAgent ?? null,
+      ip_address: input.ipAddress ?? null,
       status: "checkout_started",
     })
     .select("id")
@@ -91,6 +99,7 @@ interface AnonymousSessionInput {
   referrer?: string | null;
   userAgent?: string | null;
   ipCountry?: string | null;
+  ipAddress?: string | null;
 }
 
 /**
@@ -139,6 +148,7 @@ export async function getOrCreateAnonymousFunnelSession(
       referrer: input.referrer ?? null,
       user_agent: input.userAgent ?? null,
       ip_country: input.ipCountry ?? null,
+      ip_address: input.ipAddress ?? null,
       status: "started",
     })
     .select("id")

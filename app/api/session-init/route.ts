@@ -24,6 +24,18 @@ function buildFbc(fbclid: string): string {
   return `fb.1.${Date.now()}.${fbclid}`;
 }
 
+// Resolve the client's IP from proxy headers. x-forwarded-for can be a
+// comma-separated chain (client, proxy1, proxy2…); the first entry is the
+// originating client. Meta CAPI wants a single IP, so take the first.
+function clientIp(request: NextRequest): string | null {
+  const xff = request.headers.get("x-forwarded-for");
+  if (xff) {
+    const first = xff.split(",")[0]?.trim();
+    if (first) return first;
+  }
+  return request.headers.get("x-real-ip");
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as Record<string, unknown>;
@@ -67,6 +79,7 @@ export async function POST(request: NextRequest) {
       referrer,
       userAgent,
       ipCountry: request.headers.get("x-vercel-ip-country"),
+      ipAddress: clientIp(request),
     });
 
     // Upsert attribution (PK is session_id) so re-landing on an existing

@@ -41,6 +41,14 @@ export type FunnelStep =
       body: string;
     }
   | {
+      kind: "info";
+      id: string;
+      /** Emoji/glyph rendered as a large visual above the title. */
+      icon: string;
+      title: string;
+      body: string;
+    }
+  | {
       kind: "result";
       id: string;
       title: string;

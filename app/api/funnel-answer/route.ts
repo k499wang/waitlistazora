@@ -22,6 +22,17 @@ export const dynamic = "force-dynamic";
 
 // Parse the Referer once into the bits we need to seed a session, tolerating
 // a missing or malformed header (some privacy settings strip it).
+// First IP in the x-forwarded-for chain is the originating client; Meta CAPI
+// wants a single IP. Falls back to x-real-ip.
+function clientIp(request: NextRequest): string | null {
+  const xff = request.headers.get("x-forwarded-for");
+  if (xff) {
+    const first = xff.split(",")[0]?.trim();
+    if (first) return first;
+  }
+  return request.headers.get("x-real-ip");
+}
+
 function refererParts(referer: string | null): { path: string; slug: string } {
   if (!referer) return { path: "/", slug: "unknown" };
   try {
@@ -58,6 +69,7 @@ export async function POST(request: NextRequest) {
       referrer: referer,
       userAgent: request.headers.get("user-agent"),
       ipCountry: request.headers.get("x-vercel-ip-country"),
+      ipAddress: clientIp(request),
     });
 
     const { error } = await admin

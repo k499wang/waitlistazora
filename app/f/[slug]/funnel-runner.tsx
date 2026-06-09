@@ -159,9 +159,9 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
     return () => clearTimeout(t);
   }, [currentId, step.kind, defaultNext, navigate]);
 
-  // Resolve templates for dynamic interstitial / result text.
+  // Resolve templates for dynamic interstitial / result / info text.
   const displayTitle =
-    step.kind === "interstitial" || step.kind === "result"
+    step.kind === "interstitial" || step.kind === "result" || step.kind === "info"
       ? resolveTemplate(step.title, answers, funnel.steps)
       : step.kind === "single_choice"
         ? step.question
@@ -170,7 +170,7 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
           : "";
 
   const displayBody =
-    step.kind === "interstitial" || step.kind === "result"
+    step.kind === "interstitial" || step.kind === "result" || step.kind === "info"
       ? resolveTemplate(step.body, answers, funnel.steps)
       : step.kind === "single_choice"
         ? (step.subtext ?? "")
@@ -180,7 +180,7 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
 
   return (
     <div className="container funnelContainer">
-      {history.length > 0 && step.kind === "single_choice" ? (
+      {history.length > 0 && (step.kind === "single_choice" || step.kind === "info") ? (
         <button
           type="button"
           className="funnelBack"
@@ -238,6 +238,26 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
             {displayBody ? (
               <p className="funnelSubtext">{displayBody}</p>
             ) : null}
+          </div>
+        ) : null}
+
+        {step.kind === "info" ? (
+          <div className="funnelInfo">
+            <div className="funnelInfoIcon" aria-hidden>
+              {step.icon}
+            </div>
+            <h1 className="funnelQuestion">{displayTitle}</h1>
+            <p className="funnelSubtext">{displayBody}</p>
+            <button
+              type="button"
+              className="funnelPrimaryBtn"
+              onClick={() => {
+                const nextId = defaultNext(step.id);
+                if (nextId) navigate(nextId);
+              }}
+            >
+              Continue
+            </button>
           </div>
         ) : null}
 

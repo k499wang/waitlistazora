@@ -42,6 +42,7 @@ interface RevenueCatEvent {
   product_id?: string;
   entitlement_ids?: string[] | null;
   period_type?: PeriodType;
+  is_trial_conversion?: boolean | null;
   event_timestamp_ms?: number | null;
   purchased_at_ms?: number | null;
   expiration_at_ms?: number | null;
@@ -108,13 +109,14 @@ const SUBSCRIPTION_WRITING_EVENT_TYPES = new Set<RevenueCatEventType>([
 // endpoint owns web checkout, so ignore native-store events (the mobile
 // `revenuecat-webhook` handles those) to avoid double-mirroring `subscriptions`.
 const WEB_STORES = new Set(['RC_BILLING', 'STRIPE']);
+const WEB_PURCHASE_DEFAULT_TECHNIQUE_ID = '478';
 
 // ── Meta Conversions API (server-side Purchase) ──────────────────────────────
 const META_PIXEL_ID = Deno.env.get('META_PIXEL_ID');
 const META_CAPI_ACCESS_TOKEN = Deno.env.get('META_CAPI_ACCESS_TOKEN');
 const META_TEST_EVENT_CODE = Deno.env.get('META_TEST_EVENT_CODE'); // unset in prod
 const META_API_VERSION = 'v25.0';
-const SITE_URL = Deno.env.get('SITE_URL') ?? 'https://azora.app';
+const SITE_URL = Deno.env.get('SITE_URL') ?? 'https://tryazora.app';
 
 async function sha256(value: string): Promise<string> {
   const data = new TextEncoder().encode(value.toLowerCase().trim());
@@ -124,17 +126,21 @@ async function sha256(value: string): Promise<string> {
     .join('');
 }
 
-// Fire a Meta CAPI Purchase. Best-effort: logs and returns, never throws.
-async function sendMetaPurchaseEvent(input: {
+// Fire a Meta CAPI event (Purchase or StartTrial). Best-effort: logs and
+// returns, never throws.
+async function sendMetaEvent(input: {
+  eventName: 'Purchase' | 'StartTrial';
   externalId: string;
   email: string | null;
   fbp: string | null;
   fbc: string | null;
   clientUserAgent: string | null;
+  clientIpAddress: string | null;
   value: number | null;
   currency: string | null;
   eventId: string;
   eventTimeMs: number | null;
+  environment: RevenueCatEvent['environment'];
 }): Promise<boolean> {
   if (!META_PIXEL_ID || !META_CAPI_ACCESS_TOKEN) {
     console.warn('[meta-capi] META_PIXEL_ID / META_CAPI_ACCESS_TOKEN not set — skipping');
@@ -149,6 +155,7 @@ async function sendMetaPurchaseEvent(input: {
   if (input.fbp) userData.fbp = input.fbp;
   if (input.fbc) userData.fbc = input.fbc;
   if (input.clientUserAgent) userData.client_user_agent = input.clientUserAgent;
+  if (input.clientIpAddress) userData.client_ip_address = input.clientIpAddress;
 
   const customData: Record<string, unknown> = {};
   if (typeof input.value === 'number') customData.value = input.value;
@@ -157,7 +164,7 @@ async function sendMetaPurchaseEvent(input: {
   const body: Record<string, unknown> = {
     data: [
       {
-        event_name: 'Purchase',
+        event_name: input.eventName,
         event_time: Math.floor((input.eventTimeMs ?? Date.now()) / 1000),
         action_source: 'website',
         event_source_url: `${SITE_URL}/checkout/success`,
@@ -167,7 +174,9 @@ async function sendMetaPurchaseEvent(input: {
       },
     ],
   };
-  if (META_TEST_EVENT_CODE) body.test_event_code = META_TEST_EVENT_CODE;
+  if (input.environment !== 'PRODUCTION' && META_TEST_EVENT_CODE) {
+    body.test_event_code = META_TEST_EVENT_CODE;
+  }
 
   const url = `https://graph.facebook.com/${META_API_VERSION}/${META_PIXEL_ID}/events?access_token=${META_CAPI_ACCESS_TOKEN}`;
 
@@ -179,58 +188,214 @@ async function sendMetaPurchaseEvent(input: {
     });
     if (!res.ok) {
       const text = await res.text().catch(() => '');
-      console.error('[meta-capi] Purchase rejected:', res.status, text.slice(0, 500));
+      console.error(`[meta-capi] ${input.eventName} rejected:`, res.status, text.slice(0, 500));
       return false;
     }
-    console.log('[meta-capi] Purchase sent', { eventId: input.eventId, status: res.status });
+    console.log(`[meta-capi] ${input.eventName} sent`, { eventId: input.eventId, status: res.status });
     return true;
   } catch (error) {
-    console.error('[meta-capi] Purchase request failed:', error);
+    console.error(`[meta-capi] ${input.eventName} request failed:`, error);
     return false;
   }
 }
 
-// Gather attribution + identity for the CAPI Purchase, then fire it once.
-async function fireMetaPurchaseForIntent(
+// Decide which Meta event a RevenueCat event maps to, if any.
+//   - Trial start (INITIAL_PURCHASE, period_type TRIAL) → StartTrial (value 0).
+//   - Direct purchase (INITIAL_PURCHASE non-trial, NON_RENEWING) → Purchase.
+//   - Trial→paid conversion (RENEWAL with is_trial_conversion) → Purchase.
+//   - Ordinary renewals and everything else → null (nothing sent).
+function getMetaEventPlan(
+  event: RevenueCatEvent,
+): { eventName: 'StartTrial' | 'Purchase'; value: number | null } | null {
+  if (event.type === 'INITIAL_PURCHASE') {
+    if (event.period_type === 'TRIAL') {
+      return { eventName: 'StartTrial', value: 0 };
+    }
+    return { eventName: 'Purchase', value: getPriceAmount(event) };
+  }
+
+  if (event.type === 'NON_RENEWING_PURCHASE') {
+    return { eventName: 'Purchase', value: getPriceAmount(event) };
+  }
+
+  if (event.type === 'RENEWAL' && event.is_trial_conversion === true) {
+    return { eventName: 'Purchase', value: getPriceAmount(event) };
+  }
+
+  return null;
+}
+
+// The trial→paid conversion arrives as a RENEWAL 7+ days later: no open intent
+// and no browser session. The trial INITIAL_PURCHASE already flipped the intent
+// to 'purchased' and stored original_transaction_id, so rejoin on that to
+// recover the fbp/fbc/session captured at landing. Returns null when the
+// Purchase was already sent (idempotency guard) or no intent matches.
+async function findPurchasedIntentForConversion(
+  event: RevenueCatEvent,
+  userId: string,
+): Promise<{ id: string; session_id: string } | null> {
+  const originalTransactionId = event.original_transaction_id;
+  if (!originalTransactionId) {
+    console.warn('[meta-capi] trial conversion missing original_transaction_id', {
+      revenuecat_event_id: event.id,
+      user_id: userId,
+    });
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from('web_checkout_intents')
+    .select('id, session_id, meta_capi_sent_at')
+    .eq('user_id', userId)
+    .eq('environment', event.environment)
+    .eq('revenuecat_original_transaction_id', originalTransactionId)
+    .eq('status', 'purchased')
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error('[meta-capi] conversion intent lookup failed', {
+      error,
+      user_id: userId,
+      original_transaction_id: originalTransactionId,
+    });
+    return null;
+  }
+
+  if (!data) {
+    console.warn('[meta-capi] no purchased intent matched trial conversion', {
+      revenuecat_event_id: event.id,
+      user_id: userId,
+      original_transaction_id: originalTransactionId,
+    });
+    return null;
+  }
+
+  if (data.meta_capi_sent_at) {
+    console.log('[meta-capi] Purchase already sent for intent — skipping', {
+      intent_id: data.id,
+    });
+    return null;
+  }
+
+  return { id: data.id, session_id: data.session_id };
+}
+
+// Gather attribution + identity, then attempt delivery of the planned Meta
+// event. Only the paid Purchase stamps meta_capi_sent_at (that column tracks the
+// authoritative paid conversion, not the free trial start).
+async function fireMetaEventForIntent(
   intent: { id: string; session_id: string },
   event: RevenueCatEvent,
   userId: string,
+  plan: { eventName: 'StartTrial' | 'Purchase'; value: number | null },
 ): Promise<void> {
+  if (event.environment !== 'PRODUCTION' && !META_TEST_EVENT_CODE) {
+    console.log('[meta-capi] skipping sandbox event without META_TEST_EVENT_CODE', {
+      revenuecat_event_id: event.id,
+      intent_id: intent.id,
+      meta_event: plan.eventName,
+    });
+    return;
+  }
+
   // fbp / fbc persisted at landing.
-  const { data: attribution } = await supabase
+  const { data: attribution, error: attributionError } = await supabase
     .from('web_funnel_attribution')
     .select('fbp, fbc')
     .eq('session_id', intent.session_id)
     .maybeSingle();
 
-  // user-agent captured at landing (improves Meta match quality).
-  const { data: session } = await supabase
+  if (attributionError) {
+    console.error('[meta-capi] web_funnel_attribution lookup failed', {
+      error: attributionError,
+      session_id: intent.session_id,
+      intent_id: intent.id,
+    });
+  }
+
+  // user-agent + IP captured at landing (improves Meta match quality).
+  const { data: session, error: sessionLookupError } = await supabase
     .from('web_funnel_sessions')
-    .select('user_agent')
+    .select('user_agent, ip_address')
     .eq('id', intent.session_id)
     .maybeSingle();
 
-  // Email for hashed match key.
-  const { data: userRes } = await supabase.auth.admin.getUserById(userId);
+  if (sessionLookupError) {
+    console.error('[meta-capi] web_funnel_sessions lookup failed', {
+      error: sessionLookupError,
+      session_id: intent.session_id,
+      intent_id: intent.id,
+    });
+  }
 
-  const ok = await sendMetaPurchaseEvent({
+  // Email for hashed match key.
+  const { data: userRes, error: userLookupError } =
+    await supabase.auth.admin.getUserById(userId);
+
+  if (userLookupError) {
+    console.error('[meta-capi] auth user lookup failed', {
+      error: userLookupError,
+      user_id: userId,
+      intent_id: intent.id,
+    });
+  }
+
+  const eventIdPrefix = plan.eventName === 'Purchase' ? 'purchase' : 'starttrial';
+
+  const ok = await sendMetaEvent({
+    eventName: plan.eventName,
     externalId: userId,
     email: userRes?.user?.email ?? null,
     fbp: (attribution?.fbp as string) ?? null,
     fbc: (attribution?.fbc as string) ?? null,
     clientUserAgent: (session?.user_agent as string) ?? null,
-    value: getPriceAmount(event),
+    clientIpAddress: (session?.ip_address as string) ?? null,
+    value: plan.value,
     currency: event.currency ?? null,
-    eventId: `purchase_${intent.id}`,
+    eventId: `${eventIdPrefix}_${intent.id}`,
     eventTimeMs: event.purchased_at_ms ?? event.event_timestamp_ms ?? null,
+    environment: event.environment,
   });
 
-  if (ok) {
-    await supabase
+  if (ok && plan.eventName === 'Purchase') {
+    const { error: sentAtUpdateError } = await supabase
       .from('web_checkout_intents')
       .update({ meta_capi_sent_at: new Date().toISOString() })
       .eq('id', intent.id);
+
+    if (sentAtUpdateError) {
+      console.error('[meta-capi] meta_capi_sent_at update failed', {
+        error: sentAtUpdateError,
+        intent_id: intent.id,
+      });
+    }
   }
+}
+
+// Map the RevenueCat event to a Meta event and deliver it. Trial starts and
+// direct purchases reuse the intent just claimed by reconcileWebCheckoutIntent;
+// the trial→paid conversion (RENEWAL) rejoins the already-purchased intent.
+async function reconcileMetaConversion(
+  event: RevenueCatEvent,
+  userId: string,
+  claimedIntent: { id: string; session_id: string } | null,
+): Promise<void> {
+  const plan = getMetaEventPlan(event);
+  if (!plan) {
+    return;
+  }
+
+  let intent = claimedIntent;
+  if (!intent && event.type === 'RENEWAL') {
+    intent = await findPurchasedIntentForConversion(event, userId);
+  }
+
+  if (!intent) {
+    return;
+  }
+
+  await fireMetaEventForIntent(intent, event, userId, plan);
 }
 
 function isForeignStoreEvent(event: RevenueCatEvent): boolean {
@@ -367,6 +532,39 @@ function getPriceAmount(event: RevenueCatEvent): number | null {
   return null;
 }
 
+function getPurchaseCompletedAt(event: RevenueCatEvent): string {
+  return (
+    toIsoString(event.purchased_at_ms) ??
+    toIsoString(event.event_timestamp_ms) ??
+    new Date().toISOString()
+  );
+}
+
+async function completeOnboardingForWebPurchase(
+  event: RevenueCatEvent,
+  userId: string,
+): Promise<boolean> {
+  if (!isPurchaseEvent(event)) {
+    return false;
+  }
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({
+      onboarding_completed_at: getPurchaseCompletedAt(event),
+      default_technique_id: WEB_PURCHASE_DEFAULT_TECHNIQUE_ID,
+    })
+    .eq('user_id', userId)
+    .is('onboarding_completed_at', null)
+    .select('user_id');
+
+  if (error) {
+    throw error;
+  }
+
+  return (data?.length ?? 0) > 0;
+}
+
 async function resolveUserId(event: RevenueCatEvent): Promise<string | null> {
   if (!event.app_user_id || !isUuid(event.app_user_id)) {
     return null;
@@ -480,9 +678,9 @@ async function mirrorSubscription(
 async function reconcileWebCheckoutIntent(
   event: RevenueCatEvent,
   userId: string,
-): Promise<{ matched: boolean }> {
+): Promise<{ matched: boolean; intent: { id: string; session_id: string } | null }> {
   if (!isPurchaseEvent(event)) {
-    return { matched: false };
+    return { matched: false, intent: null };
   }
 
   const { data: intents, error: intentLookupError } = await supabase
@@ -514,7 +712,7 @@ async function reconcileWebCheckoutIntent(
       revenuecat_event_id: event.id,
       revenuecat_product_id: event.product_id ?? null,
     });
-    return { matched: false };
+    return { matched: false, intent: null };
   }
 
   const purchasedAt =
@@ -525,7 +723,7 @@ async function reconcileWebCheckoutIntent(
   // Compare-and-swap: only flip the intent if it is STILL open. `.select()`
   // returns the row only when this statement actually changed it, so a
   // concurrent webhook retry that already claimed the same intent gets an empty
-  // result and bails out — guaranteeing the CAPI Purchase fires exactly once.
+  // result and bails out, so only the claim owner attempts the CAPI Purchase.
   const { data: claimed, error: intentUpdateError } = await supabase
     .from('web_checkout_intents')
     .update({
@@ -548,21 +746,9 @@ async function reconcileWebCheckoutIntent(
   }
 
   if (!claimed || claimed.length === 0) {
-    // Another concurrent invocation already claimed this intent; it owns the
-    // CAPI send. Don't fire again.
-    return { matched: false };
-  }
-
-  // We own the claim → fire the authoritative Meta CAPI Purchase exactly once.
-  // Server-to-server, so it never depends on the user returning to the site.
-  try {
-    await fireMetaPurchaseForIntent(
-      { id: intent.id, session_id: intent.session_id },
-      event,
-      userId,
-    );
-  } catch (error) {
-    console.error('meta capi purchase failed', error);
+    // Another concurrent invocation already claimed this intent; don't attempt
+    // CAPI delivery from this invocation.
+    return { matched: false, intent: null };
   }
 
   const { error: sessionUpdateError } = await supabase
@@ -574,7 +760,10 @@ async function reconcileWebCheckoutIntent(
     console.error('web_funnel_sessions purchase status update failed', sessionUpdateError);
   }
 
-  return { matched: true };
+  return {
+    matched: true,
+    intent: { id: intent.id, session_id: intent.session_id },
+  };
 }
 
 Deno.serve(async (req) => {
@@ -649,18 +838,35 @@ Deno.serve(async (req) => {
     return new Response('subscription write failed', { status: 500 });
   }
 
+  let webPurchaseOnboardingUpdated = false;
+  try {
+    webPurchaseOnboardingUpdated = await completeOnboardingForWebPurchase(event, userId);
+  } catch (error) {
+    console.error('web purchase onboarding profile update failed', error);
+    return new Response('profile onboarding write failed', { status: 500 });
+  }
+
   let checkoutIntentMatched = false;
+  let claimedIntent: { id: string; session_id: string } | null = null;
   try {
     const checkoutReconciliation = await reconcileWebCheckoutIntent(event, userId);
     checkoutIntentMatched = checkoutReconciliation.matched;
+    claimedIntent = checkoutReconciliation.intent;
   } catch (error) {
     console.error('web checkout intent reconciliation failed', error);
+  }
+
+  try {
+    await reconcileMetaConversion(event, userId, claimedIntent);
+  } catch (error) {
+    console.error('meta conversion event failed', error);
   }
 
   return new Response(JSON.stringify({
     ok: true,
     subscription_mirrored: subscriptionResult.mirrored,
     subscription_event_stale: subscriptionResult.stale,
+    web_purchase_onboarding_updated: webPurchaseOnboardingUpdated,
     web_checkout_intent_matched: checkoutIntentMatched,
   }), {
     headers: { 'content-type': 'application/json' },

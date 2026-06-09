@@ -9,6 +9,14 @@ interface PostLoginContext {
   clientUserAgent?: string | null;
 }
 
+// x-forwarded-for can be a comma-separated chain (client, proxy1, proxy2…).
+// Meta CAPI wants a single IP, so keep only the first (originating client).
+function firstClientIp(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const first = value.split(",")[0]?.trim();
+  return first || null;
+}
+
 // Shared post-login side effects, run once per successful authentication
 // regardless of method (OAuth, magic link, email confirmation, or
 // email+password). Keeping this in one place means every login path:
@@ -84,7 +92,7 @@ export async function applyPostLogin(
       email: user.email,
       fbp,
       fbc,
-      clientIp: context?.clientIp ?? null,
+      clientIp: firstClientIp(context?.clientIp),
       clientUserAgent: context?.clientUserAgent ?? null,
       eventSourceUrl: context?.eventSourceUrl ?? null,
       eventId: `lead_${user.id}`,

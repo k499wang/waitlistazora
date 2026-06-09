@@ -24,6 +24,17 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 // Supports POST (form button) and GET (plain link) — both run the same flow.
 export const dynamic = "force-dynamic";
 
+// First IP in the x-forwarded-for chain is the originating client; Meta CAPI
+// wants a single IP. Falls back to x-real-ip.
+function clientIpFromRequest(req: Request): string | null {
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) {
+    const first = xff.split(",")[0]?.trim();
+    if (first) return first;
+  }
+  return req.headers.get("x-real-ip");
+}
+
 async function handleCheckoutStart(req: Request): Promise<Response> {
   const requestUrl = new URL(req.url);
   const offerParam = requestUrl.searchParams.get("offer");
@@ -70,6 +81,7 @@ async function handleCheckoutStart(req: Request): Promise<Response> {
     cookieSessionId: cookieStore.get(FUNNEL_SESSION_COOKIE)?.value,
     referrer: req.headers.get("referer"),
     userAgent: req.headers.get("user-agent"),
+    ipAddress: clientIpFromRequest(req),
   });
 
   const { error: intentError } = await admin.from("web_checkout_intents").insert({

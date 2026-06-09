@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -87,10 +88,10 @@ export function LoginForm({ next, initialError }: { next: string; initialError?:
 
   return (
     <div className="authCard">
-      <a href="/" className="authBrand">
+      <Link href="/" className="authBrand">
         <Image src="/icon.png" alt="" width={26} height={26} />
         Azora
-      </a>
+      </Link>
 
       <h1 className="authTitle">
         {mode === "signup" ? "Create your account" : "Welcome back"}

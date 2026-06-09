@@ -882,6 +882,359 @@ body {
   font-weight: 500;
 }
 
+/* ── Benefits (value props) ── */
+.benefitsSection {
+  padding: 6rem 0 2rem;
+  position: relative;
+  isolation: isolate;
+}
+
+.benefitsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.benefitCard {
+  padding: 1.85rem 1.75rem;
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border-strong);
+  box-shadow: var(--shadow-glass-sm);
+  transition: transform 0.3s var(--ease-out-expo), box-shadow 0.3s var(--ease-out-expo);
+}
+
+.benefitCard:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-glass-md);
+}
+
+.benefitIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--brand-soft), rgba(74, 158, 255, 0.04));
+  color: var(--brand);
+  margin-bottom: 1.1rem;
+}
+
+.benefitCard h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.benefitCard p {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* ── How it works (icon steps) ── */
+.howSteps {
+  list-style: none;
+  padding: 0;
+  margin: 0 auto;
+  max-width: 980px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+
+.howStep {
+  position: relative;
+  padding: 2rem 1.6rem 1.6rem;
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-md);
+  text-align: center;
+}
+
+.howStepNum {
+  position: absolute;
+  top: -0.85rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 800;
+  box-shadow: 0 6px 16px -4px rgba(74, 158, 255, 0.6);
+}
+
+.howStepIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--brand-soft), rgba(74, 158, 255, 0.04));
+  color: var(--brand);
+  margin: 0.4rem auto 1rem;
+}
+
+.howStep h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.45rem;
+}
+
+.howStep p {
+  font-size: 0.92rem;
+  line-height: 1.6;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* ── What's included (value stack) ── */
+.includedSection {
+  padding: 5rem 0;
+  position: relative;
+  isolation: isolate;
+}
+
+.includedInner {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 3.5rem;
+  align-items: center;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.includedList {
+  list-style: none;
+  margin: 1.75rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.includedList li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.includedCheck {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  color: var(--brand);
+}
+
+.includedOffer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.75rem;
+}
+
+.includedPhone {
+  position: relative;
+  width: 100%;
+  max-width: 210px;
+  aspect-ratio: 0.46;
+  border-radius: 28px;
+  background: #2c2c2e;
+  overflow: hidden;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.includedPhone .phoneBar {
+  position: absolute;
+  width: 3.5rem;
+  height: 0.8rem;
+  top: 0.4rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a1c;
+  z-index: 5;
+  border-radius: 10px;
+}
+
+.includedScreen {
+  position: absolute;
+  inset: 11px;
+  border-radius: 17px;
+  overflow: hidden;
+  background: #0a0a0f;
+}
+
+.includedScreen img {
+  object-fit: cover;
+  object-position: top center;
+}
+
+.includedOfferCard {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  padding: 1.85rem 1.65rem 1.5rem;
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  border: 1px solid rgba(74, 158, 255, 0.5);
+  box-shadow: 0 18px 50px -16px rgba(74, 158, 255, 0.4);
+  text-align: center;
+}
+
+.includedOfferBadge {
+  display: inline-block;
+  padding: 0.3rem 0.8rem;
+  margin-bottom: 0.9rem;
+  border-radius: 128px;
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.includedPriceRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.3rem;
+}
+
+.includedPrice {
+  font-size: 2.6rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.includedPeriod {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.includedBillingNote {
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.includedOfferCard .funnelPrimaryBtn {
+  text-decoration: none;
+}
+
+.includedTrialLine {
+  margin-top: 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* ── Social proof ── */
+.socialSection {
+  padding: 5rem 0 6rem;
+  position: relative;
+  isolation: isolate;
+}
+
+.socialHeader {
+  text-align: center;
+  margin: 0 auto 3rem;
+}
+
+.socialRating {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.9rem;
+}
+
+.socialStars,
+.reviewStars {
+  color: #ffb020;
+  letter-spacing: 0.1em;
+  font-size: 1rem;
+}
+
+.socialRatingText {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.reviewGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.reviewCard {
+  margin: 0;
+  padding: 1.75rem 1.6rem;
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border-strong);
+  box-shadow: var(--shadow-glass-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.reviewCard blockquote {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.reviewCard figcaption {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.finalCtaReassure {
+  margin-top: 1.5rem !important;
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  color: var(--text-muted) !important;
+}
+
+@media (max-width: 900px) {
+  .includedInner {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .benefitsGrid,
+  .howSteps,
+  .reviewGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ── Research / Science ── */
 .researchSection {
   padding: 7rem 0 8rem;
@@ -1998,4 +2351,550 @@ body {
 
 @media (max-width: 480px) {
   .authCard { padding: 2rem 1.5rem; }
+}
+
+/* ───────────────────────── Auth-aware nav ───────────────────────── */
+.navRight {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.authNavPlaceholder {
+  display: inline-block;
+  width: 4rem;
+  height: 1rem;
+}
+
+.authNavSignin {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+  white-space: nowrap;
+}
+
+.authNavSignin:hover {
+  color: var(--text-primary);
+}
+
+.authNavChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.authNavEmail {
+  max-width: 11rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.authNavSignout {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--brand);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.authNavSignout:hover {
+  color: var(--brand-hover);
+}
+
+@media (max-width: 720px) {
+  .authNavEmail { display: none; }
+}
+
+/* ───────────────────────── Hero "Get Pro" CTA ───────────────────────── */
+.getProBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 3.25rem;
+  padding: 0 1.6rem;
+  border-radius: 128px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 10px 30px -8px rgba(74, 158, 255, 0.6);
+  transition: all 0.25s ease;
+}
+
+.getProBtn:hover {
+  background: var(--brand-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 16px 40px -10px rgba(74, 158, 255, 0.7);
+}
+
+.getProBtn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.storeBtnSecondary {
+  opacity: 0.92;
+}
+
+/* ───────────────────────── Static top bar ───────────────────────── */
+.topBar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(250, 249, 246, 0.82);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 1px solid var(--border);
+}
+
+.topBarInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 4rem;
+}
+
+.topBarNav {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.topBarNav a {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.topBarNav a:hover {
+  color: var(--text-primary);
+}
+
+/* ───────────────────────── Pricing page ───────────────────────── */
+.pricingPage {
+  position: relative;
+  min-height: 100vh;
+  padding: 4rem 0 6rem;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.pricingHeader {
+  max-width: 640px;
+  margin: 1rem auto 3rem;
+  text-align: center;
+}
+
+.pricingGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  max-width: 760px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+.priceCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem 1.85rem;
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-md, 0 8px 24px rgba(0, 0, 0, 0.06));
+}
+
+.priceCardFeatured {
+  border-color: rgba(74, 158, 255, 0.55);
+  box-shadow: 0 18px 50px -16px rgba(74, 158, 255, 0.4);
+}
+
+.priceBadge {
+  position: absolute;
+  top: -0.85rem;
+  left: 1.85rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 128px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  box-shadow: 0 6px 16px -4px rgba(74, 158, 255, 0.6);
+}
+
+.priceName {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.85rem;
+}
+
+.priceAmountRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.priceAmount {
+  font-size: 2.6rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+/* Shimmer placeholder shown while the RevenueCat live price loads (client-side
+   only, since RevenueCat has no server-side price API). Sized in em so it
+   matches whatever price font it sits inside. */
+.priceSkeleton {
+  display: inline-block;
+  vertical-align: -0.08em;
+  width: 3.4em;
+  height: 0.78em;
+  border-radius: 0.25em;
+  background: linear-gradient(
+    100deg,
+    color-mix(in srgb, currentColor 9%, transparent) 30%,
+    color-mix(in srgb, currentColor 22%, transparent) 50%,
+    color-mix(in srgb, currentColor 9%, transparent) 70%
+  );
+  background-size: 200% 100%;
+  animation: priceShimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes priceShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .priceSkeleton {
+    animation: none;
+  }
+}
+
+.pricePeriod {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.priceBillingNote {
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.priceCta,
+.funnelPrimaryBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 3.1rem;
+  margin-top: 1.4rem;
+  border-radius: var(--radius-sm);
+  background: var(--brand);
+  color: #fff;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 10px 26px -10px rgba(74, 158, 255, 0.65);
+  transition: all 0.25s ease;
+}
+
+.priceCta:hover,
+.funnelPrimaryBtn:hover {
+  background: var(--brand-hover);
+  transform: translateY(-1px);
+}
+
+.priceCta:active,
+.funnelPrimaryBtn:active {
+  transform: translateY(0) scale(0.99);
+}
+
+.priceCard:not(.priceCardFeatured) .priceCta {
+  background: #1a1f2e;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.priceCard:not(.priceCardFeatured) .priceCta:hover {
+  background: #242a3d;
+}
+
+.priceTrialLine {
+  margin-top: 0.65rem;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.priceFeatures {
+  list-style: none;
+  margin: 1.6rem 0 0;
+  padding: 1.5rem 0 0;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.priceFeatures li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.priceFeatureIcon {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  color: var(--brand);
+}
+
+.pricingReassure {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  margin: 2.5rem auto 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.pricingAppStore {
+  margin: 1.25rem auto 0;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.pricingAppStore a {
+  color: var(--brand);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.pricingAppStore a:hover {
+  text-decoration: underline;
+}
+
+/* ───────────────────────── Funnel ───────────────────────── */
+.funnelPage {
+  position: relative;
+  min-height: calc(100vh - 4rem);
+  display: flex;
+  align-items: center;
+  padding: 3rem 0 5rem;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.funnelContainer {
+  max-width: 540px;
+}
+
+.funnelProgress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.funnelProgressBar {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--brand);
+  transition: width 0.4s var(--ease-out-expo);
+}
+
+.funnelBack {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-bottom: 1rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.funnelBack:hover {
+  color: var(--text-primary);
+}
+
+.funnelStep {
+  animation: funnelFade 0.4s var(--ease-out-expo) both;
+}
+
+@keyframes funnelFade {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.funnelQuestion {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.funnelSubtext {
+  margin-top: 0.6rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.funnelOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+}
+
+.funnelOption {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  padding: 1.1rem 1.25rem;
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-strong);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.funnelOption:hover {
+  border-color: var(--brand);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px -10px rgba(74, 158, 255, 0.5);
+}
+
+.funnelOptionSelected {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+
+.funnelOptionEmoji {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.funnelInterstitial,
+.funnelResult,
+.funnelOffer {
+  text-align: center;
+}
+
+.funnelSpinner {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 1.5rem;
+  border-radius: 50%;
+  border: 3px solid var(--border-strong);
+  border-top-color: var(--brand);
+  animation: funnelSpin 0.8s linear infinite;
+}
+
+@keyframes funnelSpin {
+  to { transform: rotate(360deg); }
+}
+
+.funnelResultBadge {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #fff;
+  font-size: 1.6rem;
+  font-weight: 800;
+  box-shadow: 0 12px 30px -10px rgba(74, 158, 255, 0.7);
+}
+
+.funnelResult .funnelPrimaryBtn,
+.funnelOffer .funnelPrimaryBtn {
+  max-width: 340px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.funnelOfferCard {
+  position: relative;
+  max-width: 360px;
+  margin: 2rem auto 0;
+  padding: 2rem 1.85rem 1.5rem;
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  border: 1px solid rgba(74, 158, 255, 0.55);
+  box-shadow: 0 18px 50px -16px rgba(74, 158, 255, 0.4);
+  text-align: center;
+}
+
+.funnelOfferCard .priceAmountRow {
+  justify-content: center;
+}
+
+.funnelOfferCard .priceBillingNote {
+  text-align: center;
+}
+
+.funnelOfferAlt {
+  display: inline-block;
+  margin-top: 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.funnelOfferAlt:hover {
+  color: var(--text-primary);
+  text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+  .funnelQuestion { font-size: 1.5rem; }
 }

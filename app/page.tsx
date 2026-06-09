@@ -4,19 +4,38 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import posthog from "posthog-js";
 import { appStoreUrl, getStoredAttribution } from "@/lib/client-attribution";
+import { AuthNav } from "./components/auth-nav";
 import { faqData } from "./faq-data";
+import { OFFER_DISPLAY } from "@/lib/checkout/offer-display";
+import { LivePrice } from "./pricing/live-price";
 import starsBg from "./assets/2066.jpg";
 import imgHome from "./assets/IMG_0161.webp";
-import imgResults from "./assets/IMG_0140 (1).webp";
-import imgBreathing from "./assets/IMG_0158.webp";
 import iconApp from "./assets/iconApp.png";
+
+const annual = OFFER_DISPLAY.annual;
 
 function StoreButtons({ center = false }: { center?: boolean }) {
   return (
     <div className="heroActions" style={center ? { justifyContent: "center" } : undefined}>
       <a
+        href="/pricing"
+        className="getProBtn"
+        onClick={() => {
+          posthog.capture("get_pro_clicked", {
+            button_location: center ? "final_cta" : "hero",
+            ...getStoredAttribution()
+          });
+        }}
+      >
+        Get Azora Pro
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12" />
+          <polyline points="12 5 19 12 12 19" />
+        </svg>
+      </a>
+      <a
         href={appStoreUrl}
-        className="storeBtn"
+        className="storeBtn storeBtnSecondary"
         target="_blank"
         rel="noopener noreferrer"
         onClick={() => {
@@ -29,11 +48,89 @@ function StoreButtons({ center = false }: { center?: boolean }) {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
           <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
         </svg>
-        App Store
+        Download free
       </a>
     </div>
   );
 }
+
+function CheckIcon() {
+  return (
+    <svg className="includedCheck" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+const BENEFITS = [
+  {
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
+    ),
+    title: "Lower stress in minutes",
+    body: "Guided breathwork designed to slow your heart rate and settle your nervous system — fast, whenever you need it.",
+  },
+  {
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
+    ),
+    title: "See it actually working",
+    body: "Camera heart-rate readings before and after each session, so the calm isn't a feeling — it's a number you can watch improve.",
+  },
+  {
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2.5" /><line x1="12" y1="18" x2="12" y2="18" /></svg>
+    ),
+    title: "No wearables, ever",
+    body: "Just your phone's camera. Nothing to buy, charge, or strap to your wrist — the same PPG science used in hospital pulse oximeters.",
+  },
+  {
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18" /><path d="M7 14l4-4 3 3 5-6" /></svg>
+    ),
+    title: "Build a lasting habit",
+    body: "Personalized daily practice and recovery trends that fit into a few quiet minutes — and keep you coming back.",
+  },
+];
+
+const HOW_STEPS = [
+  {
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
+    ),
+    title: "Measure",
+    body: "Rest a finger on your camera for a 30-second reading. Azora captures your heart rate and stress in real time.",
+  },
+  {
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12c2-3 4-3 6 0s4 3 6 0 4-3 6 0" /><path d="M2 17c2-3 4-3 6 0s4 3 6 0 4-3 6 0" /></svg>
+    ),
+    title: "Breathe",
+    body: "Follow a guided rhythm matched to how you feel right now — box breathing, wind-down, or a focused reset.",
+  },
+  {
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18" /><path d="M7 14l4-4 3 3 5-6" /></svg>
+    ),
+    title: "Recover",
+    body: "Watch your stress drop after each session and your recovery trends climb week over week.",
+  },
+];
+
+const REVIEWS = [
+  {
+    quote: "I was skeptical that a camera could read my heart rate, but seeing my stress number drop after two minutes of breathing made it click. I actually use it now.",
+    name: "Maya R.",
+  },
+  {
+    quote: "No watch, no chest strap, no charging. I open the app, breathe, and I'm calmer before my next meeting. It's the only wellness habit that's stuck.",
+    name: "Daniel K.",
+  },
+  {
+    quote: "The trends page is what hooked me — watching my recovery improve over a few weeks feels genuinely motivating instead of preachy.",
+    name: "Priya S.",
+  },
+];
 
 function FaqItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
@@ -129,12 +226,15 @@ export default function Home() {
           <div className="navLinks">
             <a href="#how">How it works</a>
             <a href="#science">Science</a>
+            <a href="/pricing">Pricing</a>
             <a href="#faq">FAQ</a>
-            <a href="#download">Download</a>
           </div>
-          <a className="navCta" href="#download">
-            Get the app
-          </a>
+          <div className="navRight">
+            <AuthNav next="/" />
+            <a className="navCta" href="/pricing">
+              Get Pro
+            </a>
+          </div>
         </div>
       </nav>
 
@@ -312,71 +412,151 @@ export default function Home() {
 
       </section>
 
-      {/* ── HOW IT WORKS ── */}
-      <section className="howSection" id="how" aria-labelledby="how-title">
+      {/* ── BENEFITS ── */}
+      <section className="benefitsSection" id="benefits" aria-labelledby="benefits-title">
         <div className="glass-glow-white" style={{ top: "10%", left: "50%", transform: "translateX(-50%)", width: "60vw" }} />
         <div className="container">
           <div className="sectionHeader reveal" ref={setRef(0)}>
-            <span className="label" style={{ color: "var(--brand)" }}>How it works</span>
-            <h2 id="how-title" className="headline" style={{ marginTop: "0.75rem" }}>
-              A practice as simple as breathing
+            <span className="label" style={{ color: "var(--brand)" }}>Why Azora</span>
+            <h2 id="benefits-title" className="headline" style={{ marginTop: "0.75rem" }}>
+              Calm you can actually measure
             </h2>
             <p className="subhead" style={{ marginTop: "0.5rem", color: "var(--text-secondary)" }}>
-              No wearables, no devices to charge, no courses to complete. Just your phone&rsquo;s camera, your breath, and a few quiet minutes.
+              Most wellness apps ask you to take their word for it. Azora shows you the proof in your own heartbeat — no wearables, no guesswork.
             </p>
           </div>
 
-          <div className="stepsGrid">
-            <div className="stepCard reveal" ref={setRef(1)}>
-              <div className="stepVisual">
-                <div className="phoneBar" />
-                <div className="stepScreen">
-                  <Image
-                    src={imgHome}
-                    alt="Azora heart rate results showing BPM, stress index, and recovery metrics."
-                    fill
-                    sizes="(max-width: 980px) 50vw, 180px"
-                  />
-                </div>
+          <div className="benefitsGrid">
+            {BENEFITS.map((b, i) => (
+              <div
+                key={b.title}
+                className={`benefitCard reveal reveal-delay-${i % 3}`}
+                ref={setRef(1 + i)}
+              >
+                <span className="benefitIcon" aria-hidden="true">{b.icon}</span>
+                <h3>{b.title}</h3>
+                <p>{b.body}</p>
               </div>
-              <h3>See your heart</h3>
-            </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-            <div className="stepCard reveal reveal-delay-1" ref={setRef(2)}>
-              <div className="stepVisual">
-                <div className="phoneBar" />
-                <div className="stepScreen">
-                  <Image
-                    src={imgBreathing}
-                    alt="Box breathing guide showing inhale, hold, exhale phases."
-                    fill
-                    sizes="(max-width: 980px) 50vw, 180px"
-                  />
-                </div>
-              </div>
-              <h3>Follow the rhythm</h3>
-            </div>
-
-            <div className="stepCard reveal reveal-delay-2" ref={setRef(3)}>
-              <div className="stepVisual">
-                <div className="phoneBar" />
-                <div className="stepScreen">
-                  <Image
-                    src={imgResults}
-                    alt="Azora home screen with daily breathing exercises and practice programs."
-                    fill
-                    sizes="(max-width: 980px) 50vw, 180px"
-                  />
-                </div>
-              </div>
-              <h3>Choose your exercises</h3>
-            </div>
+      {/* ── HOW IT WORKS ── */}
+      <section className="howSection" id="how" aria-labelledby="how-title">
+        <div className="container">
+          <div className="sectionHeader reveal" ref={setRef(5)}>
+            <span className="label" style={{ color: "var(--brand)" }}>How it works</span>
+            <h2 id="how-title" className="headline" style={{ marginTop: "0.75rem" }}>
+              Three minutes, three steps
+            </h2>
+            <p className="subhead" style={{ marginTop: "0.5rem", color: "var(--text-secondary)" }}>
+              No devices to charge, no courses to finish. Just your phone&rsquo;s camera, your breath, and a few quiet minutes.
+            </p>
           </div>
 
-          <p className="toolsLink reveal" ref={setRef(9)}>
+          <ol className="howSteps reveal" ref={setRef(6)}>
+            {HOW_STEPS.map((step, i) => (
+              <li key={step.title} className="howStep">
+                <span className="howStepNum" aria-hidden="true">{i + 1}</span>
+                <span className="howStepIcon" aria-hidden="true">{step.icon}</span>
+                <h3>{step.title}</h3>
+                <p>{step.body}</p>
+              </li>
+            ))}
+          </ol>
+
+          <p className="toolsLink reveal" ref={setRef(7)}>
             New to breathwork?{" "}
             <a href="/box-breathing">Try box breathing free in your browser →</a>
           </p>
+        </div>
+      </section>
+
+      {/* ── WHAT'S INCLUDED (value stack) ── */}
+      <section className="includedSection" id="included" aria-labelledby="included-title">
+        <div className="glass-orb orb-brand orb-md" style={{ top: "15%", left: "-6%" }} />
+        <div className="container">
+          <div className="includedInner reveal" ref={setRef(8)}>
+            <div className="includedCopy">
+              <span className="label" style={{ color: "var(--brand)" }}>Everything in Pro</span>
+              <h2 id="included-title" className="headline" style={{ marginTop: "0.75rem" }}>
+                One subscription, the whole practice
+              </h2>
+              <p className="subhead" style={{ marginTop: "0.5rem", color: "var(--text-secondary)" }}>
+                Unlock every guided program, unlimited heart-rate readings, and your full recovery picture — on the web today and inside the app the moment you sign in.
+              </p>
+              <ul className="includedList">
+                {annual.features.map((feature) => (
+                  <li key={feature}>
+                    <CheckIcon />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <aside className="includedOffer">
+              <div className="includedPhone">
+                <div className="phoneBar" />
+                <div className="includedScreen">
+                  <Image
+                    src={imgHome}
+                    alt="Azora results screen showing heart rate, stress index, and recovery trends."
+                    fill
+                    sizes="(max-width: 900px) 60vw, 240px"
+                  />
+                </div>
+              </div>
+              <div className="includedOfferCard">
+                <span className="includedOfferBadge">{annual.badge}</span>
+                <div className="includedPriceRow">
+                  <span className="includedPrice">
+                    <LivePrice offerKey="annual" fallback={annual.price} />
+                  </span>
+                  <span className="includedPeriod">{annual.period}</span>
+                </div>
+                <p className="includedBillingNote">{annual.billingNote}</p>
+                <a
+                  href="/pricing"
+                  className="funnelPrimaryBtn"
+                  onClick={() => {
+                    posthog.capture("get_pro_clicked", {
+                      button_location: "value_stack",
+                      ...getStoredAttribution()
+                    });
+                  }}
+                >
+                  Start free trial
+                </a>
+                <p className="includedTrialLine">{annual.trialLine}</p>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      {/* ── SOCIAL PROOF ── */}
+      <section className="socialSection" aria-labelledby="social-title">
+        <div className="container">
+          <div className="socialHeader reveal" ref={setRef(9)}>
+            <div className="socialRating">
+              <span className="socialStars" aria-hidden="true">★★★★★</span>
+              <span className="socialRatingText">4.8 average · loved by early members</span>
+            </div>
+            <h2 id="social-title" className="headline">
+              People feel the difference
+            </h2>
+          </div>
+          <div className="reviewGrid reveal" ref={setRef(10)}>
+            {REVIEWS.map((r) => (
+              <figure key={r.name} className="reviewCard">
+                <span className="reviewStars" aria-hidden="true">★★★★★</span>
+                <blockquote>{r.quote}</blockquote>
+                <figcaption>{r.name}</figcaption>
+              </figure>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -545,10 +725,11 @@ export default function Home() {
       <section className="finalCta" id="download" aria-labelledby="cta-title">
         <div className="glass-glow" style={{ top: "50%", left: "50%", transform: "translate(-50%, -50%)" }} />
         <div className="container">
-          <div className="reveal" ref={setRef(8)}>
+          <div className="reveal" ref={setRef(11)}>
             <h2 id="cta-title">Begin your practice today.</h2>
-            <p>Download Azora and discover what your breath has been waiting to tell you.</p>
+            <p>Start free, then just <LivePrice offerKey="annual" fallback={annual.price} />{annual.period} — about ~$3.33/mo. Cancel anytime.</p>
             <StoreButtons center />
+            <p className="finalCtaReassure">🔒 Secure checkout · Cancel anytime · Works on web &amp; in the app</p>
           </div>
         </div>
       </section>

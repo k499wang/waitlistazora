@@ -1597,6 +1597,8 @@ body {
 .funnelResult,
 .funnelOffer { text-align: center; }
 
+.funnelResult { position: relative; }
+
 .funnelSpinner {
   width: 44px;
   height: 44px;
@@ -1622,6 +1624,63 @@ body {
   font-size: 1.6rem;
   font-weight: 800;
   box-shadow: 0 12px 30px -10px rgba(74, 158, 255, 0.7);
+  animation: badgePop 0.5s var(--ease-out-expo) both;
+}
+
+@keyframes badgePop {
+  from { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.15); }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* ── Funnel reassurance toast (Calm-style) ── */
+.funnelReassurance {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  animation: reassuranceIn 0.45s var(--ease-out-expo) both;
+}
+
+@keyframes reassuranceIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.funnelReassuranceText {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+  line-height: 1.5;
+  max-width: 360px;
+}
+
+/* ── Confetti celebration ── */
+.confettiContainer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.confettiPiece {
+  position: absolute;
+  top: -12px;
+  border-radius: 2px;
+  animation: confettiFall 2.4s var(--ease-calm) both;
+}
+
+@keyframes confettiFall {
+  0% {
+    transform: translateY(0) translateX(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(320px) translateX(var(--drift, 20px)) rotate(720deg);
+    opacity: 0;
+  }
 }
 
 .funnelResult .funnelPrimaryBtn,

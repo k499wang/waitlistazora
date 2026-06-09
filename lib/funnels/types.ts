@@ -30,6 +30,8 @@ export type FunnelStep =
       id: string;
       question: string;
       subtext?: string;
+      /** Calm-style brief reassurance shown after selecting an answer, then auto-advances. */
+      reassurance?: string;
       options: FunnelOption[];
     }
   | {

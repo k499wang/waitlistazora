@@ -10,6 +10,8 @@ import { trackMetaEvent } from "@/app/components/meta-pixel-events";
 import { LivePrice } from "@/app/pricing/live-price";
 import type { FunnelConfig, FunnelStep } from "@/lib/funnels/types";
 
+const REASSURANCE_DURATION = 1700; // ms to show reassuring toast before advancing
+
 /** Resolve {{step_id}} placeholders in template strings against user answers. */
 function resolveTemplate(
   text: string,
@@ -28,11 +30,25 @@ function resolveTemplate(
   });
 }
 
+/** Confetti particle configs — deterministic so SSR/hydration match. */
+const CONFETTI_PARTICLES = Array.from({ length: 28 }, (_, i) => ({
+  id: i,
+  left: `${5 + (i * 37) % 90}%`,
+  delay: `${(i * 0.07).toFixed(2)}s`,
+  size: `${6 + (i % 8)}px`,
+  hue: ((i * 47 + 180) % 360),
+  drift: `${-20 + (i % 40)}px`,
+}));
+
 export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
   const [currentId, setCurrentId] = useState(funnel.steps[0].id);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [history, setHistory] = useState<string[]>([]);
+  const [reassuring, setReassuring] = useState<{ stepId: string; text: string } | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
   const funnelViewFired = useRef(false);
+  const confettiFired = useRef(false);
+  const reassuranceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Fire web_funnel_viewed + Meta ViewContent once on first render.
   useEffect(() => {
@@ -48,6 +64,25 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
   }, [funnel.slug, funnel.name]);
 
   const step = funnel.steps.find((s) => s.id === currentId)!;
+
+  // Trigger confetti once when the result step first appears.
+  useEffect(() => {
+    if (step.kind !== "result" || confettiFired.current) return;
+    confettiFired.current = true;
+    setShowConfetti(true);
+  }, [currentId, step.kind]);
+
+  // Cancel any pending reassurance timeout when the step changes (e.g. user
+  // clicked Back during the 1.7s toast — don't drag them forward).
+  useEffect(() => {
+    return () => {
+      if (reassuranceTimer.current) {
+        clearTimeout(reassuranceTimer.current);
+        reassuranceTimer.current = null;
+      }
+      setReassuring(null);
+    };
+  }, [currentId]);
 
   // Find the next sequential step in the array (default advance when no nextId).
   const defaultNext = useCallback(
@@ -97,6 +132,19 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
           ? s.options.find((o) => o.id === optionId)
           : null;
       const nextId = opt?.nextId ?? defaultNext(stepId);
+
+      // Calm-style reassuring toast: pause briefly before advancing.
+      if (s?.kind === "single_choice" && s.reassurance && nextId) {
+        const targetId = nextId;
+        setReassuring({ stepId, text: s.reassurance });
+        reassuranceTimer.current = setTimeout(() => {
+          setReassuring(null);
+          reassuranceTimer.current = null;
+          navigate(targetId);
+        }, REASSURANCE_DURATION);
+        return;
+      }
+
       if (nextId) navigate(nextId);
     },
     [funnel.steps, funnel.slug, navigate, defaultNext],
@@ -145,31 +193,39 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
       <div className="funnelStep" key={step.id}>
         {step.kind === "single_choice" ? (
           <>
-            <h1 className="funnelQuestion">{displayTitle}</h1>
-            {displayBody ? (
-              <p className="funnelSubtext">{displayBody}</p>
-            ) : null}
-            <div className="funnelOptions">
-              {step.options.map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  className={`funnelOption${
-                    answers[step.id] === opt.id
-                      ? " funnelOptionSelected"
-                      : ""
-                  }`}
-                  onClick={() => choose(step.id, opt.id)}
-                >
-                  {opt.emoji ? (
-                    <span className="funnelOptionEmoji" aria-hidden>
-                      {opt.emoji}
-                    </span>
-                  ) : null}
-                  <span>{opt.label}</span>
-                </button>
-              ))}
-            </div>
+            {reassuring?.stepId === step.id ? (
+              <div className="funnelReassurance" key={`re-${step.id}`}>
+                <p className="funnelReassuranceText">{reassuring.text}</p>
+              </div>
+            ) : (
+              <>
+                <h1 className="funnelQuestion">{displayTitle}</h1>
+                {displayBody ? (
+                  <p className="funnelSubtext">{displayBody}</p>
+                ) : null}
+                <div className="funnelOptions">
+                  {step.options.map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      className={`funnelOption${
+                        answers[step.id] === opt.id
+                          ? " funnelOptionSelected"
+                          : ""
+                      }`}
+                      onClick={() => choose(step.id, opt.id)}
+                    >
+                      {opt.emoji ? (
+                        <span className="funnelOptionEmoji" aria-hidden>
+                          {opt.emoji}
+                        </span>
+                      ) : null}
+                      <span>{opt.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </>
         ) : null}
 
@@ -187,6 +243,24 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
 
         {step.kind === "result" ? (
           <div className="funnelResult">
+            {showConfetti ? (
+              <div className="confettiContainer" aria-hidden>
+                {CONFETTI_PARTICLES.map((p) => (
+                  <span
+                    key={p.id}
+                    className="confettiPiece"
+                    style={{
+                      left: p.left,
+                      animationDelay: p.delay,
+                      width: p.size,
+                      height: p.size,
+                      backgroundColor: `hsl(${p.hue}, 80%, 60%)`,
+                      "--drift": p.drift,
+                    } as React.CSSProperties}
+                  />
+                ))}
+              </div>
+            ) : null}
             <div className="funnelResultBadge" aria-hidden>
               ✓
             </div>
@@ -260,7 +334,7 @@ function OfferStep({ step }: { step: { title: string; body: string } }) {
                 offerKey={offer.key}
               >
                 <button type="submit" className="funnelPrimaryBtn">
-                  Try for free
+                  {offerKey === "annual" ? "Try for free" : "Start now"}
                 </button>
               </CheckoutForm>
               <p className="priceTrialLine">{display.trialLine}</p>

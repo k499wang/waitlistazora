@@ -650,7 +650,228 @@ For Azora:
 RevenueCat App User ID = Supabase auth user.id
 ```
 
-## Phase 10: Configure The Separate Web Webhook
+## Phase 10: Validate The Web Purchase Links
+
+Before implementing or debugging the web repo checkout route, verify the
+RevenueCat Web Purchase Links themselves.
+
+Current sandbox base links:
+
+```text
+Annual sandbox: https://pay.rev.cat/sandbox/onqkikrjlwnxfpsb
+Weekly sandbox: https://pay.rev.cat/sandbox/plvwmjvsuochpfot
+```
+
+These base links are not the final URLs your app should send users to. The web
+app must append the Supabase user ID.
+
+### 10.1 Basic Link Smoke Test
+
+Open each base link in a browser:
+
+```text
+https://pay.rev.cat/sandbox/onqkikrjlwnxfpsb
+https://pay.rev.cat/sandbox/plvwmjvsuochpfot
+```
+
+Expected:
+
+```text
+RevenueCat checkout page loads
+No 404
+No product/offering missing error
+No Stripe/Web Billing configuration error
+Correct product/price appears
+```
+
+Do not complete purchase from the base link. This is only a smoke test that the
+purchase link exists.
+
+### 10.2 Identified Link Test
+
+Pick a real Supabase test user:
+
+```sql
+select id, email
+from auth.users
+where email = 'your-test-email@example.com';
+```
+
+Build an identified test URL manually:
+
+```text
+https://pay.rev.cat/sandbox/onqkikrjlwnxfpsb/<supabase_user_id>?email=<url_encoded_email>
+```
+
+Weekly:
+
+```text
+https://pay.rev.cat/sandbox/plvwmjvsuochpfot/<supabase_user_id>?email=<url_encoded_email>
+```
+
+Expected:
+
+```text
+RevenueCat checkout page loads
+Checkout is associated with that Supabase user ID
+Email appears or is prefilled if RevenueCat supports it in the current checkout
+```
+
+You can complete a purchase from this manual identified URL, but if you do it
+before `/checkout/start` exists, there will be no `web_checkout_intents` row to
+reconcile. The subscription can still mirror through the webhook if the
+`profiles` row exists.
+
+### 10.3 Profile Precondition
+
+Before completing any identified purchase, confirm:
+
+```sql
+select *
+from profiles
+where user_id = '<supabase_user_id>';
+```
+
+Expected:
+
+```text
+one profile row exists
+```
+
+If this row is missing, create/sign in through the app flow or insert it through
+the trusted server path. The webhook intentionally ignores subscription-writing
+events when the RevenueCat App User ID does not resolve to a known profile.
+
+### 10.4 Manual Purchase Link Test Without Web Repo
+
+This test validates RevenueCat, Stripe, webhook, and Supabase subscription
+mirroring before the web repo checkout route exists.
+
+1. Confirm `profiles.user_id` exists.
+2. Open the manual identified annual or weekly URL.
+3. Complete sandbox checkout.
+4. Check RevenueCat customer page for the Supabase user ID.
+5. Confirm the entitlement:
+
+```text
+Azora  Pro
+```
+
+6. Check Supabase:
+
+```sql
+select event_id, event_type, user_id, environment, received_at
+from revenuecat_events
+where user_id = '<supabase_user_id>'
+order by received_at desc
+limit 10;
+
+select *
+from subscriptions
+where user_id = '<supabase_user_id>';
+```
+
+Expected:
+
+```text
+revenuecat_events has INITIAL_PURCHASE
+subscriptions row exists
+subscriptions.status = active or trialing
+subscriptions.revenuecat_app_user_id = Supabase user.id
+```
+
+Because `/checkout/start` was bypassed, this is allowed to remain empty or
+unmatched:
+
+```sql
+select *
+from web_checkout_intents
+where user_id = '<supabase_user_id>'
+order by created_at desc
+limit 5;
+```
+
+### 10.5 Full Web Repo Link Test
+
+After `/checkout/start` exists, do not use manual URLs anymore. Click the web
+app checkout button.
+
+Expected annual redirect:
+
+```text
+https://pay.rev.cat/sandbox/onqkikrjlwnxfpsb/<supabase_user_id>?email=<email>
+```
+
+Expected weekly redirect:
+
+```text
+https://pay.rev.cat/sandbox/plvwmjvsuochpfot/<supabase_user_id>?email=<email>
+```
+
+Before completing purchase, check:
+
+```sql
+select offer_id, status, revenuecat_app_user_id, environment, revenuecat_purchase_url
+from web_checkout_intents
+where user_id = '<supabase_user_id>'
+order by created_at desc
+limit 5;
+```
+
+Expected:
+
+```text
+offer_id = web_annual_discount or web_weekly_discount
+status = redirected
+revenuecat_app_user_id = Supabase user.id
+environment = SANDBOX
+```
+
+After completing purchase:
+
+```sql
+select offer_id, status, revenuecat_event_id, purchased_at
+from web_checkout_intents
+where user_id = '<supabase_user_id>'
+order by updated_at desc
+limit 5;
+```
+
+Expected:
+
+```text
+status = purchased
+revenuecat_event_id is not null
+purchased_at is not null
+```
+
+### 10.6 If The Link Fails
+
+If the base link fails:
+
+- check RevenueCat Web Billing config
+- check Stripe connection
+- check product exists
+- check offering/package exists
+- check Web Purchase Link points to the correct offering/package
+
+If the identified link loads but mobile does not unlock:
+
+- check the URL includes the Supabase user ID
+- check `profiles.user_id` exists
+- check RevenueCat customer App User ID equals Supabase user ID
+- check the product grants `Azora  Pro`
+- check the web webhook logs
+- check `subscriptions`
+
+If the purchase works but `web_checkout_intents` does not update:
+
+- confirm the purchase went through `/checkout/start`, not a manual URL
+- confirm RevenueCat webhook points to `revenuecat-web-checkout-webhook`
+- confirm intent `environment = SANDBOX`
+- confirm intent status was `created` or `redirected` when webhook arrived
+
+## Phase 11: Configure The Separate Web Webhook
 
 Generate a new secret:
 
@@ -693,7 +914,7 @@ https://<supabase-project-ref>.supabase.co/functions/v1/revenuecat-webhook
 Do not replace the mobile webhook unless you intentionally want mobile events
 to use the web reconciliation path.
 
-## Phase 11: Apply The Supabase Migration
+## Phase 12: Apply The Supabase Migration
 
 Apply the migration in staging first:
 
@@ -764,7 +985,7 @@ Existing data safety notes:
 - It does not add non-null constraints to existing populated tables.
 - It does not alter existing mobile RLS policies.
 
-## Phase 12: Web Repo Environment Variables
+## Phase 13: Web Repo Environment Variables
 
 In the web repo, add server-only env vars:
 
@@ -785,7 +1006,7 @@ SUPABASE_SERVICE_ROLE_KEY=
 
 The service-role key must only be used in server-side code.
 
-## Phase 13: Implement `/checkout/start`
+## Phase 14: Implement `/checkout/start`
 
 In the web repo, create a server route:
 
@@ -905,7 +1126,7 @@ const baseUrl =
     : process.env.REVENUECAT_WEB_PURCHASE_LINK_ANNUAL_SANDBOX;
 ```
 
-## Phase 14: Implement `/checkout/success`
+## Phase 15: Implement `/checkout/success`
 
 Create:
 
@@ -931,7 +1152,7 @@ Finalizing your purchase...
 
 Then poll again for a short window.
 
-## Phase 15: Sandbox Test
+## Phase 16: Sandbox Test
 
 Use one known Supabase test user.
 

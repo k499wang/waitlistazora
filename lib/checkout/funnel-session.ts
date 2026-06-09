@@ -21,6 +21,8 @@ interface FunnelSessionInput {
   referrer?: string | null;
   userAgent?: string | null;
   ipAddress?: string | null;
+  /** Two-letter ISO country code (x-vercel-ip-country) — CAPI match key. */
+  ipCountry?: string | null;
 }
 
 /**
@@ -37,7 +39,7 @@ export async function getOrCreateFunnelSession(
   if (input.cookieSessionId) {
     const { data: existing, error } = await admin
       .from("web_funnel_sessions")
-      .select("id, user_id, ip_address, user_agent")
+      .select("id, user_id, ip_address, user_agent, ip_country")
       .eq("id", input.cookieSessionId)
       .maybeSingle();
 
@@ -58,6 +60,7 @@ export async function getOrCreateFunnelSession(
             // real landing values. The CAPI webhook reads both off this row.
             ip_address: existing.ip_address ?? input.ipAddress ?? null,
             user_agent: existing.user_agent ?? input.userAgent ?? null,
+            ip_country: existing.ip_country ?? input.ipCountry ?? null,
           })
           .eq("id", existing.id);
 
@@ -81,6 +84,7 @@ export async function getOrCreateFunnelSession(
       referrer: input.referrer ?? null,
       user_agent: input.userAgent ?? null,
       ip_address: input.ipAddress ?? null,
+      ip_country: input.ipCountry ?? null,
       status: "checkout_started",
     })
     .select("id")

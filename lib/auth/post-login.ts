@@ -7,6 +7,8 @@ interface PostLoginContext {
   eventSourceUrl?: string | null;
   clientIp?: string | null;
   clientUserAgent?: string | null;
+  /** Two-letter ISO country code from the edge (x-vercel-ip-country). */
+  country?: string | null;
   /**
    * _fbp/_fbc cookies read off the auth request — fallback match keys for when
    * the landing beacon never persisted attribution (blocked /api/session-init,
@@ -107,6 +109,7 @@ export async function applyPostLogin(
       fbc,
       clientIp: firstClientIp(context?.clientIp),
       clientUserAgent: context?.clientUserAgent ?? null,
+      country: context?.country ?? null,
       eventSourceUrl: context?.eventSourceUrl ?? null,
       eventId: `lead_${user.id}`,
     });

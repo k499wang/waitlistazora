@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { purchaseEmbeddedOffering } from "@/lib/checkout/revenuecat-web";
 import { resolveOfferKey } from "@/lib/checkout/offers";
-import { trackMetaEvent } from "./meta-pixel-events";
+import { setMetaAdvancedMatching, trackMetaEvent } from "./meta-pixel-events";
 
 type IntentResponse = {
   sessionId: string;
@@ -91,6 +91,13 @@ export function EmbeddedCheckoutButton({
         }
 
         const intent = (await res.json()) as IntentResponse;
+
+        // Pixel advanced matching: tie this browser's pixel events to the same
+        // identifiers the server-side CAPI events use (raw — the pixel hashes).
+        setMetaAdvancedMatching({
+          email: intent.email,
+          externalId: intent.appUserId,
+        });
 
         const outcome = await purchaseEmbeddedOffering({
           appUserId: intent.appUserId,

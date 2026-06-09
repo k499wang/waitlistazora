@@ -2,6 +2,10 @@ import { createHash } from "crypto";
 
 const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID;
 const ACCESS_TOKEN = process.env.META_CAPI_ACCESS_TOKEN;
+// CAUTION: when set, ALL Leads (including real users') become Meta Test Events
+// — visible in Events Manager's Test Events tab but not used for ad delivery.
+// Set it on Vercel only while actively testing a deployment, then remove it
+// and redeploy.
 const TEST_EVENT_CODE = process.env.META_TEST_EVENT_CODE;
 // Bump periodically — Meta sunsets each Graph API version ~2y after release.
 // When a version is sunset the endpoint starts erroring; sendLeadEvent logs
@@ -26,6 +30,8 @@ export interface MetaLeadParams {
   fbc?: string | null;
   clientIp?: string | null;
   clientUserAgent?: string | null;
+  /** Two-letter ISO country code (e.g. from x-vercel-ip-country) — hashed before sending. */
+  country?: string | null;
   eventSourceUrl?: string | null;
   /** Stable event ID for Meta-side deduplication. */
   eventId?: string | null;
@@ -61,6 +67,7 @@ export async function sendLeadEvent(
   if (params.fbc) userData.fbc = params.fbc;
   if (params.clientIp) userData.client_ip_address = params.clientIp;
   if (params.clientUserAgent) userData.client_user_agent = params.clientUserAgent;
+  if (params.country) userData.country = hashSha256(params.country);
 
   const event: Record<string, unknown> = {
     event_name: "Lead",

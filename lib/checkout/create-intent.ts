@@ -98,6 +98,7 @@ export async function createCheckoutIntent(
     referrer: req.headers.get("referer"),
     userAgent: req.headers.get("user-agent"),
     ipAddress: clientIpFromRequest(req),
+    ipCountry: req.headers.get("x-vercel-ip-country"),
   });
 
   // Persist the browser's _fbp/_fbc at checkout time so the webhook's CAPI

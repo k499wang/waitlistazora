@@ -71,6 +71,7 @@ export async function GET(request: NextRequest) {
       eventSourceUrl: `${url.origin}/auth/callback`,
       clientIp: request.headers.get("x-forwarded-for"),
       clientUserAgent: request.headers.get("user-agent"),
+      country: request.headers.get("x-vercel-ip-country"),
       fbpCookie: request.cookies.get("_fbp")?.value ?? null,
       fbcCookie: request.cookies.get("_fbc")?.value ?? null,
     });

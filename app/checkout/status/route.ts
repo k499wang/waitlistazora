@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
 
   const { data: intent, error: intentError } = await admin
     .from("web_checkout_intents")
-    .select("id, status, offer_id, environment, purchased_at, revenuecat_event_id, purchase_event_sent_at")
+    .select("id, status, offer_id, environment, purchased_at, revenuecat_event_id, purchase_event_sent_at, price_amount, currency")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -109,9 +109,21 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     intentStatus: intent?.status ?? null,
+    // For the browser-side dedup leg of the Meta conversion event: the pixel on
+    // /checkout/success fires Purchase/StartTrial with the SAME event_id the
+    // webhook CAPI event uses (purchase_<intentId> / starttrial_<intentId>), so
+    // Meta dedupes the pair and keeps whichever leg has better match data.
+    intentId: intent?.id ?? null,
     offerId: intent?.offer_id ?? null,
     environment: intent?.environment ?? null,
     purchasedAt: intent?.purchased_at ?? null,
+    priceAmount: intent?.price_amount ?? null,
+    currency: intent?.currency ?? null,
+    isTrial: subscription?.status === "trialing",
+    // Pixel advanced matching on the success page — raw values; the pixel
+    // hashes them client-side. Same identifiers the CAPI events use.
+    userId: user.id,
+    email: user.email ?? null,
     isPro,
     purchased,
   });

@@ -5,15 +5,17 @@ import {
   hasAttribution
 } from "@/lib/attribution";
 
+// Keep in sync with the global declaration in app/components/meta-pixel-events.tsx.
 declare global {
   interface Window {
     fbq?: (
-      command: "track",
-      eventName: string,
+      command: "track" | "init",
+      eventNameOrPixelId: string,
       params?: Record<string, unknown>,
       options?: {
         eventCallback?: () => void;
         eventTimeout?: number;
+        eventID?: string;
       },
     ) => void;
   }

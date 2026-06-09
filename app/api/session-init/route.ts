@@ -21,7 +21,7 @@ function maxLen(value: string | null, limit: number): string | null {
 }
 
 function buildFbc(fbclid: string): string {
-  return `fb.1.${Math.floor(Date.now() / 1000)}.${fbclid}`;
+  return `fb.1.${Date.now()}.${fbclid}`;
 }
 
 export async function POST(request: NextRequest) {

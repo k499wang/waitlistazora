@@ -49,7 +49,7 @@ export const OFFER_DISPLAY: Record<OfferKey, OfferDisplay> = {
     key: "weekly",
     price: "$4.99",
     period: "/week",
-    billingNote: "flexible, billed weekly",
+    billingNote: "billed weekly · ~$19.96/mo",
     trialLine: "Cancel anytime",
     features: [
       "Unlimited camera heart-rate sessions",

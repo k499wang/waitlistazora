@@ -38,9 +38,12 @@ function getCookie(name: string): string | undefined {
   return match ? decodeURIComponent(match[1]) : undefined;
 }
 
+function setCookie(name: string, value: string, maxAgeSeconds: number) {
+  document.cookie = `${name}=${encodeURIComponent(value)}; max-age=${maxAgeSeconds}; path=/; SameSite=Lax`;
+}
+
 function buildFbc(fbclid: string): string {
-  const ts = Math.floor(Date.now() / 1000);
-  return `fb.1.${ts}.${fbclid}`;
+  return `fb.1.${Date.now()}.${fbclid}`;
 }
 
 const searchParams = new URLSearchParams(window.location.search);
@@ -53,6 +56,7 @@ const attribution = attributionFromSearchParams(searchParams);
 // Fill Meta params from URL / cookies when they aren't already in attribution.
 const fbclid = searchParams.get("fbclid");
 const fbp = getCookie("_fbp");
+const fbc = getCookie("_fbc") ?? (fbclid ? buildFbc(fbclid) : undefined);
 
 if (fbclid && !attribution.fbclid) {
   attribution.fbclid = fbclid;
@@ -60,8 +64,11 @@ if (fbclid && !attribution.fbclid) {
 if (fbp && !attribution._fbp) {
   attribution._fbp = fbp;
 }
-if (fbclid && !attribution._fbc) {
-  attribution._fbc = buildFbc(fbclid);
+if (fbc && !attribution._fbc) {
+  attribution._fbc = fbc;
+}
+if (fbclid && fbc && !getCookie("_fbc")) {
+  setCookie("_fbc", fbc, 60 * 60 * 24 * 90);
 }
 
 // ── Persist attribution server-side ──────────────────────────────────────────
@@ -76,7 +83,7 @@ setTimeout(() => {
     if (v) payload[key] = v;
   }
   payload._fbp = getCookie("_fbp") ?? "";
-  payload._fbc = getCookie("_fbc") ?? "";
+  payload._fbc = getCookie("_fbc") ?? fbc ?? "";
   payload.landing_path = window.location.pathname;
   payload.initial_url = window.location.href;
   payload.referrer = document.referrer;

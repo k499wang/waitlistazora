@@ -1,5 +1,13 @@
-// Minimal, data-driven funnel model. Intentionally boring: add new step kinds
-// only when the UI/behavior is genuinely different (see docs/plan.md).
+// Data-driven funnel model with branching support.
+//
+// Steps are defined as a flat array. Sequential advance walks the array,
+// but any FunnelOption can set `nextId` to jump to a specific step —
+// enabling conditional branching (e.g. different follow-up questions
+// based on the user's goal).
+//
+// Interstitial and result steps support {{step_id}} template variables
+// in their title/body. The runner resolves them to the selected option
+// label at render time.
 
 import type { OfferKey } from "@/lib/checkout/offers";
 
@@ -9,6 +17,11 @@ export interface FunnelOption {
   label: string;
   /** Optional emoji/glyph rendered before the label. */
   emoji?: string;
+  /**
+   * If set, selecting this option navigates to this step ID instead of
+   * the next sequential step in the array. Use for branching funnels.
+   */
+  nextId?: string;
 }
 
 export type FunnelStep =

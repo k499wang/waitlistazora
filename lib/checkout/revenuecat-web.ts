@@ -82,15 +82,18 @@ export type PurchaseOutcome =
  * replaces its singleton with a fresh instance bound to this user (no alias).
  *
  * Loads the discount-bearing offering by identifier (NOT the `current` offering)
- * and purchases its package for the given offer. Presents RevenueCat's payment
- * UI as a modal. Never throws — resolves to a discriminated outcome so the caller
- * can branch on cancel vs error.
+ * and purchases its package for the given offer. When `htmlTarget` is provided
+ * the payment UI renders inside that element (our branded checkout panel);
+ * otherwise the SDK falls back to its own full-screen modal. Never throws —
+ * resolves to a discriminated outcome so the caller can branch on cancel vs
+ * error.
  */
 export async function purchaseEmbeddedOffering(input: {
   appUserId: string;
   offeringIdentifier: string;
   offerKey: OfferKey;
   email?: string | null;
+  htmlTarget?: HTMLElement;
 }): Promise<PurchaseOutcome> {
   if (!BILLING_KEY) {
     return { status: "error", message: "Checkout is not configured." };
@@ -125,6 +128,7 @@ export async function purchaseEmbeddedOffering(input: {
     await purchases.purchase({
       rcPackage,
       customerEmail: input.email ?? undefined,
+      htmlTarget: input.htmlTarget,
     });
 
     return { status: "completed" };

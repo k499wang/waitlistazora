@@ -52,8 +52,16 @@ function fireBrowserConversionPixel(data: StatusResponse) {
   if (data.intentStatus !== "purchased" || !data.intentId) return;
 
   // Sandbox test purchases must not hit the production pixel (the webhook
-  // likewise only sends sandbox CAPI events under a test_event_code).
-  if (data.environment !== "PRODUCTION") return;
+  // likewise only sends sandbox CAPI events under a test_event_code). Override
+  // with NEXT_PUBLIC_META_SANDBOX_PIXEL=true while testing — browse via the
+  // Events Manager Test Events tab so the session is tagged as test traffic —
+  // and unset it (plus redeploy) when done.
+  if (
+    data.environment !== "PRODUCTION" &&
+    process.env.NEXT_PUBLIC_META_SANDBOX_PIXEL !== "true"
+  ) {
+    return;
+  }
 
   if (!data.purchasedAt) return;
   const purchaseAge = Date.now() - new Date(data.purchasedAt).getTime();

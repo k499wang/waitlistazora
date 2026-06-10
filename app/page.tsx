@@ -8,6 +8,7 @@ import { AuthNav } from "./components/auth-nav";
 import { OFFER_DISPLAY } from "@/lib/checkout/offer-display";
 import { LivePrice } from "./pricing/live-price";
 import iconApp from "./assets/iconApp.png";
+import { faqData } from "./faq-data";
 
 const annual = OFFER_DISPLAY.annual;
 
@@ -76,6 +77,50 @@ const HOW_STEPS = [
     body: "Watch your stress drop after each session and your recovery trends climb week over week.",
   },
 ];
+
+const TRUST_POINTS = [
+  {
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
+    ),
+    title: "Real physiology, not guesswork",
+    body: "Azora reads your pulse with photoplethysmography (PPG) — the same optical technique behind pulse oximeters and fitness wearables. No extra hardware required.",
+  },
+  {
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg>
+    ),
+    title: "Evidence-based techniques",
+    body: "Every session is built on slow-paced breathing protocols studied for their effects on stress and heart-rate variability — not wellness trends.",
+  },
+  {
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+    ),
+    title: "Private by design",
+    body: "Your physiological data stays on your device unless you choose to sync. We never sell, share, or monetize your health information.",
+  },
+];
+
+function FaqItem({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="faqItem">
+      <button
+        type="button"
+        className="faqQuestion"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+      >
+        {q}
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+      </button>
+      <div className={`faqAnswer ${open ? "open" : ""}`}>
+        <p>{a}</p>
+      </div>
+    </div>
+  );
+}
 
 const REVIEWS = [
   {
@@ -155,7 +200,9 @@ export default function Home() {
             </a>
             <div className="navLinks">
             <a href="#how">How it works</a>
+            <a href="#science">Science</a>
             <a href="#reviews">Reviews</a>
+            <a href="#faq">FAQ</a>
             <a href="/pricing">Pricing</a>
             </div>
             <div className="navRight">
@@ -170,13 +217,27 @@ export default function Home() {
         <div className="heroContent">
           <h1 id="hero-title" className="heroTitle display">
             <span>Breathe with intention.</span>
-            <span>Recover with clarity.</span>
+            <span><em>Recover with clarity.</em></span>
           </h1>
           <p className="heroSub subhead">
             Azora guides every inhale, tracks every heartbeat, and reveals
             the quiet rhythm of your recovery — one breath at a time.
           </p>
           <StoreButtons />
+          <ul className="heroTrust" aria-label="Why people trust Azora">
+            <li>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+              No wearables needed
+            </li>
+            <li>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+              30-second readings
+            </li>
+            <li>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+              Your data stays on your device
+            </li>
+          </ul>
         </div>
       </section>
 
@@ -184,15 +245,16 @@ export default function Home() {
       <section className="howSection" id="how" aria-labelledby="how-title">
         <div className="container">
           <div className="sectionHeader reveal" ref={setRef(0)}>
-            <span className="label" style={{ color: "var(--brand)" }}>How Azora works</span>
+            <span className="label" style={{ color: "var(--brand)" }}><span className="labelMark" aria-hidden="true" />How Azora works</span>
             <h2 id="how-title" className="headline" style={{ marginTop: "0.75rem" }}>
               Calm you can actually measure
             </h2>
           </div>
 
           <div className="stepsGrid reveal" ref={setRef(1)}>
-            {HOW_STEPS.map((step) => (
+            {HOW_STEPS.map((step, i) => (
               <div key={step.title} className="stepCard">
+                <span className="stepNum" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
                 <span className="howStepIcon" aria-hidden="true">{step.icon}</span>
                 <h3 className="stepTitle">{step.title}</h3>
                 <p className="stepBody">{step.body}</p>
@@ -204,6 +266,27 @@ export default function Home() {
             New to breathwork?{" "}
             <a href="/box-breathing">Try box breathing free in your browser →</a>
           </p>
+        </div>
+      </section>
+
+      {/* ── WHY YOU CAN TRUST IT ── */}
+      <section className="trustSection" id="science" aria-labelledby="trust-title">
+        <div className="container">
+          <div className="sectionHeader reveal" ref={setRef(6)}>
+            <span className="label" style={{ color: "var(--brand)" }}><span className="labelMark" aria-hidden="true" />Grounded in science</span>
+            <h2 id="trust-title" className="headline" style={{ marginTop: "0.75rem" }}>
+              Calm worth trusting
+            </h2>
+          </div>
+          <div className="trustGrid reveal" ref={setRef(7)}>
+            {TRUST_POINTS.map((point) => (
+              <div key={point.title} className="trustCard">
+                <span className="trustCardIcon" aria-hidden="true">{point.icon}</span>
+                <h3 className="trustCardTitle">{point.title}</h3>
+                <p className="trustCardBody">{point.body}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -231,14 +314,36 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── FAQ ── */}
+      <section className="faqSection" id="faq" aria-labelledby="faq-title">
+        <div className="container">
+          <div className="sectionHeader reveal" ref={setRef(8)} style={{ marginBottom: 0 }}>
+            <span className="label" style={{ color: "var(--brand)" }}><span className="labelMark" aria-hidden="true" />Questions</span>
+            <h2 id="faq-title" className="headline" style={{ marginTop: "0.75rem" }}>
+              Everything you might wonder
+            </h2>
+          </div>
+          <div className="faqList reveal" ref={setRef(9)}>
+            {faqData.map((item) => (
+              <FaqItem key={item.q} q={item.q} a={item.a} />
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── FINAL CTA ── */}
       <section className="finalCta" id="download" aria-labelledby="cta-title">
         <div className="container">
           <div className="reveal" ref={setRef(5)}>
-            <h2 id="cta-title">Begin your practice today.</h2>
+            <div className="breathRings" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </div>
+            <h2 id="cta-title">Begin your practice <em>today</em>.</h2>
             <p>Start free, then just <LivePrice offerKey="annual" fallback={annual.price} />{annual.period} — about ~$3.33/mo. Cancel anytime.</p>
             <StoreButtons center />
-            <p className="finalCtaReassure">🔒 Secure checkout · Cancel anytime · Works on web &amp; in the app</p>
+            <p className="finalCtaReassure">Secure checkout · Cancel anytime · Works on web &amp; in the app</p>
           </div>
         </div>
       </section>

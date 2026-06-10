@@ -18,6 +18,8 @@ export interface OfferDisplay {
   period: string;
   /** Secondary line under the price, e.g. "billed annually · ~$3.33/mo". */
   billingNote: string;
+  /** Per-week equivalent for compact display, e.g. "$0.77". */
+  weeklyPrice: string;
   /** Optional ribbon, e.g. "Best value". */
   badge?: string;
   /** Short trial / risk-reversal line shown on the CTA. */
@@ -33,7 +35,8 @@ export const OFFER_DISPLAY: Record<OfferKey, OfferDisplay> = {
     key: "annual",
     price: "$39.99",
     period: "/year",
-    billingNote: "billed annually · just ~$3.33/mo",
+    billingNote: "billed annually",
+    weeklyPrice: "$0.77",
     badge: "Best value · Save 80%",
     trialLine: "7-day free trial, then $39.99/yr",
     features: [
@@ -49,7 +52,8 @@ export const OFFER_DISPLAY: Record<OfferKey, OfferDisplay> = {
     key: "weekly",
     price: "$4.99",
     period: "/week",
-    billingNote: "billed weekly · ~$19.96/mo",
+    billingNote: "billed weekly",
+    weeklyPrice: "$4.99",
     trialLine: "Cancel anytime",
     features: [
       "Unlimited camera heart-rate sessions",

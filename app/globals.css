@@ -2180,10 +2180,40 @@ body::after {
   text-align: center;
 }
 
-.checkoutCardPrice { margin-bottom: 1.35rem; }
+.checkoutCardPrice { margin-bottom: 1rem; }
 
-.checkoutCardPrice .priceAmountRow { justify-content: center; }
-.checkoutCardPrice .priceBillingNote { text-align: center; }
+/* Trial headline — the star of the card */
+.checkoutTrialHeadline {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--brand);
+  margin-bottom: 0.35rem;
+  letter-spacing: -0.01em;
+}
+
+/* Monthly price — small and subdued */
+.checkoutMonthlyPrice {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.checkoutMonthlyPrice .pricePeriod {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.checkoutMonthlyPrice .priceSkeleton {
+  vertical-align: -0.06em;
+  width: 2.4em;
+}
+
+.checkoutCardPrice .priceBillingNote {
+  text-align: center;
+  margin-top: 0.2rem;
+}
 
 /* Feature checkmarks */
 .checkoutFeatures {

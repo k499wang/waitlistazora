@@ -43,7 +43,7 @@ export const OFFERS: Record<OfferKey, OfferDefinition> = {
   annual: {
     key: "annual",
     offerId: "web_annual_discount",
-    offeringIdentifier: "web_annual_discount",
+    offeringIdentifier: "web_annual_discount_prod",
     displayName: "Azora Pro Annual",
     sandboxEnvVar: "REVENUECAT_WEB_PURCHASE_LINK_ANNUAL_SANDBOX",
     prodEnvVar: "REVENUECAT_WEB_PURCHASE_LINK_ANNUAL_PROD",
@@ -51,7 +51,7 @@ export const OFFERS: Record<OfferKey, OfferDefinition> = {
   weekly: {
     key: "weekly",
     offerId: "web_weekly_discount",
-    offeringIdentifier: "web_weekly_discount",
+    offeringIdentifier: "web_weekly_discount_prod",
     displayName: "Azora Pro Weekly",
     sandboxEnvVar: "REVENUECAT_WEB_PURCHASE_LINK_WEEKLY_SANDBOX",
     prodEnvVar: "REVENUECAT_WEB_PURCHASE_LINK_WEEKLY_PROD",

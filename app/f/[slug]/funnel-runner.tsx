@@ -8,7 +8,6 @@ import { OFFER_DISPLAY } from "@/lib/checkout/offer-display";
 import { CheckoutForm } from "@/app/components/checkout-form";
 import { RESUME_PARAM } from "@/app/components/embedded-checkout-button";
 import { trackMetaEvent } from "@/app/components/meta-pixel-events";
-import { LivePrice } from "@/app/pricing/live-price";
 import type { FunnelConfig, FunnelStep } from "@/lib/funnels/types";
 
 import {
@@ -409,13 +408,16 @@ function OfferStep({ step }: { step: { title: string; body: string } }) {
 
       {/* Single checkout card */}
       <div className="checkoutCard">
+        {/* Trial headline — the main message. */}
+        <p className="checkoutTrialHeadline">
+          {plan === "annual" ? "Free for 7 days" : "No commitment"}
+        </p>
+
         <div className="checkoutCardPrice">
-          <div className="priceAmountRow">
-            <span className="priceAmount">
-              <LivePrice offerKey={plan} fallback={display.price} />
-            </span>
-            <span className="pricePeriod">{display.period}</span>
-          </div>
+          <p className="checkoutMonthlyPrice">
+            {display.weeklyPrice}
+            <span className="pricePeriod">/wk</span>
+          </p>
           <p className="priceBillingNote">{display.billingNote}</p>
         </div>
 
@@ -442,12 +444,14 @@ function OfferStep({ step }: { step: { title: string; body: string } }) {
           ))}
         </ul>
 
+        <p className="checkoutTrialLine">{display.trialLine}</p>
+
         <CheckoutForm
           action={`/checkout/start?offer=${offer.key}`}
           offerKey={offer.key}
         >
           <button type="submit" className="checkoutCta">
-            {plan === "annual" ? "Try for free" : "Start now"}
+            {plan === "annual" ? "Start my free trial" : "Start now"}
             <svg
               width="16"
               height="16"
@@ -464,7 +468,6 @@ function OfferStep({ step }: { step: { title: string; body: string } }) {
             </svg>
           </button>
         </CheckoutForm>
-        <p className="checkoutTrialLine">{display.trialLine}</p>
 
         {/* Account status: reassure signed-in users their plan is attached;
             tell signed-out users upfront that checkout needs an account. */}

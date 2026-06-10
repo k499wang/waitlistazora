@@ -480,7 +480,7 @@ const FUNNELS: Record<string, FunnelConfig> = {
       {
         kind: "offer",
         id: "offer",
-        title: "Try Azora Pro for free",
+        title: "Try Azora for free",
         body: "",
         offerKey: "annual",
       },

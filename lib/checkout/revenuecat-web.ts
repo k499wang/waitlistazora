@@ -19,7 +19,7 @@
 
 import { ErrorCode, Purchases, PurchasesError } from "@revenuecat/purchases-js";
 
-import type { OfferKey } from "./offers";
+import { OFFERS, type OfferKey } from "./offers";
 
 const BILLING_KEY = process.env.NEXT_PUBLIC_REVENUECAT_BILLING_KEY;
 
@@ -154,12 +154,15 @@ async function loadPrices(): Promise<LiveOfferPrices> {
   });
 
   const offerings = await purchases.getOfferings();
-  const offering = offerings.current ?? Object.values(offerings.all)[0];
 
   const result: LiveOfferPrices = {};
-  if (!offering) return result;
 
   for (const key of Object.keys(PACKAGE_IDENTIFIER) as OfferKey[]) {
+    // The discounted packages live on each offer's own offering (see
+    // OFFERS[key].offeringIdentifier), not on the `current` offering.
+    const offering = offerings.all[OFFERS[key].offeringIdentifier];
+    if (!offering) continue;
+
     const pkg = offering.availablePackages.find(
       (p) => p.identifier === PACKAGE_IDENTIFIER[key],
     );

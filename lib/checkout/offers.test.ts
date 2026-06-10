@@ -52,8 +52,8 @@ describe("offer registry contract", () => {
   });
 
   it("exposes the SDK offering identifier for the embedded checkout path", () => {
-    expect(getOffer("annual").offeringIdentifier).toBe("web_annual_discount");
-    expect(getOffer("weekly").offeringIdentifier).toBe("web_weekly_discount");
+    expect(getOffer("annual").offeringIdentifier).toBe("web_annual_discount_prod");
+    expect(getOffer("weekly").offeringIdentifier).toBe("web_weekly_discount_prod");
   });
 });
 

@@ -480,14 +480,16 @@ const FUNNELS: Record<string, FunnelConfig> = {
       },
 
       // ── Result ────────────────────────────────────────────────────────
+      // Acceptance framing ("you qualify"), not delivery framing ("here's
+      // your product") — the user is approved for something, not sold to.
       {
         kind: "result",
         id: "result",
-        title: "Your plan is ready",
+        title: "You're a match for Heart-Guided Breathing",
         body:
-          "A daily Heart-Guided Breathing plan tuned to your goal, your " +
-          "schedule, and the way stress shows up in your body. Your sessions " +
-          "happen in the Azora app on your phone.",
+          "Based on your answers, the way stress shows up for you is " +
+          "exactly what live heart-rate biofeedback is built to catch. " +
+          "Your daily plan has been approved and built.",
       },
 
       // ── Summary: personalized plan recap ──────────────────────────────

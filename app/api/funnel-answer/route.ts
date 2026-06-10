@@ -46,6 +46,43 @@ function refererParts(referer: string | null): { path: string; slug: string } {
   }
 }
 
+// Return all saved answers for the visitor's funnel session as a
+// {step_id: option_id} map. The runner fetches this on mount to rehydrate
+// client state after OAuth round-trips, where local answers reset and the
+// personalized summary/paywall copy would otherwise fall back to generic.
+export async function GET(request: NextRequest) {
+  const sessionId = request.cookies.get(FUNNEL_SESSION_COOKIE)?.value;
+  if (!sessionId) {
+    return NextResponse.json({ answers: {} });
+  }
+
+  try {
+    const admin = createAdminSupabaseClient();
+    const { data, error } = await admin
+      .from("web_funnel_answers")
+      .select("step_id, answer")
+      .eq("session_id", sessionId);
+
+    if (error) {
+      throw error;
+    }
+
+    const answers: Record<string, string> = {};
+    for (const row of data ?? []) {
+      const optionId = (row.answer as { option_id?: unknown } | null)
+        ?.option_id;
+      if (typeof optionId === "string") {
+        answers[row.step_id] = optionId;
+      }
+    }
+
+    return NextResponse.json({ answers });
+  } catch (error) {
+    console.error("[funnel-answer] GET failed:", error);
+    return NextResponse.json({ answers: {} });
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as Record<string, unknown>;

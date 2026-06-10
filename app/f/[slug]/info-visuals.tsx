@@ -477,7 +477,15 @@ function CameraPpg() {
  * "today" level easing down to a calm low at the 2-week mark. Exported so the
  * summary plan card can embed it directly, not only via an info step.
  */
-export function StressProjection() {
+export function StressProjection({
+  endLabel = "Calm",
+  targetDateLabel = "2 weeks",
+}: {
+  /** Outcome the curve lands on, named for the user's goal (e.g. "Rested"). */
+  endLabel?: string;
+  /** Right-axis time label, e.g. "by Jun 24". */
+  targetDateLabel?: string;
+} = {}) {
   return (
     <svg
       viewBox="0 0 320 132"
@@ -513,10 +521,10 @@ export function StressProjection() {
       <circle className="visualPulse" cx={304} cy={106} r={5} fill={BRAND} opacity={0.5} />
       <circle cx={304} cy={106} r={5} fill={BRAND} />
       <text x={304} y={90} textAnchor="end" fontSize={12} fontWeight={800} fill={BRAND}>
-        Calm
+        {endLabel}
       </text>
       <text x={304} y={122} textAnchor="end" fontSize={11} fontWeight={600} fill={SECONDARY}>
-        2 weeks
+        {targetDateLabel}
       </text>
     </svg>
   );

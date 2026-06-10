@@ -57,6 +57,10 @@ const CONFETTI_PARTICLES = Array.from({ length: 28 }, (_, i) => ({
 export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
   const [currentId, setCurrentId] = useState(funnel.steps[0].id);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  // Server-saved answers from earlier in the session (or a previous visit),
+  // kept separate from `answers` so quiz options never render pre-selected —
+  // these only feed personalized copy (templates, summary, paywall).
+  const [savedAnswers, setSavedAnswers] = useState<Record<string, string>>({});
   const [history, setHistory] = useState<string[]>([]);
   const [reassuring, setReassuring] = useState<{ stepId: string; text: string } | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -76,6 +80,24 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
       content_name: funnel.name,
     });
   }, [funnel.slug, funnel.name]);
+
+  // Rehydrate answers persisted server-side. Local state resets across the
+  // OAuth/login round-trips, which silently degrades the personalized
+  // summary/paywall copy to its generic fallbacks for exactly the users who
+  // invested the most.
+  useEffect(() => {
+    fetch("/api/funnel-answer")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { answers?: Record<string, string> } | null) => {
+        if (!data?.answers || Object.keys(data.answers).length === 0) return;
+        setSavedAnswers(data.answers);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Personalized copy reads from the merged view; live picks win over the
+  // server snapshot. Option highlighting deliberately uses `answers` only.
+  const effectiveAnswers = { ...savedAnswers, ...answers };
 
   // Post-login checkout resume: an offer click while logged out bounces through
   // /login and lands back here with ?resume_checkout=<offer>. The runner always
@@ -210,7 +232,7 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
     step.kind === "result" ||
     step.kind === "info" ||
     step.kind === "summary"
-      ? resolveTemplate(step.title, answers, funnel.steps)
+      ? resolveTemplate(step.title, effectiveAnswers, funnel.steps)
       : step.kind === "single_choice"
         ? step.question
         : step.kind === "offer"
@@ -222,7 +244,7 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
     step.kind === "result" ||
     step.kind === "info" ||
     step.kind === "summary"
-      ? resolveTemplate(step.body, answers, funnel.steps)
+      ? resolveTemplate(step.body, effectiveAnswers, funnel.steps)
       : step.kind === "single_choice"
         ? (step.subtext ?? "")
         : step.kind === "offer"
@@ -419,7 +441,7 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
           <SummaryStep
             title={displayTitle}
             body={displayBody}
-            answers={answers}
+            answers={effectiveAnswers}
             onContinue={() => {
               const nextId = defaultNext(step.id);
               if (nextId) navigate(nextId);
@@ -439,7 +461,7 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
         ) : null}
 
         {step.kind === "offer" ? (
-          <OfferStep step={step} answers={answers} funnelSlug={funnel.slug} />
+          <OfferStep step={step} answers={effectiveAnswers} funnelSlug={funnel.slug} />
         ) : null}
       </div>
     </div>
@@ -493,6 +515,25 @@ const TRIED_SHORT: Record<string, string> = {
   other: "Supplements and teas",
 };
 
+// Where the projection curve lands, named for the goal they picked — the
+// chart forecasts *their* outcome, not a generic "calm".
+const GOAL_END_LABELS: Record<string, string> = {
+  stress: "Calm",
+  sleep: "Rested",
+  wellness: "Balanced",
+  focus: "Clear",
+  explore: "Calm",
+};
+
+/** Concrete date 2 weeks out (e.g. "Jun 24") so the forecast reads as a
+ *  commitment, not a vague duration. Client-only steps, so no SSR mismatch. */
+function projectionDateLabel(): string {
+  return new Date(Date.now() + 14 * 86400000).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
+
 /** Plan rows derived from the user's answers, shared by the summary screen
  *  and the results-first recap on the paywall. */
 function buildPlanRows(answers: Record<string, string>) {
@@ -531,7 +572,10 @@ function PlanRecap({
       {showProjection ? (
         <div className="summaryProjection">
           <p className="summaryProjectionTitle">Your stress, projected</p>
-          <StressProjection />
+          <StressProjection
+            endLabel={GOAL_END_LABELS[answers.goal] ?? "Calm"}
+            targetDateLabel={`by ${projectionDateLabel()}`}
+          />
         </div>
       ) : null}
     </>
@@ -550,6 +594,8 @@ function SummaryStep({
   onContinue: () => void;
 }) {
   const tried = TRIED_SHORT[answers.tried_before];
+  const duration = DURATION_LABELS[answers.calm_duration] ?? "5-minute";
+  const peaceTime = PEACE_TIME_LABELS[answers.peace_time] ?? "daily";
 
   return (
     <div className="funnelSummary">
@@ -557,6 +603,19 @@ function SummaryStep({
       {body ? <p className="funnelSubtext">{body}</p> : null}
 
       <PlanRecap answers={answers} />
+
+      {/* Explicit forecast fed by their own answers — the "based on your
+          answers, we predict" beat. First-session claim is observable in-app;
+          keep the 2-week claim soft ("calmer baseline"), not medical. */}
+      <div className="summaryPrediction">
+        <p className="summaryPredictionKicker">Based on your answers</p>
+        <p className="summaryPredictionText">
+          We predict you&apos;ll watch your heart rate fall in your very first
+          session — and feel a calmer baseline by{" "}
+          <strong>{projectionDateLabel()}</strong> with your {duration}{" "}
+          {peaceTime} resets.
+        </p>
+      </div>
 
       {tried ? (
         <p className="summaryCompare">

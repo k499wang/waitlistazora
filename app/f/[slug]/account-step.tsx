@@ -7,10 +7,9 @@ import { LOGIN_NEXT_COOKIE } from "@/lib/checkout/funnel-session";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { FunnelStep } from "@/lib/funnels/types";
 
-// Query param marking a return from the auth round-trip (Google OAuth or the
-// /auth/finalize hop after a password signup). The runner sees it, strips it,
-// and jumps straight back to the account step so the funnel resumes where the
-// user left off instead of restarting at question 1.
+// Query param marking a return from the Google OAuth round-trip. The runner
+// sees it, strips it, and jumps straight back to the account step so the
+// funnel resumes where the user left off instead of restarting at question 1.
 export const ACCOUNT_DONE_PARAM = "account_done";
 
 type SessionState = { loaded: boolean; email: string | null };
@@ -41,10 +40,10 @@ export function useSupabaseSession(): SessionState {
 
 type AccountStepConfig = Extract<FunnelStep, { kind: "account" }>;
 
-// Inline account creation, styled as a funnel step. Both auth methods leave the
-// page (Google → provider → /auth/callback; password → /auth/finalize) and land
-// back on the funnel with ?account_done=1, so the post-auth experience is the
-// signed-in success state below — "plan saved" — with a Continue button to the offer.
+// Inline account creation, styled as a funnel step. Uses Google OAuth only;
+// the page leaves for the provider round-trip and lands back with
+// ?account_done=1, so the post-auth experience is the signed-in success state
+// below — "plan saved" — with a Continue button to the offer.
 export function FunnelAccountStep({
   step,
   slug,
@@ -56,12 +55,8 @@ export function FunnelAccountStep({
 }) {
   const { loaded, email: sessionEmail } = useSupabaseSession();
 
-  const [mode, setMode] = useState<"signup" | "signin">("signup");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
-  const [pending, setPending] = useState<null | "password" | "google">(null);
+  const [pending, setPending] = useState<null | "google">(null);
 
   const viewFired = useRef(false);
   useEffect(() => {
@@ -80,7 +75,6 @@ export function FunnelAccountStep({
 
   async function signInWithGoogle() {
     setError(null);
-    setNotice(null);
     setPending("google");
     posthog.capture("web_funnel_account_submitted", {
       funnel_slug: slug,
@@ -106,56 +100,6 @@ export function FunnelAccountStep({
       window.location.assign(data.url);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Google sign-in failed.");
-      setPending(null);
-    }
-  }
-
-  async function submitPassword(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setNotice(null);
-    setPending("password");
-    posthog.capture("web_funnel_account_submitted", {
-      funnel_slug: slug,
-      method: "password",
-      mode,
-    });
-    try {
-      const supabase = createBrowserSupabaseClient();
-      const normalizedEmail = email.trim().toLowerCase();
-
-      if (mode === "signup") {
-        const { data, error: signUpError } = await supabase.auth.signUp({
-          email: normalizedEmail,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(returnUrl())}`,
-          },
-        });
-        if (signUpError) throw signUpError;
-
-        // Email confirmation required — no session yet, so we can't advance.
-        if (!data.session) {
-          setNotice("Check your email to confirm your account, then sign in here.");
-          setMode("signin");
-          return;
-        }
-      } else {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: normalizedEmail,
-          password,
-        });
-        if (signInError) throw signInError;
-      }
-
-      // Route through /auth/finalize (full navigation) so password auth runs
-      // the same post-login side effects as OAuth — web_email_captured, the
-      // session claim, and the server-side Meta CAPI Lead.
-      window.location.assign(`/auth/finalize?next=${encodeURIComponent(returnUrl())}`);
-      return;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Authentication failed.");
-    } finally {
       setPending(null);
     }
   }
@@ -222,80 +166,14 @@ export function FunnelAccountStep({
           disabled={pending !== null}
         >
           <GoogleIcon />
-          {pending === "google" ? "Redirecting…" : "Continue with Google"}
+          {pending === "google" ? "Redirecting…" : "Save my plan, it's free"}
         </button>
 
-        <div className="authDivider" aria-hidden>
-          or
-        </div>
-
-        <form className="authForm" onSubmit={submitPassword}>
-          <div className="authField">
-            <label className="authLabel" htmlFor="funnel-auth-email">
-              Email
-            </label>
-            <input
-              id="funnel-auth-email"
-              className="authInput"
-              type="email"
-              autoComplete="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          <div className="authField">
-            <label className="authLabel" htmlFor="funnel-auth-password">
-              Password
-            </label>
-            <input
-              id="funnel-auth-password"
-              className="authInput"
-              type="password"
-              autoComplete={mode === "signup" ? "new-password" : "current-password"}
-              placeholder="••••••••"
-              minLength={8}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-          <button type="submit" className="authSubmitBtn" disabled={pending !== null}>
-            {pending === "password"
-              ? "Working…"
-              : mode === "signup"
-                ? "Save my plan, it's free"
-                : "Sign in & save my plan"}
-          </button>
-        </form>
-
-        {notice ? (
-          <p className="authMessage authNotice" role="status">
-            {notice}
-          </p>
-        ) : null}
         {error ? (
           <p className="authMessage authError" role="alert">
             {error}
           </p>
         ) : null}
-
-        <div className="funnelAccountToggle">
-          {mode === "signup" ? "Already have an account?" : "New here?"}
-          <button
-            type="button"
-            className="authTextBtn"
-            onClick={() => {
-              setMode(mode === "signup" ? "signin" : "signup");
-              setError(null);
-              setNotice(null);
-            }}
-            disabled={pending !== null}
-          >
-            {mode === "signup" ? "Sign in" : "Create an account"}
-          </button>
-        </div>
       </div>
 
       <p className="funnelAccountFinePrint">

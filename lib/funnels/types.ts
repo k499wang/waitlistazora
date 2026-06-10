@@ -11,6 +11,19 @@
 
 import type { OfferKey } from "@/lib/checkout/offers";
 
+/**
+ * Built-in SVG diagram rendered as the visual centerpiece of an info step
+ * (replaces the emoji icon). Components live in app/f/[slug]/info-visuals.tsx.
+ */
+export type InfoVisualKey =
+  | "fading_streak"
+  | "open_vs_closed_loop"
+  | "ppg_vs_ecg"
+  | "hr_falling"
+  | "stat_ring"
+  | "stress_signature"
+  | "camera_ppg";
+
 export interface FunnelOption {
   /** Stable id stored with the answer. */
   id: string;
@@ -45,8 +58,26 @@ export type FunnelStep =
       id: string;
       /** Emoji/glyph rendered as a large visual above the title. */
       icon: string;
+      /**
+       * Built-in SVG diagram rendered above the title instead of the emoji
+       * icon. The icon remains the fallback when this is unset.
+       */
+      visual?: InfoVisualKey;
       title: string;
       body: string;
+      /**
+       * Institution names rendered as a wordmark credibility strip under the
+       * body (e.g. "MIT Media Lab"). Text-only for now; swap in licensed logo
+       * assets later without changing the data shape.
+       */
+      institutions?: string[];
+      /** Small-print study citation line rendered under the strip. */
+      citation?: string;
+      /**
+       * YouTube video id embedded as a vertical (9:16, Shorts-style) demo
+       * player between the body and the Continue button.
+       */
+      youtubeId?: string;
     }
   | {
       kind: "result";

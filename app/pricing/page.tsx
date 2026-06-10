@@ -5,6 +5,7 @@ import {
   OFFER_DISPLAY,
   OFFER_DISPLAY_ORDER,
 } from "@/lib/checkout/offer-display";
+import { AppStoreBadge } from "@/app/components/app-store-badge";
 import { CheckoutForm } from "@/app/components/checkout-form";
 import { TopBar } from "@/app/components/top-bar";
 import { LivePrice } from "./live-price";
@@ -116,12 +117,10 @@ export default function PricingPage() {
             <span>Works on web &amp; in the app</span>
           </div>
 
-          <p className="pricingAppStore">
-            Prefer to start in the app first?{" "}
-            <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">
-              Download Azora free on the App Store →
-            </a>
-          </p>
+          <div className="pricingAppStore">
+            <p>Prefer to start in the app first?</p>
+            <AppStoreBadge height={44} href={APP_STORE_URL} />
+          </div>
         </div>
       </main>
     </>

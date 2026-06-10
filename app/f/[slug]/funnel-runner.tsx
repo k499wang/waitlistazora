@@ -15,8 +15,10 @@ import {
   FunnelAccountStep,
   useSupabaseSession,
 } from "./account-step";
+import { InfoStepVisual } from "./info-visuals";
 
-const REASSURANCE_DURATION = 1700; // ms to show reassuring toast before advancing
+const REASSURANCE_DURATION = 2800; // ms to show reassuring toast before advancing
+const INTERSTITIAL_DURATION = 4000; // ms before an interstitial auto-advances
 
 /** Resolve {{step_id}} placeholders in template strings against user answers. */
 function resolveTemplate(
@@ -192,7 +194,7 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
     if (step.kind !== "interstitial") return;
     const nextId = defaultNext(step.id);
     if (!nextId) return;
-    const t = setTimeout(() => navigate(nextId), 2200);
+    const t = setTimeout(() => navigate(nextId), INTERSTITIAL_DURATION);
     return () => clearTimeout(t);
   }, [currentId, step.kind, defaultNext, navigate]);
 
@@ -280,11 +282,42 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
 
         {step.kind === "info" ? (
           <div className="funnelInfo">
-            <div className="funnelInfoIcon" aria-hidden>
-              {step.icon}
-            </div>
+            {step.visual ? (
+              <InfoStepVisual visual={step.visual} />
+            ) : (
+              <div className="funnelInfoIcon" aria-hidden>
+                {step.icon}
+              </div>
+            )}
             <h1 className="funnelQuestion">{displayTitle}</h1>
             <p className="funnelSubtext">{displayBody}</p>
+            {step.youtubeId ? (
+              <div className="funnelVideoWrap">
+                <iframe
+                  className="funnelVideo"
+                  src={`https://www.youtube-nocookie.com/embed/${step.youtubeId}?playsinline=1&rel=0`}
+                  title="Demo: how Heart-Guided Breathing works"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  loading="lazy"
+                />
+              </div>
+            ) : null}
+            {step.institutions?.length ? (
+              <div
+                className="funnelInstitutions"
+                aria-label="Research institutions"
+              >
+                {step.institutions.map((name) => (
+                  <span key={name} className="funnelInstitution">
+                    {name}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+            {step.citation ? (
+              <p className="funnelCitation">{step.citation}</p>
+            ) : null}
             <button
               type="button"
               className="funnelPrimaryBtn"
@@ -352,18 +385,70 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
         ) : null}
 
         {step.kind === "offer" ? (
-          <OfferStep step={step} />
+          <OfferStep step={step} answers={answers} funnelSlug={funnel.slug} />
         ) : null}
       </div>
     </div>
   );
 }
 
-function OfferStep({ step }: { step: { title: string; body: string } }) {
+// Paywall headline personalized to the goal picked in Q1. Falls back to the
+// step's generic title when the answer is missing (e.g. post-OAuth resume,
+// where local answer state resets).
+const GOAL_HEADLINES: Record<string, string> = {
+  stress: "Your plan for a calmer mind is ready",
+  sleep: "Your plan for deeper sleep is ready",
+  wellness: "Your plan to feel better every day is ready",
+  focus: "Your plan for sharper focus is ready",
+};
+
+const DURATION_LABELS: Record<string, string> = {
+  two_min: "2-minute",
+  five_min: "5-minute",
+  ten_min: "10-minute",
+};
+
+const PEACE_TIME_LABELS: Record<string, string> = {
+  morning: "morning",
+  midday: "midday",
+  evening: "evening",
+  late: "late-night",
+};
+
+function OfferStep({
+  step,
+  answers,
+  funnelSlug,
+}: {
+  step: Extract<FunnelStep, { kind: "offer" }>;
+  answers: Record<string, string>;
+  funnelSlug: string;
+}) {
   const [plan, setPlan] = useState<"annual" | "weekly">("annual");
   const offer = OFFERS[plan];
   const display = OFFER_DISPLAY[plan];
   const { loaded, email } = useSupabaseSession();
+
+  // Fire web_paywall_viewed once when the offer step mounts, so paywall
+  // conversion can be measured separately from quiz completion.
+  const paywallViewFired = useRef(false);
+  useEffect(() => {
+    if (paywallViewFired.current) return;
+    paywallViewFired.current = true;
+    posthog.capture("web_paywall_viewed", {
+      funnel_slug: funnelSlug,
+      offer_key: step.offerKey,
+      goal: answers.goal ?? null,
+    });
+  }, [funnelSlug, step.offerKey, answers.goal]);
+
+  const title = GOAL_HEADLINES[answers.goal] ?? step.title;
+  const duration = DURATION_LABELS[answers.calm_duration];
+  const peaceTime = PEACE_TIME_LABELS[answers.peace_time];
+  const body =
+    duration && peaceTime
+      ? `Try it free in the app. Built around a daily ${duration} ${peaceTime} reset.`
+      : step.body;
 
   return (
     <div className="funnelOffer">
@@ -375,11 +460,11 @@ function OfferStep({ step }: { step: { title: string; body: string } }) {
         <li className={email ? "offerStepCurrent" : ""}>Unlock Pro</li>
       </ol>
 
-      {step.title ? (
-        <h1 className="funnelQuestion">{step.title}</h1>
+      {title ? (
+        <h1 className="funnelQuestion">{title}</h1>
       ) : null}
-      {step.body ? (
-        <p className="funnelSubtext">{step.body}</p>
+      {body ? (
+        <p className="funnelSubtext">{body}</p>
       ) : null}
 
       {/* Plan toggle */}
@@ -410,11 +495,19 @@ function OfferStep({ step }: { step: { title: string; body: string } }) {
       <div className="checkoutCard">
         {/* Trial headline — the main message. */}
         <p className="checkoutTrialHeadline">
-          {plan === "annual" ? "Free for 7 days" : "No commitment"}
+          {plan === "annual" ? "Try Azora For Free" : "No commitment"}
         </p>
+        {plan === "annual" ? (
+          <p className="checkoutTrialSub">
+            7-day free trial, cancel anytime
+          </p>
+        ) : null}
 
         <div className="checkoutCardPrice">
           <p className="checkoutMonthlyPrice">
+            {plan === "annual" ? (
+              <s className="priceAnchor">{OFFER_DISPLAY.weekly.weeklyPrice}</s>
+            ) : null}
             {display.weeklyPrice}
             <span className="pricePeriod">/wk</span>
           </p>
@@ -444,7 +537,34 @@ function OfferStep({ step }: { step: { title: string; body: string } }) {
           ))}
         </ul>
 
-        <p className="checkoutTrialLine">{display.trialLine}</p>
+        <p className="checkoutAnchorNote">
+          Everything a $300 wearable tracks for calm, with the phone already in
+          your pocket.
+        </p>
+
+        {plan === "annual" ? (
+          <ol className="trialTimeline" aria-label="How your free trial works">
+            <li>
+              <span className="trialTimelineDay">Today</span>
+              <span className="trialTimelineText">
+                Download the app, sign in, and watch your heart rate fall in
+                your first session
+              </span>
+            </li>
+            <li>
+              <span className="trialTimelineDay">Day 5</span>
+              <span className="trialTimelineText">
+                Your daily streak builds and your stress trends take shape
+              </span>
+            </li>
+            <li>
+              <span className="trialTimelineDay">Day 7</span>
+              <span className="trialTimelineText">
+                Trial ends. Cancel anytime before and pay nothing
+              </span>
+            </li>
+          </ol>
+        ) : null}
 
         <CheckoutForm
           action={`/checkout/start?offer=${offer.key}`}
@@ -469,6 +589,8 @@ function OfferStep({ step }: { step: { title: string; body: string } }) {
           </button>
         </CheckoutForm>
 
+        <p className="checkoutDueToday">{display.dueTodayLine}</p>
+
         {/* Account status: reassure signed-in users their plan is attached;
             tell signed-out users upfront that checkout needs an account. */}
         {loaded ? (
@@ -478,7 +600,7 @@ function OfferStep({ step }: { step: { title: string; body: string } }) {
             </p>
           ) : (
             <p className="checkoutAccountNote">
-              Your subscription is linked to a free Azora account — you&apos;ll
+              Your subscription is linked to a free Azora account. You&apos;ll
               create one at checkout.
             </p>
           )
@@ -496,6 +618,16 @@ function OfferStep({ step }: { step: { title: string; body: string } }) {
           <span>Cancel anytime</span>
           <span>·</span>
           <span>Web &amp; app</span>
+        </div>
+
+        {/* Accuracy credibility: PPG validation, peer-reviewed sources. */}
+        <div className="checkoutValidation">
+          <p className="checkoutValidationLine">
+            Heart rate via PPG, validated against ECG in peer-reviewed research
+          </p>
+          <p className="checkoutValidationSources">
+            MIT Media Lab · Stanford Medicine · University Hospital Zurich
+          </p>
         </div>
       </div>
     </div>

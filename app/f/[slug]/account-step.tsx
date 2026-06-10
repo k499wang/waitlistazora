@@ -13,10 +13,6 @@ import type { FunnelStep } from "@/lib/funnels/types";
 // user left off instead of restarting at question 1.
 export const ACCOUNT_DONE_PARAM = "account_done";
 
-// How long the "plan saved" success state shows before auto-advancing to the
-// offer. Long enough to register the win, short enough not to stall the flow.
-const SAVED_ADVANCE_DELAY = 1600;
-
 type SessionState = { loaded: boolean; email: string | null };
 
 /** Client-side auth state, kept live via onAuthStateChange. */
@@ -48,7 +44,7 @@ type AccountStepConfig = Extract<FunnelStep, { kind: "account" }>;
 // Inline account creation, styled as a funnel step. Both auth methods leave the
 // page (Google → provider → /auth/callback; password → /auth/finalize) and land
 // back on the funnel with ?account_done=1, so the post-auth experience is the
-// signed-in success state below — "plan saved" — which auto-advances to the offer.
+// signed-in success state below — "plan saved" — with a Continue button to the offer.
 export function FunnelAccountStep({
   step,
   slug,
@@ -76,14 +72,6 @@ export function FunnelAccountStep({
       already_signed_in: sessionEmail !== null,
     });
   }, [loaded, sessionEmail, slug]);
-
-  // Signed in (already, or back from the auth round-trip): show the success
-  // state briefly, then continue to the offer.
-  useEffect(() => {
-    if (!sessionEmail) return;
-    const t = setTimeout(onContinue, SAVED_ADVANCE_DELAY);
-    return () => clearTimeout(t);
-  }, [sessionEmail, onContinue]);
 
   // Where auth should land afterwards: this funnel, resumed at this step.
   function returnUrl() {
@@ -189,7 +177,7 @@ export function FunnelAccountStep({
         </div>
         <h1 className="funnelQuestion">Your plan is saved</h1>
         <p className="funnelSubtext">
-          Linked to <strong>{sessionEmail}</strong> — it&apos;ll be waiting in the
+          Linked to <strong>{sessionEmail}</strong>. It&apos;ll be waiting in the
           app too.
         </p>
         <button type="button" className="funnelPrimaryBtn" onClick={onContinue}>
@@ -277,7 +265,7 @@ export function FunnelAccountStep({
             {pending === "password"
               ? "Working…"
               : mode === "signup"
-                ? "Save my plan — it's free"
+                ? "Save my plan, it's free"
                 : "Sign in & save my plan"}
           </button>
         </form>
@@ -311,7 +299,7 @@ export function FunnelAccountStep({
       </div>
 
       <p className="funnelAccountFinePrint">
-        Free to create · No spam — just your plan, on web and iOS
+        Free to create · No spam, just your plan on web and iOS
       </p>
     </div>
   );

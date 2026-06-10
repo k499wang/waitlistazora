@@ -24,6 +24,8 @@ export interface OfferDisplay {
   badge?: string;
   /** Short trial / risk-reversal line shown on the CTA. */
   trialLine: string;
+  /** Charge-transparency line shown directly under the checkout CTA. */
+  dueTodayLine: string;
   /** Bullet features rendered in the card. */
   features: string[];
   /** Whether this card is visually highlighted as the recommended plan. */
@@ -33,17 +35,19 @@ export interface OfferDisplay {
 export const OFFER_DISPLAY: Record<OfferKey, OfferDisplay> = {
   annual: {
     key: "annual",
-    price: "$39.99",
+    price: "$59.99",
     period: "/year",
     billingNote: "billed annually",
-    weeklyPrice: "$0.77",
-    badge: "Best value · Save 80%",
-    trialLine: "7-day free trial, then $39.99/yr",
+    weeklyPrice: "$1.15",
+    badge: "Best value · Save 77%",
+    trialLine: "7-day free trial, then $59.99/yr",
+    dueTodayLine: "$0.00 due today · then $59.99/yr after your 7-day trial",
     features: [
-      "Unlimited camera heart-rate sessions",
-      "All guided breathwork programs",
+      "Unlimited camera heart-rate readings in the app, no wearable needed",
+      "Live biofeedback: watch your heart rate fall as you breathe",
+      "Every guided breathing program, paced to your pulse",
+      "Daily reminders & streaks that keep the habit going",
       "Stress & recovery trends over time",
-      "Personalized daily practice",
       "Cancel anytime",
     ],
     featured: true,
@@ -55,10 +59,11 @@ export const OFFER_DISPLAY: Record<OfferKey, OfferDisplay> = {
     billingNote: "billed weekly",
     weeklyPrice: "$4.99",
     trialLine: "Cancel anytime",
+    dueTodayLine: "$4.99 due today · billed weekly, cancel anytime",
     features: [
-      "Unlimited camera heart-rate sessions",
-      "All guided breathwork programs",
-      "Stress & recovery trends over time",
+      "Unlimited camera heart-rate readings in the app, no wearable needed",
+      "Live biofeedback: watch your heart rate fall as you breathe",
+      "Daily reminders & streaks that keep the habit going",
       "Cancel anytime",
     ],
     featured: false,

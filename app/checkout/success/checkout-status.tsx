@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { AppStoreBadge } from "@/app/components/app-store-badge";
 import {
   setMetaAdvancedMatching,
   trackMetaEvent,
@@ -29,7 +30,6 @@ type Phase = "pending" | "confirmed" | "timeout" | "error";
 // poll for a short window and then show a graceful "still finalizing" state.
 const POLL_INTERVAL_MS = 3000;
 const MAX_WAIT_MS = 90_000;
-const APP_STORE_URL = "https://apps.apple.com/app/azora";
 
 // Meta's event_id dedup window. Both legs must land inside it, and a stale
 // revisit outside it must never fire (it would be counted as a NEW conversion).
@@ -143,36 +143,91 @@ export function CheckoutStatus() {
 
   if (phase === "confirmed") {
     return (
-      <div>
-        <h1>You&apos;re all set 🎉</h1>
-        <p>Azora Pro is now active on your account.</p>
-        <p>Open the Azora app and sign in with the same account to start using Pro.</p>
-        <a href={APP_STORE_URL}>Open the Azora app</a>
+      <div className="checkoutSuccessCard">
+        <div className="checkoutSuccessIcon">
+          <svg
+            width="32"
+            height="32"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+        <h1 className="checkoutSuccessTitle">You&apos;re all set 🎉</h1>
+        <p className="checkoutSuccessBody">
+          Azora Pro is now active on your account.
+        </p>
+
+        <ol className="checkoutSuccessSteps" aria-label="Next steps">
+          <li>
+            <span className="checkoutSuccessStepNum">1</span>
+            Get the Azora app on your iPhone
+          </li>
+          <li>
+            <span className="checkoutSuccessStepNum">2</span>
+            Sign in with the same account you used here
+          </li>
+          <li>
+            <span className="checkoutSuccessStepNum">3</span>
+            Start your first session — Pro is already unlocked
+          </li>
+        </ol>
+
+        <div className="checkoutSuccessGetApp">
+          <div className="checkoutSuccessQrBox">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/qr-app-store.svg"
+              alt="QR code linking to Azora on the App Store"
+              className="checkoutSuccessQr"
+            />
+            <p className="checkoutSuccessQrCaption">
+              Scan with your iPhone camera
+            </p>
+          </div>
+          <div className="checkoutSuccessBadgeCol">
+            <span className="checkoutSuccessOr" aria-hidden>
+              or
+            </span>
+            <AppStoreBadge height={48} />
+          </div>
+        </div>
       </div>
     );
   }
 
   if (phase === "timeout" || phase === "error") {
     return (
-      <div>
-        <h1>Finalizing your purchase…</h1>
-        <p>
+      <div className="checkoutSuccessCard">
+        <div className="checkoutSuccessSpinner" />
+        <h1 className="checkoutSuccessTitle">Finalizing your purchase…</h1>
+        <p className="checkoutSuccessBody">
           Your payment went through. We&apos;re still confirming it with our
           billing provider — this can take a moment.
         </p>
-        <p>
+        <p className="checkoutSuccessHint">
           Open the Azora app and sign in; Pro will appear automatically once
           confirmed. You can also refresh this page.
         </p>
-        <a href={APP_STORE_URL}>Open the Azora app</a>
+        <div className="checkoutSuccessBadgeRow">
+          <AppStoreBadge height={48} />
+        </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <h1>Finalizing your purchase…</h1>
-      <p>Confirming your subscription. This usually takes just a few seconds.</p>
+    <div className="checkoutSuccessCard">
+      <div className="checkoutSuccessSpinner" />
+      <h1 className="checkoutSuccessTitle">Finalizing your purchase…</h1>
+      <p className="checkoutSuccessBody">
+        Confirming your subscription. This usually takes just a few seconds.
+      </p>
     </div>
   );
 }

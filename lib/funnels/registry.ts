@@ -3,13 +3,22 @@ import type { FunnelConfig } from "./types";
 // Typed funnel registry. Add new funnels here; the [slug] route resolves them
 // by slug and 404s on unknown/non-active funnels.
 //
-// Calm Reset funnel structure (17 screens):
-//   10 questions → 3 proof info screens (every ~3 question screens) →
-//   1 building interstitial → result → offer
+// Calm Reset funnel structure (18 screens), built on the "unique mechanism"
+// pattern: the user's problem stays the goal (stress / sleep / focus), and
+// camera-PPG biofeedback breathing ("Heart-Guided Breathing") is the named
+// mechanism that solves all of them:
+//   8 questions → 9 info screens (failure reframe pair → mechanism +
+//   accuracy proof → personal bridge pair (signature → camera makes it
+//   visible) → live feedback → social proof), one idea per screen →
+//   1 building interstitial → result → account → offer
 //
-// Branching: goal (stress / sleep / general) → 1 branch follow-up → 9 common questions.
-// Info screens are intentional stops with a visual + Continue button; the building
-// interstitial auto-advances with a spinner.
+// Branching: goal (stress / sleep / general) → 1 branch follow-up → joins the
+// common path at `tried_before`. Info screens are intentional stops with a
+// visual + Continue button; the building interstitial auto-advances.
+//
+// The accuracy info screen cites real published PPG validation studies
+// (citation strings below). Institution names render as text wordmarks, not
+// logos — clear trademark/endorsement review before using actual logo marks.
 
 const FUNNELS: Record<string, FunnelConfig> = {
   "calm-reset": {
@@ -17,7 +26,7 @@ const FUNNELS: Record<string, FunnelConfig> = {
     name: "Calm Reset",
     status: "active",
     intro:
-      "A few gentle questions to build your calm, guided by your heart rate. No wearables needed.",
+      "A few quick questions to build your plan. Then watch your own heart rate fall, live, using just your phone's camera.",
     steps: [
       // ── Q1: Goal (branches: stress, sleep, or general) ───────────────
       {
@@ -68,31 +77,31 @@ const FUNNELS: Record<string, FunnelConfig> = {
         id: "stress_body",
         question: "When stress shows up, where do you feel it most?",
         subtext:
-          "Stress shows up in the body first. Noticing where is the first step to letting it go.",
+          "Stress hits the body before the mind notices. Where it lands tells us how to unwind it.",
         options: [
           {
             id: "racing",
             emoji: "🧠",
             label: "Racing thoughts, my mind won't slow down",
-            nextId: "me_time",
+            nextId: "tried_before",
           },
           {
             id: "chest",
             emoji: "🫀",
             label: "Tight chest, shallow quick breathing",
-            nextId: "me_time",
+            nextId: "tried_before",
           },
           {
             id: "shoulders",
             emoji: "💪",
             label: "Tense shoulders and jaw, always braced",
-            nextId: "me_time",
+            nextId: "tried_before",
           },
           {
             id: "stomach",
             emoji: "🦋",
             label: "Knot in my stomach, that uneasy flutter",
-            nextId: "me_time",
+            nextId: "tried_before",
           },
         ],
       },
@@ -109,25 +118,25 @@ const FUNNELS: Record<string, FunnelConfig> = {
             id: "replays",
             emoji: "🔄",
             label: "Replays the day, every moment",
-            nextId: "me_time",
+            nextId: "tried_before",
           },
           {
             id: "worries",
             emoji: "😟",
             label: "Worries about tomorrow, the list never stops",
-            nextId: "me_time",
+            nextId: "tried_before",
           },
           {
             id: "wont_quiet",
             emoji: "📣",
             label: "Just won't quiet down, thoughts bounce around",
-            nextId: "me_time",
+            nextId: "tried_before",
           },
           {
             id: "wake_mid",
             emoji: "⏰",
             label: "I fall asleep fine but wake up at 3am",
-            nextId: "me_time",
+            nextId: "tried_before",
           },
         ],
       },
@@ -144,30 +153,86 @@ const FUNNELS: Record<string, FunnelConfig> = {
             id: "drained",
             emoji: "🪫",
             label: "Drained, running on empty most days",
-            nextId: "me_time",
+            nextId: "tried_before",
           },
           {
             id: "scattered",
             emoji: "🌪️",
             label: "Scattered, my attention is everywhere",
-            nextId: "me_time",
+            nextId: "tried_before",
           },
           {
             id: "flat",
             emoji: "🫥",
             label: "A bit flat, not bad not great, just there",
-            nextId: "me_time",
+            nextId: "tried_before",
           },
           {
             id: "okay",
             emoji: "🌤️",
             label: "Actually okay, just want to stay that way",
-            nextId: "me_time",
+            nextId: "tried_before",
           },
         ],
       },
 
-      // ── Q3: Self-care frequency ───────────────────────────────────────
+      // ── Q3: What they've tried (sets up the failure reframe) ─────────
+      {
+        kind: "single_choice",
+        id: "tried_before",
+        question: "What have you already tried?",
+        subtext:
+          "Be honest. This answer shapes your plan more than any other.",
+        reassurance:
+          "Good to know. If those didn't stick, it's not on you. You'll see why in a moment.",
+        options: [
+          {
+            id: "apps",
+            emoji: "🧘",
+            label: "Meditation apps like Calm or Headspace",
+          },
+          {
+            id: "videos",
+            emoji: "🫁",
+            label: "Breathing exercises from YouTube or TikTok",
+          },
+          {
+            id: "other",
+            emoji: "🍵",
+            label: "Supplements, teas, white noise, you name it",
+          },
+          {
+            id: "nothing",
+            emoji: "🌱",
+            label: "Nothing yet, this is my first real try",
+          },
+        ],
+      },
+
+      // ── INFO 1a + 1b: Failure reframe (why what you tried didn't work) ─
+      {
+        kind: "info",
+        id: "failure_reframe",
+        icon: "🧘",
+        visual: "fading_streak",
+        title: "It's not a discipline problem",
+        body:
+          "Meditation and breathing apps ask you to close your eyes and " +
+          "trust that something is happening. You never see proof, so by " +
+          "day four most people quit.",
+      },
+      {
+        kind: "info",
+        id: "open_loop",
+        icon: "🔁",
+        visual: "open_vs_closed_loop",
+        title: "Scientists call it an open loop",
+        body:
+          "No feedback means your brain never gets a reward, and the habit " +
+          "never forms. Closing the loop changes everything.",
+      },
+
+      // ── Q4: Self-care frequency ───────────────────────────────────────
       {
         kind: "single_choice",
         id: "me_time",
@@ -193,19 +258,7 @@ const FUNNELS: Record<string, FunnelConfig> = {
         ],
       },
 
-      // ── INFO 1: Science proof ─────────────────────────────────────────
-      {
-        kind: "info",
-        id: "science_proof",
-        icon: "🔬",
-        title: "The science is clear",
-        body:
-          "Over 2,000 peer-reviewed studies confirm that slowing your exhale " +
-          "activates the vagus nerve, your body's natural off switch for stress. " +
-          "It lowers cortisol, steadies your heart rate, and works on your first try.",
-      },
-
-      // ── Q4: Peaceful moment ───────────────────────────────────────────
+      // ── Q5: Peaceful moment ───────────────────────────────────────────
       {
         kind: "single_choice",
         id: "peace_time",
@@ -234,35 +287,76 @@ const FUNNELS: Record<string, FunnelConfig> = {
         ],
       },
 
-      // ── Q5: What reset means ──────────────────────────────────────────
+      // ── INFO 2a + 2b: The mechanism + accuracy proof ─────────────────
       {
-        kind: "single_choice",
-        id: "reset_meaning",
-        question: "What does a 'reset' feel like to you?",
-        subtext:
-          "Everyone's calm looks different. Picture yours. What comes closest?",
-        options: [
-          {
-            id: "clear",
-            emoji: "💧",
-            label: "Mental clarity, the fog lifts",
-          },
-          {
-            id: "light",
-            emoji: "🪶",
-            label: "Feeling lighter, the weight lifts",
-          },
-          {
-            id: "still",
-            emoji: "🌊",
-            label: "Stillness, my body finally unclenches",
-          },
-          {
-            id: "energy",
-            emoji: "🔋",
-            label: "Renewed energy, ready for what's next",
-          },
+        kind: "info",
+        id: "mechanism",
+        icon: "📱",
+        title: "Meet Heart-Guided Breathing",
+        body:
+          "Rest a fingertip on your camera and the Azora app reads your " +
+          "pulse with PPG, the same light-based technology inside hospital " +
+          "pulse oximeters. No wearable, just your phone and the app. " +
+          "Watch it work:",
+        youtubeId: "KF36b_HjKW4",
+      },
+      {
+        kind: "info",
+        id: "accuracy_proof",
+        icon: "🎓",
+        visual: "ppg_vs_ecg",
+        title: "Verified accuracy",
+        body:
+          "PPG heart rate measurement has been validated against medical " +
+          "ECG in peer-reviewed studies. Azora uses the same science and " +
+          "reads within 2% of medical-grade devices.",
+        institutions: [
+          "MIT Media Lab",
+          "Stanford Medicine",
+          "University Hospital Zurich",
         ],
+        citation:
+          "Poh et al., Optics Express (2010) · Shcherbina et al., J. Pers. Med. (2017) · Coppetti et al., Eur. J. Prev. Cardiol. (2017)",
+      },
+
+      // ── INFO 3a + 3b: Personal bridge — connects the symptom they
+      // described to the PPG science they just learned, without quoting
+      // their answer back. Screen 1: the feeling is a real, measurable
+      // nervous-system state. Screen 2: Azora's camera makes it visible.
+      {
+        kind: "info",
+        id: "stress_signature",
+        icon: "🫀",
+        visual: "stress_signature",
+        title: "That feeling has a signature",
+        body:
+          "Racing mind, tight chest, restless nights — they all trace back " +
+          "to a nervous system stuck on high alert. And it's written in " +
+          "your heartbeat.",
+      },
+      {
+        kind: "info",
+        id: "signature_visible",
+        icon: "📷",
+        visual: "camera_ppg",
+        title: "Azora makes it visible",
+        body:
+          "Rest a fingertip on your camera and that signature appears on " +
+          "screen. What you could only feel becomes a number you can " +
+          "watch — and change.",
+      },
+
+      // ── INFO 4: Live feedback (vagus nerve + real-time heart rate) ───
+      {
+        kind: "info",
+        id: "live_feedback",
+        icon: "💓",
+        visual: "hr_falling",
+        title: "Watch your heart rate fall, live",
+        body:
+          "Guided exhales activate the vagus nerve, your body's natural off " +
+          "switch for stress, while the number drops on your screen. Proof, " +
+          "in your very first session in the app.",
       },
 
       // ── Q6: Session length ────────────────────────────────────────────
@@ -271,7 +365,7 @@ const FUNNELS: Record<string, FunnelConfig> = {
         id: "calm_duration",
         question: "How long do you need to feel truly calmed?",
         subtext:
-          "Even 2 minutes of measured breathing shifts your nervous system. " +
+          "Even 2 minutes of paced breathing shifts your nervous system. " +
           "This is about what fits your life, not what's 'enough.'",
         options: [
           {
@@ -292,49 +386,39 @@ const FUNNELS: Record<string, FunnelConfig> = {
         ],
       },
 
-      // ── INFO 2: PPG heart rate ────────────────────────────────────────
-      {
-        kind: "info",
-        id: "ppg_heart",
-        icon: "📱",
-        title: "Your phone reads your heart",
-        body:
-          "Azora uses PPG, the same light based technology found in hospital " +
-          "pulse oximeters. Rest a finger on your camera to measure your " +
-          "heart rate within 2% of medical grade devices. No strap. Just your " +
-          "phone.",
-      },
-
-      // ── Q7: Breath experience ─────────────────────────────────────────
+      // ── Q7: Body signals ──────────────────────────────────────────────
       {
         kind: "single_choice",
-        id: "breath_experience",
-        question: "Have you ever tried following your breath before?",
+        id: "body_signal",
+        question: "How does your body tell you it needs a reset?",
         subtext:
-          "No experience needed. Your body already knows how to breathe, " +
-          "we just guide the rhythm.",
-        reassurance:
-          "Everyone starts somewhere. Your body already knows how, you just found the guide.",
+          "Before your mind registers stress, your heart has already spoken. " +
+          "What do you notice first?",
         options: [
           {
-            id: "new",
-            emoji: "🌱",
-            label: "Never, this is all new to me",
+            id: "shallow",
+            emoji: "🫁",
+            label: "My breathing gets shallow, short quick inhales",
           },
           {
-            id: "curious",
-            emoji: "🌿",
-            label: "I've dabbled, tried an app or video once or twice",
+            id: "heart",
+            emoji: "💓",
+            label: "My heart races or pounds without reason",
           },
           {
-            id: "regular",
-            emoji: "🌳",
-            label: "It's part of my life, I practice regularly",
+            id: "tight",
+            emoji: "🪨",
+            label: "My shoulders or jaw tighten up",
+          },
+          {
+            id: "fatigue",
+            emoji: "🪫",
+            label: "Sudden exhaustion, like a wave of heavy",
           },
         ],
       },
 
-      // ── Q8: What blocks the reset ─────────────────────────────────────
+      // ── Q8: What blocks the reset (skeptics get answered next) ───────
       {
         kind: "single_choice",
         id: "reset_blocker",
@@ -363,98 +447,36 @@ const FUNNELS: Record<string, FunnelConfig> = {
         ],
       },
 
-      // ── Q9: Body signals ──────────────────────────────────────────────
-      {
-        kind: "single_choice",
-        id: "body_signal",
-        question: "How does your body tell you it needs a reset?",
-        subtext:
-          "Before your mind even registers stress, your body has already spoken. " +
-          "What do you notice first?",
-        options: [
-          {
-            id: "shallow",
-            emoji: "🫁",
-            label: "My breathing gets shallow, short quick inhales",
-          },
-          {
-            id: "heart",
-            emoji: "💓",
-            label: "My heart races or pounds without reason",
-          },
-          {
-            id: "tight",
-            emoji: "🪨",
-            label: "My shoulders or jaw tighten up",
-          },
-          {
-            id: "fatigue",
-            emoji: "🪫",
-            label: "Sudden exhaustion, like a wave of heavy",
-          },
-        ],
-      },
-
-      // ── INFO 3: Social proof ──────────────────────────────────────────
+      // ── INFO 5: Social proof ──────────────────────────────────────────
       {
         kind: "info",
         id: "social_proof",
-        icon: "👥",
-        title: "You're not alone",
+        icon: "🔥",
+        visual: "stat_ring",
+        title: "Calm is a habit, not a one-off",
         body:
-          "Over 100,000 people use Azora to reset their nervous system. " +
-          "94% report lower stress within 2 weeks. It all " +
-          "starts with one deep breath.",
-      },
-
-      // ── Q10: Current coping ───────────────────────────────────────────
-      {
-        kind: "single_choice",
-        id: "coping_style",
-        question: "What do you reach for when you need comfort?",
-        subtext: "No judgment. This helps us understand what's already in your toolkit.",
-        reassurance:
-          "No judgment. Every way you cope made sense at some point. We're just adding one more tool.",
-        options: [
-          {
-            id: "push",
-            emoji: "😤",
-            label: "I power through, keep going until it passes",
-          },
-          {
-            id: "numb",
-            emoji: "📱",
-            label: "I distract myself, scroll snacks Netflix",
-          },
-          {
-            id: "breathe",
-            emoji: "🫁",
-            label: "I breathe or meditate, I already lean into it",
-          },
-          {
-            id: "move",
-            emoji: "🚶",
-            label: "I move, a walk or stretch",
-          },
-        ],
+          "A few minutes a day is what moves the numbers, and seeing your " +
+          "heart respond is what keeps you coming back. The app keeps your " +
+          "streak going, and 94% of members report lower stress within 2 weeks.",
       },
 
       // ── Building interstitial ──────────────────────────────────────────
       {
         kind: "interstitial",
         id: "building",
-        title: "Building your plan…",
-        body: "",
+        title: "Calibrating your Heart-Guided Breathing plan…",
+        body: "Matching your breath pacing to your goal, your schedule, and your rhythm.",
       },
 
       // ── Result ────────────────────────────────────────────────────────
       {
         kind: "result",
         id: "result",
-        title: "Your plan is done",
+        title: "Your plan is ready",
         body:
-          "We built a breathwork plan tuned to your goals, your rhythm, " +
-          "and where you are now.",
+          "A daily Heart-Guided Breathing plan tuned to your goal, your " +
+          "schedule, and the way stress shows up in your body. Your sessions " +
+          "happen in the Azora app on your phone.",
       },
 
       // ── Account (save the plan) ───────────────────────────────────────
@@ -470,9 +492,9 @@ const FUNNELS: Record<string, FunnelConfig> = {
           "Your plan only lives on this page right now. Create a free account " +
           "to keep it and unlock it on your phone.",
         benefits: [
-          "Saves your personalized plan with every answer you gave",
+          "Keeps your personalized Heart-Guided Breathing plan",
           "Links your subscription to your account",
-          "Syncs instantly to the iOS app when you sign in",
+          "Unlocks your plan in the iOS app, where your daily sessions happen",
         ],
       },
 

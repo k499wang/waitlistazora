@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { faqData } from "./faq-data";
@@ -126,7 +127,13 @@ fbq('init', ${JSON.stringify(metaPixelId)});
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqPageLd) }}
         />
         {children}
-        {metaPixelId ? <MetaPixelEvents /> : null}
+        {/* useSearchParams() inside requires a Suspense boundary or static
+            prerendering (e.g. /_not-found) fails the whole build. */}
+        {metaPixelId ? (
+          <Suspense fallback={null}>
+            <MetaPixelEvents />
+          </Suspense>
+        ) : null}
         <Analytics />
         {metaPixelId ? (
           <noscript>

@@ -55,6 +55,14 @@ export type FunnelStep =
       body: string;
     }
   | {
+      kind: "account";
+      id: string;
+      title: string;
+      body: string;
+      /** Benefit bullets shown above the inline auth form. */
+      benefits: string[];
+    }
+  | {
       kind: "offer";
       id: string;
       title: string;

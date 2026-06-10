@@ -17,7 +17,7 @@ const FUNNELS: Record<string, FunnelConfig> = {
     name: "Calm Reset",
     status: "active",
     intro:
-      "A few gentle questions to build your calm — guided by your heart rate, no wearables needed.",
+      "A few gentle questions to build your calm, guided by your heart rate. No wearables needed.",
     steps: [
       // ── Q1: Goal (branches: stress, sleep, or general) ───────────────
       {
@@ -25,9 +25,9 @@ const FUNNELS: Record<string, FunnelConfig> = {
         id: "goal",
         question: "What brings you here today?",
         subtext:
-          "Take your time. There are no wrong answers — just where you are right now.",
+          "There are no wrong answers here, just where you're at right now.",
         reassurance:
-          "That's a great place to start. We'll shape everything around this.",
+          "That's a great place to start. We'll build from here.",
         options: [
           {
             id: "stress",
@@ -56,7 +56,7 @@ const FUNNELS: Record<string, FunnelConfig> = {
           {
             id: "explore",
             emoji: "🔍",
-            label: "I'm just exploring — curious what this is",
+            label: "I'm just exploring, curious what this is",
             nextId: "general_feel",
           },
         ],
@@ -68,30 +68,30 @@ const FUNNELS: Record<string, FunnelConfig> = {
         id: "stress_body",
         question: "When stress shows up, where do you feel it most?",
         subtext:
-          "Your body keeps score. Noticing where tension lives is the first step to releasing it.",
+          "Stress shows up in the body first. Noticing where is the first step to letting it go.",
         options: [
           {
             id: "racing",
             emoji: "🧠",
-            label: "Racing thoughts — my mind won't slow down",
+            label: "Racing thoughts, my mind won't slow down",
             nextId: "me_time",
           },
           {
             id: "chest",
             emoji: "🫀",
-            label: "Tight chest — shallow, quick breathing",
+            label: "Tight chest, shallow quick breathing",
             nextId: "me_time",
           },
           {
             id: "shoulders",
             emoji: "💪",
-            label: "Tense shoulders & jaw — I'm always braced",
+            label: "Tense shoulders and jaw, always braced",
             nextId: "me_time",
           },
           {
             id: "stomach",
             emoji: "🦋",
-            label: "Knot in my stomach — that uneasy flutter",
+            label: "Knot in my stomach, that uneasy flutter",
             nextId: "me_time",
           },
         ],
@@ -103,24 +103,24 @@ const FUNNELS: Record<string, FunnelConfig> = {
         id: "sleep_mind",
         question: "What does your mind do when you lie down to sleep?",
         subtext:
-          "Nighttime is when the quiet gets loud. Understanding your pattern helps us quiet it.",
+          "What happens when your head hits the pillow? Understanding the pattern helps.",
         options: [
           {
             id: "replays",
             emoji: "🔄",
-            label: "Replays the day — every conversation, every moment",
+            label: "Replays the day, every moment",
             nextId: "me_time",
           },
           {
             id: "worries",
             emoji: "😟",
-            label: "Worries about tomorrow — the to-do list won't stop",
+            label: "Worries about tomorrow, the list never stops",
             nextId: "me_time",
           },
           {
             id: "wont_quiet",
             emoji: "📣",
-            label: "Just won't quiet down — random thoughts ping-pong",
+            label: "Just won't quiet down, thoughts bounce around",
             nextId: "me_time",
           },
           {
@@ -143,25 +143,25 @@ const FUNNELS: Record<string, FunnelConfig> = {
           {
             id: "drained",
             emoji: "🪫",
-            label: "Drained — running on empty most days",
+            label: "Drained, running on empty most days",
             nextId: "me_time",
           },
           {
             id: "scattered",
             emoji: "🌪️",
-            label: "Scattered — my attention is everywhere",
+            label: "Scattered, my attention is everywhere",
             nextId: "me_time",
           },
           {
             id: "flat",
             emoji: "🫥",
-            label: "A bit flat — not bad, not great, just… there",
+            label: "A bit flat, not bad not great, just there",
             nextId: "me_time",
           },
           {
             id: "okay",
             emoji: "🌤️",
-            label: "Actually okay — just want to stay that way",
+            label: "Actually okay, just want to stay that way",
             nextId: "me_time",
           },
         ],
@@ -173,22 +173,22 @@ const FUNNELS: Record<string, FunnelConfig> = {
         id: "me_time",
         question: "How often do you take a moment just for yourself?",
         subtext:
-          "Not a workout. Not scrolling. Just a quiet pause where you're not doing anything for anyone else.",
+          "Not a workout. Not scrolling your phone. Just a quiet pause where you're not doing anything for anyone.",
         options: [
           {
             id: "rarely",
             emoji: "💨",
-            label: "Almost never — who has the time?",
+            label: "Almost never, who has the time",
           },
           {
             id: "sometimes",
             emoji: "🌤️",
-            label: "Once in a while — when things get too heavy",
+            label: "Once in a while, when things pile up",
           },
           {
             id: "often",
             emoji: "🕯️",
-            label: "Most days — I protect a few minutes",
+            label: "Most days, I protect a few minutes",
           },
         ],
       },
@@ -201,7 +201,7 @@ const FUNNELS: Record<string, FunnelConfig> = {
         title: "The science is clear",
         body:
           "Over 2,000 peer-reviewed studies confirm that slowing your exhale " +
-          "activates the vagus nerve — your body's natural off-switch for stress. " +
+          "activates the vagus nerve, your body's natural off switch for stress. " +
           "It lowers cortisol, steadies your heart rate, and works on your first try.",
       },
 
@@ -214,22 +214,22 @@ const FUNNELS: Record<string, FunnelConfig> = {
           {
             id: "morning",
             emoji: "🌅",
-            label: "Early morning — before the world wakes up",
+            label: "Early morning, before the world wakes up",
           },
           {
             id: "midday",
             emoji: "☀️",
-            label: "Midday — I need a reset between the rush",
+            label: "Midday, I need a reset in the middle of things",
           },
           {
             id: "evening",
             emoji: "🌆",
-            label: "Evening — winding down from the day",
+            label: "Evening, winding down from the day",
           },
           {
             id: "late",
             emoji: "🌌",
-            label: "Late at night — when everything is finally quiet",
+            label: "Late at night, when everything is finally quiet",
           },
         ],
       },
@@ -240,27 +240,27 @@ const FUNNELS: Record<string, FunnelConfig> = {
         id: "reset_meaning",
         question: "What does a 'reset' feel like to you?",
         subtext:
-          "Everyone's calm looks different. Picture your ideal reset — what comes closest?",
+          "Everyone's calm looks different. Picture yours. What comes closest?",
         options: [
           {
             id: "clear",
             emoji: "💧",
-            label: "Mental clarity — the fog lifts and I can think",
+            label: "Mental clarity, the fog lifts",
           },
           {
             id: "light",
             emoji: "🪶",
-            label: "Feeling lighter — the weight is gone",
+            label: "Feeling lighter, the weight lifts",
           },
           {
             id: "still",
             emoji: "🌊",
-            label: "Stillness — my body finally unclenches",
+            label: "Stillness, my body finally unclenches",
           },
           {
             id: "energy",
             emoji: "🔋",
-            label: "Renewed energy — like I can face what's next",
+            label: "Renewed energy, ready for what's next",
           },
         ],
       },
@@ -277,17 +277,17 @@ const FUNNELS: Record<string, FunnelConfig> = {
           {
             id: "two_min",
             emoji: "⏱️",
-            label: "2 minutes — just enough to catch my breath",
+            label: "2 minutes, just enough to catch my breath",
           },
           {
             id: "five_min",
             emoji: "🕐",
-            label: "5 minutes — a real pause that sticks",
+            label: "5 minutes, a real pause that sticks",
           },
           {
             id: "ten_min",
             emoji: "🕙",
-            label: "10 minutes — I want to go deep",
+            label: "10 minutes, I want to go deep",
           },
         ],
       },
@@ -297,12 +297,12 @@ const FUNNELS: Record<string, FunnelConfig> = {
         kind: "info",
         id: "ppg_heart",
         icon: "📱",
-        title: "Your phone knows your heart",
+        title: "Your phone reads your heart",
         body:
-          "Azora uses photoplethysmography — PPG — the same light-based " +
-          "technology used in hospital pulse oximeters. Rest a finger on your " +
-          "camera and we measure your heart rate within 2% of medical-grade " +
-          "devices. No wearables. No extra hardware. Just your phone and 30 seconds.",
+          "Azora uses PPG, the same light based technology found in hospital " +
+          "pulse oximeters. Rest a finger on your camera to measure your " +
+          "heart rate within 2% of medical grade devices. No strap. Just your " +
+          "phone.",
       },
 
       // ── Q7: Breath experience ─────────────────────────────────────────
@@ -311,25 +311,25 @@ const FUNNELS: Record<string, FunnelConfig> = {
         id: "breath_experience",
         question: "Have you ever tried following your breath before?",
         subtext:
-          "No experience needed — your body already knows how to breathe. " +
-          "We just guide the rhythm.",
+          "No experience needed. Your body already knows how to breathe, " +
+          "we just guide the rhythm.",
         reassurance:
-          "Everyone starts somewhere. Your body already knows how — you just found the guide.",
+          "Everyone starts somewhere. Your body already knows how, you just found the guide.",
         options: [
           {
             id: "new",
             emoji: "🌱",
-            label: "Never — this is all new to me",
+            label: "Never, this is all new to me",
           },
           {
             id: "curious",
             emoji: "🌿",
-            label: "I've dabbled — tried a breathing app or video once or twice",
+            label: "I've dabbled, tried an app or video once or twice",
           },
           {
             id: "regular",
             emoji: "🌳",
-            label: "It's part of my life — I practice regularly",
+            label: "It's part of my life, I practice regularly",
           },
         ],
       },
@@ -343,12 +343,12 @@ const FUNNELS: Record<string, FunnelConfig> = {
           {
             id: "guilt",
             emoji: "😞",
-            label: "It feels selfish — there's too much to do",
+            label: "It feels selfish, there's too much to do",
           },
           {
             id: "forget",
             emoji: "🌊",
-            label: "I forget — the day sweeps me away",
+            label: "I forget, the day sweeps me away",
           },
           {
             id: "dont_know",
@@ -375,7 +375,7 @@ const FUNNELS: Record<string, FunnelConfig> = {
           {
             id: "shallow",
             emoji: "🫁",
-            label: "My breathing gets shallow — short, quick inhales",
+            label: "My breathing gets shallow, short quick inhales",
           },
           {
             id: "heart",
@@ -390,7 +390,7 @@ const FUNNELS: Record<string, FunnelConfig> = {
           {
             id: "fatigue",
             emoji: "🪫",
-            label: "Sudden exhaustion — like a wave of heavy",
+            label: "Sudden exhaustion, like a wave of heavy",
           },
         ],
       },
@@ -400,10 +400,10 @@ const FUNNELS: Record<string, FunnelConfig> = {
         kind: "info",
         id: "social_proof",
         icon: "👥",
-        title: "You're in good company",
+        title: "You're not alone",
         body:
           "Over 100,000 people use Azora to reset their nervous system. " +
-          "94% report measurably lower stress within 2 weeks — and it all " +
+          "94% report lower stress within 2 weeks. It all " +
           "starts with one deep breath.",
       },
 
@@ -414,27 +414,27 @@ const FUNNELS: Record<string, FunnelConfig> = {
         question: "What do you reach for when you need comfort?",
         subtext: "No judgment. This helps us understand what's already in your toolkit.",
         reassurance:
-          "No judgment — every way you cope made sense at some point. We're just adding one more tool.",
+          "No judgment. Every way you cope made sense at some point. We're just adding one more tool.",
         options: [
           {
             id: "push",
             emoji: "😤",
-            label: "I power through — keep going until it passes",
+            label: "I power through, keep going until it passes",
           },
           {
             id: "numb",
             emoji: "📱",
-            label: "I distract myself — scroll, snacks, Netflix",
+            label: "I distract myself, scroll snacks Netflix",
           },
           {
             id: "breathe",
             emoji: "🫁",
-            label: "I breathe or meditate — I already lean into it",
+            label: "I breathe or meditate, I already lean into it",
           },
           {
             id: "move",
             emoji: "🚶",
-            label: "I move — a walk, a stretch, anything physical",
+            label: "I move, a walk or stretch",
           },
         ],
       },
@@ -451,9 +451,29 @@ const FUNNELS: Record<string, FunnelConfig> = {
       {
         kind: "result",
         id: "result",
-        title: "Your plan is ready",
+        title: "Your plan is done",
         body:
-          "We built a breathwork plan tuned to your goals, your rhythm, and your experience level.",
+          "We built a breathwork plan tuned to your goals, your rhythm, " +
+          "and where you are now.",
+      },
+
+      // ── Account (save the plan) ───────────────────────────────────────
+      // Web2app pattern: account creation sits between the result and the
+      // offer, framed as saving the plan the user just built. Purchases are
+      // tied to the account, so asking here (instead of surprising the user
+      // at checkout) makes the requirement explicit while motivation is high.
+      {
+        kind: "account",
+        id: "account",
+        title: "Save your plan",
+        body:
+          "Your plan only lives on this page right now. Create a free account " +
+          "to keep it and unlock it on your phone.",
+        benefits: [
+          "Saves your personalized plan with every answer you gave",
+          "Links your subscription to your account",
+          "Syncs instantly to the iOS app when you sign in",
+        ],
       },
 
       // ── Offer ─────────────────────────────────────────────────────────

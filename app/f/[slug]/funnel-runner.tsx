@@ -11,6 +11,12 @@ import { trackMetaEvent } from "@/app/components/meta-pixel-events";
 import { LivePrice } from "@/app/pricing/live-price";
 import type { FunnelConfig, FunnelStep } from "@/lib/funnels/types";
 
+import {
+  ACCOUNT_DONE_PARAM,
+  FunnelAccountStep,
+  useSupabaseSession,
+} from "./account-step";
+
 const REASSURANCE_DURATION = 1700; // ms to show reassuring toast before advancing
 
 /** Resolve {{step_id}} placeholders in template strings against user answers. */
@@ -75,6 +81,24 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
     if (!params.has(RESUME_PARAM)) return;
     const offerStep = funnel.steps.find((s) => s.kind === "offer");
     if (offerStep) setCurrentId(offerStep.id);
+  }, [funnel.steps]);
+
+  // Post-auth funnel resume: the account step's signup/sign-in round-trips
+  // (Google OAuth or /auth/finalize) land back here with ?account_done=1.
+  // Jump to the account step, which now renders its "plan saved" success
+  // state and auto-advances to the offer. Strip the param so a refresh
+  // doesn't replay the jump.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has(ACCOUNT_DONE_PARAM)) return;
+    params.delete(ACCOUNT_DONE_PARAM);
+    window.history.replaceState(
+      null,
+      "",
+      `${window.location.pathname}${params.toString() ? `?${params}` : ""}`,
+    );
+    const accountStep = funnel.steps.find((s) => s.kind === "account");
+    if (accountStep) setCurrentId(accountStep.id);
   }, [funnel.steps]);
 
   const step = funnel.steps.find((s) => s.id === currentId)!;
@@ -317,6 +341,17 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
           </div>
         ) : null}
 
+        {step.kind === "account" ? (
+          <FunnelAccountStep
+            step={step}
+            slug={funnel.slug}
+            onContinue={() => {
+              const nextId = defaultNext(step.id);
+              if (nextId) navigate(nextId);
+            }}
+          />
+        ) : null}
+
         {step.kind === "offer" ? (
           <OfferStep step={step} />
         ) : null}
@@ -326,10 +361,21 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
 }
 
 function OfferStep({ step }: { step: { title: string; body: string } }) {
-  const offerKeys = ["annual", "weekly"] as const;
+  const [plan, setPlan] = useState<"annual" | "weekly">("annual");
+  const offer = OFFERS[plan];
+  const display = OFFER_DISPLAY[plan];
+  const { loaded, email } = useSupabaseSession();
 
   return (
     <div className="funnelOffer">
+      {/* Mini journey strip: makes the account requirement explicit instead of
+          surprising the user with a login bounce when they hit the CTA. */}
+      <ol className="offerSteps" aria-label="Checkout steps">
+        <li className="offerStepDone">Plan built</li>
+        <li className={email ? "offerStepDone" : "offerStepCurrent"}>Account</li>
+        <li className={email ? "offerStepCurrent" : ""}>Unlock Pro</li>
+      </ol>
+
       {step.title ? (
         <h1 className="funnelQuestion">{step.title}</h1>
       ) : null}
@@ -337,44 +383,117 @@ function OfferStep({ step }: { step: { title: string; body: string } }) {
         <p className="funnelSubtext">{step.body}</p>
       ) : null}
 
-      <div className="funnelOfferGrid">
-        {offerKeys.map((offerKey) => {
-          const offer = OFFERS[offerKey];
-          const display = OFFER_DISPLAY[offerKey];
-
+      {/* Plan toggle */}
+      <div className="planToggle" role="radiogroup" aria-label="Billing period">
+        {(["annual", "weekly"] as const).map((key) => {
+          const d = OFFER_DISPLAY[key];
           return (
-            <div
-              key={offerKey}
-              className={`funnelOfferCard${
-                display.featured ? " funnelOfferCardFeatured" : ""
-              }`}
+            <button
+              key={key}
+              type="button"
+              role="radio"
+              aria-checked={plan === key}
+              className={`planToggleBtn${plan === key ? " planToggleBtnActive" : ""}`}
+              onClick={() => setPlan(key)}
             >
-              {display.badge ? (
-                <span className="priceBadge">{display.badge}</span>
+              <span className="planToggleLabel">
+                {key === "annual" ? "Annual" : "Weekly"}
+              </span>
+              {d.badge ? (
+                <span className="planToggleBadge">{d.badge}</span>
               ) : null}
-              <div className="priceAmountRow">
-                <span className="priceAmount">
-                  <LivePrice
-                    offerKey={offerKey}
-                    fallback={display.price}
-                  />
-                </span>
-                <span className="pricePeriod">{display.period}</span>
-              </div>
-              <p className="priceBillingNote">{display.billingNote}</p>
-
-              <CheckoutForm
-                action={`/checkout/start?offer=${offer.key}`}
-                offerKey={offer.key}
-              >
-                <button type="submit" className="funnelPrimaryBtn">
-                  {offerKey === "annual" ? "Try for free" : "Start now"}
-                </button>
-              </CheckoutForm>
-              <p className="priceTrialLine">{display.trialLine}</p>
-            </div>
+            </button>
           );
         })}
+      </div>
+
+      {/* Single checkout card */}
+      <div className="checkoutCard">
+        <div className="checkoutCardPrice">
+          <div className="priceAmountRow">
+            <span className="priceAmount">
+              <LivePrice offerKey={plan} fallback={display.price} />
+            </span>
+            <span className="pricePeriod">{display.period}</span>
+          </div>
+          <p className="priceBillingNote">{display.billingNote}</p>
+        </div>
+
+        {/* Feature checkmarks */}
+        <ul className="checkoutFeatures">
+          {display.features.map((feature) => (
+            <li key={feature}>
+              <svg
+                className="checkoutFeatureIcon"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              {feature}
+            </li>
+          ))}
+        </ul>
+
+        <CheckoutForm
+          action={`/checkout/start?offer=${offer.key}`}
+          offerKey={offer.key}
+        >
+          <button type="submit" className="checkoutCta">
+            {plan === "annual" ? "Try for free" : "Start now"}
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
+          </button>
+        </CheckoutForm>
+        <p className="checkoutTrialLine">{display.trialLine}</p>
+
+        {/* Account status: reassure signed-in users their plan is attached;
+            tell signed-out users upfront that checkout needs an account. */}
+        {loaded ? (
+          email ? (
+            <p className="checkoutAccountNote checkoutAccountNoteSaved">
+              ✓ Plan saved to <strong>{email}</strong>
+            </p>
+          ) : (
+            <p className="checkoutAccountNote">
+              Your subscription is linked to a free Azora account — you&apos;ll
+              create one at checkout.
+            </p>
+          )
+        ) : null}
+
+        {/* Trust badges */}
+        <div className="checkoutTrust">
+          <span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 1a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2h-1V6a5 5 0 0 0-5-5zm-3 8V6a3 3 0 1 1 6 0v3H9z" />
+            </svg>
+            Secure checkout
+          </span>
+          <span>·</span>
+          <span>Cancel anytime</span>
+          <span>·</span>
+          <span>Web &amp; app</span>
+        </div>
       </div>
     </div>
   );

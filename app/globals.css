@@ -1792,19 +1792,26 @@ body::after {
 
 .funnelContainer { max-width: 540px; }
 
+/* Full-width loading bar pinned flush under the 4rem top bar (z-index 90 keeps
+   it above page content but below the sticky bar's 100). Sitting exactly at the
+   header's bottom edge means it's always visible and never tucked behind the
+   menu — on mobile and desktop alike, since the top bar is 4rem on both. */
 .funnelProgress {
+  position: fixed;
+  top: 4rem;
+  left: 0;
+  width: 100%;
   height: 6px;
-  border-radius: 999px;
   background: var(--border);
   overflow: hidden;
-  margin-bottom: 2rem;
+  z-index: 90;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
 .funnelProgressBar {
   height: 100%;
-  border-radius: 999px;
   background: var(--brand);
-  transition: width 0.4s var(--ease-out-expo);
+  transition: width 0.5s var(--ease-out-expo);
 }
 
 /* Pinned just under the top bar, aligned with the funnel column's left edge,
@@ -2074,6 +2081,178 @@ body::after {
   margin: 0 auto 1.75rem;
   font-size: 0.66rem;
   line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* ── Funnel summary: personalized plan recap ── */
+.funnelSummary { text-align: center; }
+
+.funnelSummary .funnelQuestion {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.funnelSummary .funnelSubtext {
+  max-width: 420px;
+  margin: 0 auto 1.5rem;
+}
+
+.summaryPlanCard {
+  max-width: 420px;
+  margin: 0 auto 1.5rem;
+  padding: 0.5rem 1.25rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 18px;
+  background: var(--brand-soft);
+  text-align: left;
+}
+
+.summaryPlanRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.summaryPlanRow:last-child { border-bottom: 0; }
+
+.summaryPlanLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.summaryPlanValue {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.summaryProjection {
+  max-width: 420px;
+  margin: 0 auto 1.5rem;
+}
+
+.summaryProjectionTitle {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.summaryCompare {
+  max-width: 420px;
+  margin: 0 auto 1.75rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.funnelSummary .funnelPrimaryBtn {
+  max-width: 340px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ── Paywall: results-first recap, guarantee, reviews ── */
+.starRow {
+  display: inline-flex;
+  gap: 1px;
+  color: var(--accent);
+  line-height: 0;
+}
+
+.funnelOffer .funnelSubtext {
+  max-width: 420px;
+  margin: 0.75rem auto 0;
+}
+
+/* Recap reused on the paywall: tighten the spacing it carries from the
+   summary screen so it sits compactly above the plan toggle. */
+.offerRecap {
+  margin-top: 1.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.offerRecap .summaryPlanCard,
+.offerRecap .summaryProjection {
+  margin-bottom: 1rem;
+}
+
+.checkoutGuaranteeBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  max-width: 100%;
+  margin: 0 auto 1rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.checkoutGuaranteeBadge svg { flex-shrink: 0; }
+
+.offerTestimonials {
+  margin-top: 1.75rem;
+}
+
+.offerTestimonialsHeading {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-align: center;
+  margin-bottom: 0.9rem;
+}
+
+.testimonialCard {
+  margin: 0 0 0.85rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 16px;
+  background: var(--bg-card);
+  text-align: left;
+}
+
+.testimonialCard .starRow { margin-bottom: 0.5rem; }
+
+.testimonialText {
+  margin: 0 0 0.6rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+.testimonialMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.testimonialName {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.testimonialSub {
+  font-size: 0.75rem;
   color: var(--text-muted);
 }
 
@@ -2353,56 +2532,98 @@ body::after {
   text-align: center;
 }
 
-.checkoutCardPrice { margin-bottom: 1rem; }
+.checkoutCardPrice { margin: 1.25rem 0 1.5rem; }
 
 /* Trial headline — the star of the card */
 .checkoutTrialHeadline {
-  font-size: 1.65rem;
+  font-size: 1.9rem;
   font-weight: 800;
   color: var(--brand);
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.5rem;
   letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+/* "free" inside the headline — gold display-serif italic for visual weight */
+.freeAccent {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 600;
+  color: var(--accent);
+  font-size: 1.12em;
 }
 
 /* Trial subline under the headline */
 .checkoutTrialSub {
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 0.92rem;
+  font-weight: 500;
   color: var(--text-secondary);
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.25rem;
 }
 
-/* Monthly price — small and subdued */
-.checkoutMonthlyPrice {
-  font-size: 1.2rem;
+.checkoutTrialSub strong {
   font-weight: 800;
   color: var(--text-primary);
-  letter-spacing: -0.02em;
 }
 
-/* Strikethrough anchor (weekly price) shown before the annual per-week price */
-.checkoutMonthlyPrice .priceAnchor {
-  margin-right: 0.4rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-decoration-thickness: 2px;
-}
-
-.checkoutMonthlyPrice .pricePeriod {
+/* Won-discount chip above the hero price */
+.priceDealChip {
+  display: inline-block;
+  margin-bottom: 0.5rem;
+  padding: 0.3rem 0.85rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
   font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-muted);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  box-shadow: 0 6px 18px -6px rgba(201, 163, 106, 0.6);
+  animation: badgePop 0.5s var(--ease-out-expo) both;
 }
 
-.checkoutMonthlyPrice .priceSkeleton {
-  vertical-align: -0.06em;
-  width: 2.4em;
+/* Hero price — the discounted number carries the card */
+.checkoutHeroPrice {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.55rem;
+  color: var(--text-primary);
+}
+
+.checkoutHeroPrice .priceHeroAmount {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+/* Once the spin discount applies, the price goes brand-teal */
+.checkoutCardPriceDeal .priceHeroAmount { color: var(--brand); }
+
+/* Crossed-out anchor next to the hero price */
+.checkoutHeroPrice .priceAnchor {
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-decoration-thickness: 2.5px;
+  text-decoration-color: rgba(248, 113, 113, 0.75);
+}
+
+.checkoutHeroPrice .pricePeriod {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-muted);
 }
 
 .checkoutCardPrice .priceBillingNote {
   text-align: center;
-  margin-top: 0.2rem;
+  margin-top: 0.5rem;
+}
+
+.checkoutCardPrice .priceBillingNote strong {
+  color: var(--text-primary);
+  font-weight: 800;
 }
 
 /* Feature checkmarks */
@@ -2531,10 +2752,10 @@ body::after {
 
 /* Charge-transparency line directly under the CTA */
 .checkoutDueToday {
-  margin-top: 0.65rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-secondary);
+  margin-top: 0.85rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 /* Trust row */
@@ -2560,13 +2781,17 @@ body::after {
 
 .checkoutTrust svg { flex-shrink: 0; opacity: 0.7; }
 
-/* Hardware price anchor under the feature list */
+/* Hardware price anchor under the feature list — soft callout chip so it
+   reads as its own element instead of a stray line between two blocks */
 .checkoutAnchorNote {
-  margin: 0.75rem 0 0;
-  font-size: 0.8rem;
+  margin: 0 0 1.5rem;
+  padding: 0.8rem 1.1rem;
+  border-radius: 12px;
+  background: var(--brand-soft);
+  font-size: 0.85rem;
   font-weight: 600;
-  line-height: 1.45;
-  color: var(--text-secondary);
+  line-height: 1.5;
+  color: var(--brand);
 }
 
 /* PPG accuracy validation block at the bottom of the checkout card */
@@ -2614,13 +2839,20 @@ body::after {
     padding: 2rem 1.25rem 2rem;
   }
   .checkoutTrialHeadline {
+    font-size: 1.6rem;
     margin-bottom: 0.5rem;
   }
   .checkoutTrialSub {
-    margin-bottom: 0.85rem;
+    margin-bottom: 0.4rem;
   }
   .checkoutCardPrice {
-    margin-bottom: 1.25rem;
+    margin: 1.1rem 0 1.35rem;
+  }
+  .checkoutHeroPrice .priceHeroAmount {
+    font-size: 2.5rem;
+  }
+  .checkoutHeroPrice .priceAnchor {
+    font-size: 1.15rem;
   }
   .checkoutFeatures {
     margin-bottom: 1.75rem;
@@ -2628,7 +2860,7 @@ body::after {
     gap: 0.75rem;
   }
   .checkoutAnchorNote {
-    margin: 1rem 0 0;
+    margin-bottom: 1.75rem;
   }
   .trialTimeline {
     margin-bottom: 1.75rem;
@@ -3090,4 +3322,201 @@ body::after {
 
 @media (max-width: 600px) {
   .finalCtaQr { display: none; }
+}
+
+/* ── Discount spin-wheel overlay (funnel paywall) ── */
+.spinOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(239, 234, 225, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  animation: spinOverlayIn 0.45s var(--ease-out-expo) both;
+}
+
+@keyframes spinOverlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.spinPanel {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  padding: 2.25rem 1.75rem 1.75rem;
+  border-radius: var(--radius-xl);
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-glass-lg), 0 32px 80px -24px rgba(29, 43, 51, 0.25);
+  text-align: center;
+  animation: spinPanelIn 0.6s var(--ease-out-expo) 0.1s both;
+}
+
+@keyframes spinPanelIn {
+  from { opacity: 0; transform: translateY(24px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.spinKicker {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.4rem;
+}
+
+.spinHeadline {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.9rem;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.spinHeadlineWon {
+  font-size: 2.4rem;
+  color: var(--brand);
+}
+
+.spinSub {
+  font-size: 0.92rem;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  max-width: 320px;
+  margin: 0 auto 1.5rem;
+}
+
+.spinWheelWrap {
+  position: relative;
+  width: min(280px, 72vw);
+  margin: 0 auto 1.6rem;
+}
+
+.spinWheel {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 6px var(--bg-card),
+    0 0 0 7px rgba(62, 111, 119, 0.25),
+    0 18px 44px -16px rgba(29, 43, 51, 0.35);
+  will-change: transform;
+}
+
+/* Pointer at 12 o'clock, pointing down into the wheel */
+.spinPointer {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  z-index: 2;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-top: 20px solid var(--accent);
+  filter: drop-shadow(0 2px 3px rgba(29, 43, 51, 0.3));
+}
+
+.spinWedgeA { fill: #3e6f77; }
+.spinWedgeB { fill: #f3ede2; }
+.spinWedgeWin { fill: var(--accent); }
+
+.spinLabel {
+  font-family: var(--font-sans);
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+/* Light text over teal wedges, teal text over cream wedges. */
+.spinLabelLight { fill: #f3ede2; }
+.spinLabelDark { fill: #3e6f77; }
+
+.spinLabelWin {
+  fill: #fff;
+  font-size: 19px;
+}
+
+.spinHub {
+  fill: var(--bg-card);
+  stroke: rgba(62, 111, 119, 0.35);
+  stroke-width: 2;
+}
+
+.spinHubText {
+  font-size: 18px;
+  fill: var(--accent);
+}
+
+.spinCta {
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+.spinCta:disabled {
+  opacity: 0.65;
+  cursor: default;
+  transform: none;
+}
+
+.spinFinePrint {
+  margin-top: 0.8rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* ── Applied-discount banner on the paywall ── */
+.discountBanner {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  margin-top: 1.4rem;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  background: linear-gradient(120deg, rgba(201, 163, 106, 0.16), rgba(62, 111, 119, 0.12));
+  border: 1px solid rgba(201, 163, 106, 0.45);
+  animation: badgePop 0.5s var(--ease-out-expo) both;
+}
+
+.discountBannerPct {
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--brand);
+}
+
+.discountBannerText {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.discountBannerTimer {
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  padding-left: 0.45rem;
+  border-left: 1px solid rgba(201, 163, 106, 0.45);
+}
+
+@media (max-width: 480px) {
+  .spinPanel { padding: 1.9rem 1.25rem 1.5rem; }
+  .spinHeadline { font-size: 1.6rem; }
+  .spinHeadlineWon { font-size: 2.1rem; }
 }

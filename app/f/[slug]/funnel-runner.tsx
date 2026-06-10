@@ -15,7 +15,13 @@ import {
   FunnelAccountStep,
   useSupabaseSession,
 } from "./account-step";
-import { InfoStepVisual } from "./info-visuals";
+import {
+  DISCOUNT_TIMER_MS,
+  DiscountSpinnerOverlay,
+  readSpinDiscount,
+  type SpinDiscount,
+} from "./discount-spinner";
+import { InfoStepVisual, StressProjection } from "./info-visuals";
 
 const REASSURANCE_DURATION = 2800; // ms to show reassuring toast before advancing
 const INTERSTITIAL_DURATION = 4000; // ms before an interstitial auto-advances
@@ -200,7 +206,10 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
 
   // Resolve templates for dynamic interstitial / result / info text.
   const displayTitle =
-    step.kind === "interstitial" || step.kind === "result" || step.kind === "info"
+    step.kind === "interstitial" ||
+    step.kind === "result" ||
+    step.kind === "info" ||
+    step.kind === "summary"
       ? resolveTemplate(step.title, answers, funnel.steps)
       : step.kind === "single_choice"
         ? step.question
@@ -209,7 +218,10 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
           : "";
 
   const displayBody =
-    step.kind === "interstitial" || step.kind === "result" || step.kind === "info"
+    step.kind === "interstitial" ||
+    step.kind === "result" ||
+    step.kind === "info" ||
+    step.kind === "summary"
       ? resolveTemplate(step.body, answers, funnel.steps)
       : step.kind === "single_choice"
         ? (step.subtext ?? "")
@@ -217,8 +229,38 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
           ? step.body
           : "";
 
+  // Front-loaded progress bar. The fill is deliberately biased ahead of the
+  // user's true position (curve exponent < 1, non-zero base) so the bar always
+  // reads "almost there" — a well-worn nudge that lifts quiz completion. Driven
+  // by how many steps the user has actually visited (history length), not the
+  // array index, so the goal-branch fork doesn't make the bar jump. The "-2"
+  // accounts for the two branch follow-ups every user skips, so the bar still
+  // reaches ~100% by the result/summary regardless of which branch they took.
+  const accountIndex = funnel.steps.findIndex((s) => s.kind === "account");
+  const showProgress =
+    accountIndex > 0 && step.kind !== "account" && step.kind !== "offer";
+  const estimatedTotal = Math.max(accountIndex - 2, 1);
+  const ratio = Math.min(history.length, estimatedTotal) / estimatedTotal;
+  const progressPct = Math.round(12 + 88 * Math.pow(ratio, 0.6));
+
   return (
     <div className="container funnelContainer">
+      {showProgress ? (
+        <div
+          className="funnelProgress"
+          role="progressbar"
+          aria-valuenow={progressPct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Quiz progress"
+        >
+          <div
+            className="funnelProgressBar"
+            style={{ width: `${progressPct}%` }}
+          />
+        </div>
+      ) : null}
+
       {history.length > 0 && (step.kind === "single_choice" || step.kind === "info") ? (
         <button
           type="button"
@@ -373,6 +415,18 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
           </div>
         ) : null}
 
+        {step.kind === "summary" ? (
+          <SummaryStep
+            title={displayTitle}
+            body={displayBody}
+            answers={answers}
+            onContinue={() => {
+              const nextId = defaultNext(step.id);
+              if (nextId) navigate(nextId);
+            }}
+          />
+        ) : null}
+
         {step.kind === "account" ? (
           <FunnelAccountStep
             step={step}
@@ -415,6 +469,158 @@ const PEACE_TIME_LABELS: Record<string, string> = {
   late: "late-night",
 };
 
+// Short, card-friendly forms of each answer for the personalized plan recap.
+// Full option labels are full sentences, so the summary uses these instead.
+const GOAL_SHORT: Record<string, string> = {
+  stress: "a calmer mind",
+  sleep: "deeper sleep",
+  wellness: "feeling better overall",
+  focus: "sharper focus",
+  explore: "a calmer mind",
+};
+
+const BODY_SIGNAL_SHORT: Record<string, string> = {
+  shallow: "shallow breathing",
+  heart: "a racing heart",
+  tight: "tense shoulders and jaw",
+  fatigue: "sudden fatigue",
+};
+
+// What they've tried, phrased for the "closes the loop" comparison line.
+const TRIED_SHORT: Record<string, string> = {
+  apps: "Meditation apps",
+  videos: "Breathing videos",
+  other: "Supplements and teas",
+};
+
+/** Plan rows derived from the user's answers, shared by the summary screen
+ *  and the results-first recap on the paywall. */
+function buildPlanRows(answers: Record<string, string>) {
+  const goal = GOAL_SHORT[answers.goal] ?? "a calmer mind";
+  const duration = DURATION_LABELS[answers.calm_duration] ?? "5-minute";
+  const peaceTime = PEACE_TIME_LABELS[answers.peace_time] ?? "daily";
+  const bodyFocus = BODY_SIGNAL_SHORT[answers.body_signal];
+  return [
+    { label: "Your goal", value: goal },
+    { label: "Daily reset", value: `${duration} session, ${peaceTime}` },
+    ...(bodyFocus ? [{ label: "Tuned for", value: bodyFocus }] : []),
+    { label: "How it works", value: "Live camera heart-rate biofeedback" },
+  ];
+}
+
+/** Personalized plan card + projection graph, reused on the summary screen and
+ *  again at the top of the paywall (results-first framing). */
+function PlanRecap({
+  answers,
+  showProjection = true,
+}: {
+  answers: Record<string, string>;
+  showProjection?: boolean;
+}) {
+  return (
+    <>
+      <dl className="summaryPlanCard">
+        {buildPlanRows(answers).map((row) => (
+          <div key={row.label} className="summaryPlanRow">
+            <dt className="summaryPlanLabel">{row.label}</dt>
+            <dd className="summaryPlanValue">{row.value}</dd>
+          </div>
+        ))}
+      </dl>
+
+      {showProjection ? (
+        <div className="summaryProjection">
+          <p className="summaryProjectionTitle">Your stress, projected</p>
+          <StressProjection />
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function SummaryStep({
+  title,
+  body,
+  answers,
+  onContinue,
+}: {
+  title: string;
+  body: string;
+  answers: Record<string, string>;
+  onContinue: () => void;
+}) {
+  const tried = TRIED_SHORT[answers.tried_before];
+
+  return (
+    <div className="funnelSummary">
+      {title ? <h1 className="funnelQuestion">{title}</h1> : null}
+      {body ? <p className="funnelSubtext">{body}</p> : null}
+
+      <PlanRecap answers={answers} />
+
+      {tried ? (
+        <p className="summaryCompare">
+          <strong>{tried}</strong> gave you no feedback, so the habit never
+          stuck. Your plan closes the loop — you&apos;ll watch it working from
+          day one.
+        </p>
+      ) : null}
+
+      <button type="button" className="funnelPrimaryBtn" onClick={onContinue}>
+        Save my plan
+      </button>
+    </div>
+  );
+}
+
+// PLACEHOLDER social proof — replace with real, verifiable customer reviews
+// before running paid traffic. Fabricated testimonials in ads are an FTC /
+// ad-platform compliance risk; these are wireframe copy only.
+const TESTIMONIALS = [
+  {
+    name: "Maya R.",
+    meta: "Member since 2025",
+    text:
+      "Watching my heart rate actually drop on screen is the first thing " +
+      "that's ever made breathing exercises stick for me.",
+  },
+  {
+    name: "James T.",
+    meta: "Verified subscriber",
+    text:
+      "Two weeks in and my 3am wake-ups have basically stopped. Seeing the " +
+      "streak build keeps me honest.",
+  },
+  {
+    name: "Priya N.",
+    meta: "Member since 2025",
+    text:
+      "I've tried every meditation app out there. This is the only one where " +
+      "I can actually see it working.",
+  },
+];
+
+/** Inline 5-star row. */
+function Stars() {
+  return (
+    <span className="starRow" aria-hidden>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <svg key={i} width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.8 5.9 21.4l1.4-6.8L2.2 9.9l6.9-.8z" />
+        </svg>
+      ))}
+    </span>
+  );
+}
+
+/** mm:ss for the "discount reserved" countdown. */
+function formatCountdown(ms: number): string {
+  const totalSec = Math.ceil(ms / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
 function OfferStep({
   step,
   answers,
@@ -429,6 +635,33 @@ function OfferStep({
   const display = OFFER_DISPLAY[plan];
   const { loaded, email } = useSupabaseSession();
 
+  // Spin-the-wheel discount. Read in an effect (not during render) so SSR and
+  // the first client render match; until then neither the overlay nor the
+  // discounted prices show. New visitors get the spinner overlay once;
+  // returning visitors land with their discount already applied.
+  const [discount, setDiscount] = useState<SpinDiscount | null>(null);
+  const [showSpinner, setShowSpinner] = useState(false);
+  useEffect(() => {
+    const existing = readSpinDiscount();
+    if (existing) setDiscount(existing);
+    else setShowSpinner(true);
+  }, []);
+
+  // Countdown ticks down from the moment the discount was claimed. After it
+  // hits zero the timer disappears but the discount stays applied — the
+  // price never actually changes.
+  const [countdownMs, setCountdownMs] = useState(0);
+  useEffect(() => {
+    if (!discount) return;
+    const tick = () =>
+      setCountdownMs(
+        Math.max(0, discount.claimedAt + DISCOUNT_TIMER_MS - Date.now()),
+      );
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [discount]);
+
   // Fire web_paywall_viewed once when the offer step mounts, so paywall
   // conversion can be measured separately from quiz completion.
   const paywallViewFired = useRef(false);
@@ -439,6 +672,7 @@ function OfferStep({
       funnel_slug: funnelSlug,
       offer_key: step.offerKey,
       goal: answers.goal ?? null,
+      spin_discount_claimed: readSpinDiscount() !== null,
     });
   }, [funnelSlug, step.offerKey, answers.goal]);
 
@@ -452,6 +686,16 @@ function OfferStep({
 
   return (
     <div className="funnelOffer">
+      {showSpinner && !discount ? (
+        <DiscountSpinnerOverlay
+          funnelSlug={funnelSlug}
+          onClaim={(won) => {
+            setDiscount(won);
+            setShowSpinner(false);
+          }}
+        />
+      ) : null}
+
       {/* Mini journey strip: makes the account requirement explicit instead of
           surprising the user with a login bounce when they hit the CTA. */}
       <ol className="offerSteps" aria-label="Checkout steps">
@@ -465,6 +709,24 @@ function OfferStep({
       ) : null}
       {body ? (
         <p className="funnelSubtext">{body}</p>
+      ) : null}
+
+      {/* Results-first framing: the personalized plan the user just built,
+          repeated at the point of payment so the value is in view at the CTA. */}
+      <div className="offerRecap">
+        <PlanRecap answers={answers} />
+      </div>
+
+      {discount ? (
+        <div className="discountBanner" role="status">
+          <span className="discountBannerPct">{discount.pct}% OFF</span>
+          <span className="discountBannerText">applied to your plan</span>
+          {countdownMs > 0 ? (
+            <span className="discountBannerTimer">
+              reserved for {formatCountdown(countdownMs)}
+            </span>
+          ) : null}
+        </div>
       ) : null}
 
       {/* Plan toggle */}
@@ -493,25 +755,59 @@ function OfferStep({
 
       {/* Single checkout card */}
       <div className="checkoutCard">
+        {/* Risk-reversal badge pinned to the card (not the CTA): defuses the
+            "I'll forget to cancel" objection right where the price lives. */}
+        <div className="checkoutGuaranteeBadge">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 1l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V4l8-3zm-1.2 14.2l5.5-5.5-1.4-1.4-4.1 4.1-1.9-1.9-1.4 1.4 3.3 3.3z" />
+          </svg>
+          <span>Cancel anytime · we&apos;ll remind you 2 days before billing</span>
+        </div>
+
         {/* Trial headline — the main message. */}
         <p className="checkoutTrialHeadline">
-          {plan === "annual" ? "Try Azora For Free" : "No commitment"}
+          {plan === "annual" ? (
+            <>
+              Try Azora <em className="freeAccent">free</em> for 7 days
+            </>
+          ) : (
+            "No commitment"
+          )}
         </p>
         {plan === "annual" ? (
           <p className="checkoutTrialSub">
-            7-day free trial, cancel anytime
+            <strong>$0.00 today</strong> · cancel anytime during the trial
           </p>
         ) : null}
 
-        <div className="checkoutCardPrice">
-          <p className="checkoutMonthlyPrice">
-            {plan === "annual" ? (
-              <s className="priceAnchor">{OFFER_DISPLAY.weekly.weeklyPrice}</s>
+        {/* Pre-spin, the un-discounted anchor renders as the plain price (the
+            spinner overlay is covering the card); winning the spin crosses it
+            out and reveals the real price — which is what checkout charges. */}
+        <div
+          className={`checkoutCardPrice${discount ? " checkoutCardPriceDeal" : ""}`}
+        >
+          {discount ? (
+            <span className="priceDealChip">{discount.pct}% OFF</span>
+          ) : null}
+          <p className="checkoutHeroPrice">
+            {discount ? (
+              <s className="priceAnchor">{display.anchorWeeklyPrice}</s>
             ) : null}
-            {display.weeklyPrice}
+            <span className="priceHeroAmount">
+              {discount ? display.weeklyPrice : display.anchorWeeklyPrice}
+            </span>
             <span className="pricePeriod">/wk</span>
           </p>
-          <p className="priceBillingNote">{display.billingNote}</p>
+          <p className="priceBillingNote">
+            {display.billingNote}
+            {/* Weekly's full price IS the weekly price above — skip the echo. */}
+            {discount && plan === "annual" ? (
+              <>
+                {" · "}
+                <s>{display.anchorFullPrice}</s> <strong>{display.price}{display.period}</strong>
+              </>
+            ) : null}
+          </p>
         </div>
 
         {/* Feature checkmarks */}
@@ -538,8 +834,7 @@ function OfferStep({
         </ul>
 
         <p className="checkoutAnchorNote">
-          Everything a $300 wearable tracks for calm, with the phone already in
-          your pocket.
+          Everything a $300 wearable does — with just your phone.
         </p>
 
         {plan === "annual" ? (
@@ -630,6 +925,21 @@ function OfferStep({
           </p>
         </div>
       </div>
+
+      {/* Social proof: member reviews under the card, reinforcing the CTA. */}
+      <section className="offerTestimonials" aria-label="Member reviews">
+        <p className="offerTestimonialsHeading">What members say</p>
+        {TESTIMONIALS.map((t) => (
+          <figure key={t.name} className="testimonialCard">
+            <Stars />
+            <blockquote className="testimonialText">{t.text}</blockquote>
+            <figcaption className="testimonialMeta">
+              <span className="testimonialName">{t.name}</span>
+              <span className="testimonialSub">{t.meta}</span>
+            </figcaption>
+          </figure>
+        ))}
+      </section>
     </div>
   );
 }

@@ -472,6 +472,56 @@ function CameraPpg() {
   );
 }
 
+/**
+ * Projected stress trend on the personalized plan card: a high, jagged
+ * "today" level easing down to a calm low at the 2-week mark. Exported so the
+ * summary plan card can embed it directly, not only via an info step.
+ */
+export function StressProjection() {
+  return (
+    <svg
+      viewBox="0 0 320 132"
+      role="img"
+      aria-label="Projected stress level trending down from high today to low within two weeks of daily use"
+    >
+      <defs>
+        <linearGradient id="projFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={BRAND} stopOpacity={0.16} />
+          <stop offset="100%" stopColor={BRAND} stopOpacity={0} />
+        </linearGradient>
+      </defs>
+      {/* Jagged early section settling into a smooth low tail. */}
+      <path
+        d="M16 30 l10 14 l10 -18 l10 22 l10 -10 C90 50 118 78 150 86 S214 104 260 104 S294 106 304 106 L304 128 L16 128 Z"
+        fill="url(#projFill)"
+      />
+      <path
+        className="visualDraw"
+        d="M16 30 l10 14 l10 -18 l10 22 l10 -10 C90 50 118 78 150 86 S214 104 260 104 S294 106 304 106"
+        fill="none"
+        stroke={BRAND}
+        strokeWidth={3}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <text x={16} y={20} fontSize={11} fontWeight={700} fill="#d05757">
+        High alert
+      </text>
+      <text x={16} y={122} fontSize={11} fontWeight={600} fill={SECONDARY}>
+        Today
+      </text>
+      <circle className="visualPulse" cx={304} cy={106} r={5} fill={BRAND} opacity={0.5} />
+      <circle cx={304} cy={106} r={5} fill={BRAND} />
+      <text x={304} y={90} textAnchor="end" fontSize={12} fontWeight={800} fill={BRAND}>
+        Calm
+      </text>
+      <text x={304} y={122} textAnchor="end" fontSize={11} fontWeight={600} fill={SECONDARY}>
+        2 weeks
+      </text>
+    </svg>
+  );
+}
+
 const VISUALS: Record<InfoVisualKey, () => React.JSX.Element> = {
   fading_streak: FadingStreak,
   open_vs_closed_loop: OpenVsClosedLoop,
@@ -480,6 +530,7 @@ const VISUALS: Record<InfoVisualKey, () => React.JSX.Element> = {
   stat_ring: StatRing,
   stress_signature: StressSignature,
   camera_ppg: CameraPpg,
+  stress_projection: StressProjection,
 };
 
 export function InfoStepVisual({ visual }: { visual: InfoVisualKey }) {

@@ -22,7 +22,8 @@ export type InfoVisualKey =
   | "hr_falling"
   | "stat_ring"
   | "stress_signature"
-  | "camera_ppg";
+  | "camera_ppg"
+  | "stress_projection";
 
 export interface FunnelOption {
   /** Stable id stored with the answer. */
@@ -81,6 +82,15 @@ export type FunnelStep =
     }
   | {
       kind: "result";
+      id: string;
+      title: string;
+      body: string;
+    }
+  | {
+      // Personalized plan recap. The card contents (goal, schedule, focus,
+      // projection, vs. what they tried) are derived from the user's answers
+      // in the runner, so the step itself only carries the framing copy.
+      kind: "summary";
       id: string;
       title: string;
       body: string;

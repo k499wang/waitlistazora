@@ -20,6 +20,15 @@ export interface OfferDisplay {
   billingNote: string;
   /** Per-week equivalent for compact display, e.g. "$0.77". */
   weeklyPrice: string;
+  /**
+   * Pre-discount per-week price shown before the spin-wheel discount is won,
+   * then crossed out once it applies. Real charge never changes — keep this at
+   * weeklyPrice / (1 - DISCOUNT_PCT/100) so the strikethrough math is honest
+   * against the displayed discount.
+   */
+  anchorWeeklyPrice: string;
+  /** Pre-discount full price for the billing cadence, e.g. "$149.99/yr". */
+  anchorFullPrice: string;
   /** Optional ribbon, e.g. "Best value". */
   badge?: string;
   /** Short trial / risk-reversal line shown on the CTA. */
@@ -39,16 +48,17 @@ export const OFFER_DISPLAY: Record<OfferKey, OfferDisplay> = {
     period: "/year",
     billingNote: "billed annually",
     weeklyPrice: "$1.15",
+    anchorWeeklyPrice: "$2.88",
+    anchorFullPrice: "$149.99/yr",
     badge: "Best value · Save 77%",
     trialLine: "7-day free trial, then $59.99/yr",
     dueTodayLine: "$0.00 due today · then $59.99/yr after your 7-day trial",
     features: [
-      "Unlimited camera heart-rate readings in the app, no wearable needed",
-      "Live biofeedback: watch your heart rate fall as you breathe",
-      "Every guided breathing program, paced to your pulse",
-      "Daily reminders & streaks that keep the habit going",
-      "Stress & recovery trends over time",
-      "Cancel anytime",
+      "Unlimited camera heart-rate readings",
+      "Live biofeedback as you breathe",
+      "Every program, paced to your pulse",
+      "Streaks & daily reminders",
+      "Stress & recovery trends",
     ],
     featured: true,
   },
@@ -58,13 +68,14 @@ export const OFFER_DISPLAY: Record<OfferKey, OfferDisplay> = {
     period: "/week",
     billingNote: "billed weekly",
     weeklyPrice: "$4.99",
+    anchorWeeklyPrice: "$12.48",
+    anchorFullPrice: "$12.48/wk",
     trialLine: "Cancel anytime",
     dueTodayLine: "$4.99 due today · billed weekly, cancel anytime",
     features: [
-      "Unlimited camera heart-rate readings in the app, no wearable needed",
-      "Live biofeedback: watch your heart rate fall as you breathe",
-      "Daily reminders & streaks that keep the habit going",
-      "Cancel anytime",
+      "Unlimited camera heart-rate readings",
+      "Live biofeedback as you breathe",
+      "Streaks & daily reminders",
     ],
     featured: false,
   },

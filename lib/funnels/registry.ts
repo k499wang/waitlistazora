@@ -3,14 +3,19 @@ import type { FunnelConfig } from "./types";
 // Typed funnel registry. Add new funnels here; the [slug] route resolves them
 // by slug and 404s on unknown/non-active funnels.
 //
-// Calm Reset funnel structure (18 screens), built on the "unique mechanism"
-// pattern: the user's problem stays the goal (stress / sleep / focus), and
-// camera-PPG biofeedback breathing ("Heart-Guided Breathing") is the named
-// mechanism that solves all of them:
-//   8 questions → 9 info screens (failure reframe pair → mechanism +
-//   accuracy proof → personal bridge pair (signature → camera makes it
-//   visible) → live feedback → social proof), one idea per screen →
-//   1 building interstitial → result → account → offer
+// Calm Reset funnel structure, built on the "unique mechanism" pattern: the
+// user's problem stays the goal (stress / sleep / focus), and camera-PPG
+// biofeedback breathing ("Heart-Guided Breathing") is the named mechanism
+// that solves all of them.
+//
+// Questions and info screens are interleaved so the user never sits through
+// more than two info screens in a row — info pairs stay together
+// conceptually but are broken up by a question to keep momentum:
+//   goal + branch + tried_before → failure-reframe pair → me_time →
+//   mechanism + accuracy proof → peace_time → personal-bridge pair
+//   (signature → camera makes it visible) → calm_duration → live feedback →
+//   body_signal → reset_blocker → social proof → building interstitial →
+//   result → account → offer
 //
 // Branching: goal (stress / sleep / general) → 1 branch follow-up → joins the
 // common path at `tried_before`. Info screens are intentional stops with a
@@ -239,6 +244,8 @@ const FUNNELS: Record<string, FunnelConfig> = {
         question: "How often do you take a moment just for yourself?",
         subtext:
           "Not a workout. Not scrolling your phone. Just a quiet pause where you're not doing anything for anyone.",
+        reassurance:
+          "However little that is right now, we'll make it count.",
         options: [
           {
             id: "rarely",
@@ -254,35 +261,6 @@ const FUNNELS: Record<string, FunnelConfig> = {
             id: "often",
             emoji: "🕯️",
             label: "Most days, I protect a few minutes",
-          },
-        ],
-      },
-
-      // ── Q5: Peaceful moment ───────────────────────────────────────────
-      {
-        kind: "single_choice",
-        id: "peace_time",
-        question: "When do you feel most at peace during your day?",
-        options: [
-          {
-            id: "morning",
-            emoji: "🌅",
-            label: "Early morning, before the world wakes up",
-          },
-          {
-            id: "midday",
-            emoji: "☀️",
-            label: "Midday, I need a reset in the middle of things",
-          },
-          {
-            id: "evening",
-            emoji: "🌆",
-            label: "Evening, winding down from the day",
-          },
-          {
-            id: "late",
-            emoji: "🌌",
-            label: "Late at night, when everything is finally quiet",
           },
         ],
       },
@@ -319,6 +297,37 @@ const FUNNELS: Record<string, FunnelConfig> = {
           "Poh et al., Optics Express (2010) · Shcherbina et al., J. Pers. Med. (2017) · Coppetti et al., Eur. J. Prev. Cardiol. (2017)",
       },
 
+      // ── Q5: Peaceful moment ───────────────────────────────────────────
+      {
+        kind: "single_choice",
+        id: "peace_time",
+        question: "When do you feel most at peace during your day?",
+        reassurance:
+          "Perfect. That's when we'll anchor your daily reset.",
+        options: [
+          {
+            id: "morning",
+            emoji: "🌅",
+            label: "Early morning, before the world wakes up",
+          },
+          {
+            id: "midday",
+            emoji: "☀️",
+            label: "Midday, I need a reset in the middle of things",
+          },
+          {
+            id: "evening",
+            emoji: "🌆",
+            label: "Evening, winding down from the day",
+          },
+          {
+            id: "late",
+            emoji: "🌌",
+            label: "Late at night, when everything is finally quiet",
+          },
+        ],
+      },
+
       // ── INFO 3a + 3b: Personal bridge — connects the symptom they
       // described to the PPG science they just learned, without quoting
       // their answer back. Screen 1: the feeling is a real, measurable
@@ -344,19 +353,6 @@ const FUNNELS: Record<string, FunnelConfig> = {
           "Rest a fingertip on your camera and that signature appears on " +
           "screen. What you could only feel becomes a number you can " +
           "watch — and change.",
-      },
-
-      // ── INFO 4: Live feedback (vagus nerve + real-time heart rate) ───
-      {
-        kind: "info",
-        id: "live_feedback",
-        icon: "💓",
-        visual: "hr_falling",
-        title: "Watch your heart rate fall, live",
-        body:
-          "Guided exhales activate the vagus nerve, your body's natural off " +
-          "switch for stress, while the number drops on your screen. Proof, " +
-          "in your very first session in the app.",
       },
 
       // ── Q6: Session length ────────────────────────────────────────────
@@ -386,6 +382,19 @@ const FUNNELS: Record<string, FunnelConfig> = {
         ],
       },
 
+      // ── INFO 4: Live feedback (vagus nerve + real-time heart rate) ───
+      {
+        kind: "info",
+        id: "live_feedback",
+        icon: "💓",
+        visual: "hr_falling",
+        title: "Watch your heart rate fall, live",
+        body:
+          "Guided exhales activate the vagus nerve, your body's natural off " +
+          "switch for stress, while the number drops on your screen. Proof, " +
+          "in your very first session in the app.",
+      },
+
       // ── Q7: Body signals ──────────────────────────────────────────────
       {
         kind: "single_choice",
@@ -394,6 +403,8 @@ const FUNNELS: Record<string, FunnelConfig> = {
         subtext:
           "Before your mind registers stress, your heart has already spoken. " +
           "What do you notice first?",
+        reassurance:
+          "That's exactly the signal Heart-Guided Breathing is built to catch.",
         options: [
           {
             id: "shallow",
@@ -477,6 +488,18 @@ const FUNNELS: Record<string, FunnelConfig> = {
           "A daily Heart-Guided Breathing plan tuned to your goal, your " +
           "schedule, and the way stress shows up in your body. Your sessions " +
           "happen in the Azora app on your phone.",
+      },
+
+      // ── Summary: personalized plan recap ──────────────────────────────
+      // Commitment anchor before the paywall: restates the user's own answers
+      // as a concrete plan, projects the 2-week trend, and contrasts it with
+      // what they've already tried — turning data collection into proof the
+      // app understood them.
+      {
+        kind: "summary",
+        id: "summary",
+        title: "Here's your Heart-Guided Breathing plan",
+        body: "Built from your answers. This is the daily reset we'll set up for you.",
       },
 
       // ── Account (save the plan) ───────────────────────────────────────

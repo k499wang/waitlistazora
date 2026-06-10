@@ -16,19 +16,6 @@ const annual = OFFER_DISPLAY.annual;
 function StoreButtons({ center = false }: { center?: boolean }) {
   return (
     <div className="heroActions" style={center ? { justifyContent: "center" } : undefined}>
-      <a
-        href="/pricing"
-        className="getProBtn"
-        onClick={() => {
-          posthog.capture("get_pro_clicked", {
-            button_location: center ? "final_cta" : "hero",
-            ...getStoredAttribution()
-          });
-        }}
-      >
-        <span className="getProBtnEyebrow">Get</span>
-        <span className="getProBtnLabel">Azora Pro</span>
-      </a>
       <AppStoreBadge
         height={50}
         onClick={() => {

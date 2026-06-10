@@ -21,6 +21,18 @@ export function LoginForm({ next, initialError }: { next: string; initialError?:
   const [error, setError] = useState<string | null>(initialError ?? null);
   const [notice, setNotice] = useState<string | null>(null);
   const [pending, setPending] = useState<null | "password" | "google">(null);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+
+  // Account creation requires explicit consent to the Terms & Privacy Policy
+  // (which includes marketing email consent). Google sign-in can also create
+  // an account, so it's gated too while in signup mode.
+  function requireConsent(): boolean {
+    if (mode === "signup" && !acceptedTerms) {
+      setError("Please accept the Terms & Conditions and Privacy Policy to create an account.");
+      return false;
+    }
+    return true;
+  }
 
   function callbackUrl() {
     return `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
@@ -29,6 +41,7 @@ export function LoginForm({ next, initialError }: { next: string; initialError?:
   async function signInWithGoogle() {
     setError(null);
     setNotice(null);
+    if (!requireConsent()) return;
     setPending("google");
     try {
       const supabase = createBrowserSupabaseClient();
@@ -58,6 +71,7 @@ export function LoginForm({ next, initialError }: { next: string; initialError?:
     e.preventDefault();
     setError(null);
     setNotice(null);
+    if (!requireConsent()) return;
     setPending("password");
     try {
       const supabase = createBrowserSupabaseClient();
@@ -159,6 +173,31 @@ export function LoginForm({ next, initialError }: { next: string; initialError?:
             required
           />
         </div>
+        {mode === "signup" ? (
+          <label className="authConsent">
+            <input
+              type="checkbox"
+              className="authConsentBox"
+              checked={acceptedTerms}
+              onChange={(e) => {
+                setAcceptedTerms(e.target.checked);
+                if (e.target.checked) setError(null);
+              }}
+            />
+            <span className="authConsentText">
+              I agree to the{" "}
+              <Link href="/terms" target="_blank">
+                Terms &amp; Conditions
+              </Link>{" "}
+              and{" "}
+              <Link href="/privacy" target="_blank">
+                Privacy Policy
+              </Link>
+              , and to receive product updates and marketing emails from Azora
+              (unsubscribe anytime).
+            </span>
+          </label>
+        ) : null}
         <button type="submit" className="authSubmitBtn" disabled={pending !== null}>
           {pending === "password"
             ? "Working…"
@@ -194,6 +233,20 @@ export function LoginForm({ next, initialError }: { next: string; initialError?:
           {mode === "signup" ? "Sign in" : "Create an account"}
         </button>
       </div>
+
+      {mode === "signin" ? (
+        <p className="authFinePrint">
+          By continuing, you agree to our{" "}
+          <Link href="/terms" target="_blank">
+            Terms &amp; Conditions
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" target="_blank">
+            Privacy Policy
+          </Link>
+          .
+        </p>
+      ) : null}
     </div>
   );
 }

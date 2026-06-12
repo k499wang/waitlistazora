@@ -18,14 +18,16 @@ export function CheckoutForm({
   className,
   children,
   onCheckoutStart,
-  onIntentionalDeparture,
+  onCheckoutActive,
+  onCheckoutInactive,
 }: {
   action: string;
   offerKey: string;
   className?: string;
   children: ReactNode;
   onCheckoutStart?: () => void;
-  onIntentionalDeparture?: () => void;
+  onCheckoutActive?: () => void;
+  onCheckoutInactive?: () => void;
 }) {
   const submittedRef = useRef(false);
 
@@ -35,7 +37,8 @@ export function CheckoutForm({
         offerKey={offerKey}
         className={className}
         onCheckoutStart={onCheckoutStart}
-        onIntentionalDeparture={onIntentionalDeparture}
+        onCheckoutActive={onCheckoutActive}
+        onCheckoutInactive={onCheckoutInactive}
       >
         {children}
       </EmbeddedCheckoutButton>
@@ -55,6 +58,7 @@ export function CheckoutForm({
         submittedRef.current = true;
         event.preventDefault();
         onCheckoutStart?.();
+        onCheckoutActive?.();
 
         const form = event.currentTarget;
         let continued = false;
@@ -63,7 +67,6 @@ export function CheckoutForm({
             return;
           }
           continued = true;
-          onIntentionalDeparture?.();
           HTMLFormElement.prototype.submit.call(form);
         };
 

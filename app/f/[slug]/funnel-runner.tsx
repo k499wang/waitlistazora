@@ -1228,11 +1228,18 @@ function OfferStep({
                 plan === "annual" ? "Start my free trial" : "Start now",
             });
           }}
-          onIntentionalDeparture={() => {
+          onCheckoutActive={() => {
             try {
               window.sessionStorage.setItem(INTENTIONAL_DEPARTURE_KEY, "1");
             } catch {
               // Best-effort guard against counting checkout as abandonment.
+            }
+          }}
+          onCheckoutInactive={() => {
+            try {
+              window.sessionStorage.removeItem(INTENTIONAL_DEPARTURE_KEY);
+            } catch {
+              // Storage may be unavailable in locked-down browsers.
             }
           }}
         >

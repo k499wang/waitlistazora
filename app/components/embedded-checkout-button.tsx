@@ -45,13 +45,15 @@ export function EmbeddedCheckoutButton({
   className,
   children,
   onCheckoutStart,
-  onIntentionalDeparture,
+  onCheckoutActive,
+  onCheckoutInactive,
 }: {
   offerKey: string;
   className?: string;
   children: ReactNode;
   onCheckoutStart?: () => void;
-  onIntentionalDeparture?: () => void;
+  onCheckoutActive?: () => void;
+  onCheckoutInactive?: () => void;
 }) {
   const submittingRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,7 +72,8 @@ export function EmbeddedCheckoutButton({
     setPanelOpen(false);
     if (targetRef.current) targetRef.current.innerHTML = "";
     submittingRef.current = false;
-  }, []);
+    onCheckoutInactive?.();
+  }, [onCheckoutInactive]);
 
   // Esc closes the panel; lock page scroll behind it while open.
   useEffect(() => {
@@ -106,6 +109,7 @@ export function EmbeddedCheckoutButton({
       if (submittingRef.current) return;
       submittingRef.current = true;
       setError(null);
+      onCheckoutActive?.();
 
       if (firePixel) {
         // Same InitiateCheckout signal CheckoutForm fires, so attribution is
@@ -133,7 +137,6 @@ export function EmbeddedCheckoutButton({
           const url = new URL(window.location.href);
           url.searchParams.set(RESUME_PARAM, offerKey);
           const next = `${url.pathname}${url.search}`;
-          onIntentionalDeparture?.();
           window.location.assign(`/login?next=${encodeURIComponent(next)}`);
           return;
         }
@@ -172,7 +175,6 @@ export function EmbeddedCheckoutButton({
         if (session !== sessionRef.current) return;
 
         if (outcome.status === "completed") {
-          onIntentionalDeparture?.();
           window.location.assign("/checkout/success");
           return;
         }
@@ -192,7 +194,7 @@ export function EmbeddedCheckoutButton({
         );
       }
     },
-    [offerKey, waitForTarget, closePanel, onIntentionalDeparture],
+    [offerKey, waitForTarget, closePanel, onCheckoutActive],
   );
 
   // Auto-resume after a login bounce. Only the button whose offer matches the

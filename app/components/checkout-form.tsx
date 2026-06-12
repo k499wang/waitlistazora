@@ -18,12 +18,14 @@ export function CheckoutForm({
   className,
   children,
   onCheckoutStart,
+  onIntentionalDeparture,
 }: {
   action: string;
   offerKey: string;
   className?: string;
   children: ReactNode;
   onCheckoutStart?: () => void;
+  onIntentionalDeparture?: () => void;
 }) {
   const submittedRef = useRef(false);
 
@@ -33,6 +35,7 @@ export function CheckoutForm({
         offerKey={offerKey}
         className={className}
         onCheckoutStart={onCheckoutStart}
+        onIntentionalDeparture={onIntentionalDeparture}
       >
         {children}
       </EmbeddedCheckoutButton>
@@ -60,6 +63,7 @@ export function CheckoutForm({
             return;
           }
           continued = true;
+          onIntentionalDeparture?.();
           HTMLFormElement.prototype.submit.call(form);
         };
 

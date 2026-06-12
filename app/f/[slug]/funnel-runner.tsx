@@ -127,6 +127,7 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
   const funnelViewFired = useRef(false);
   const confettiFired = useRef(false);
   const reassuranceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [resumeParamsHandled, setResumeParamsHandled] = useState(false);
 
   // Fire web_funnel_viewed + Meta ViewContent once on first render.
   useEffect(() => {
@@ -162,35 +163,34 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
     [answers, savedAnswers],
   );
 
-  // Post-login checkout resume: an offer click while logged out bounces through
-  // /login and lands back here with ?resume_checkout=<offer>. The runner always
-  // starts at step 1, so jump straight to the offer step — otherwise the
-  // EmbeddedCheckoutButton that auto-resumes the purchase never mounts. The
-  // button itself strips the param and re-starts checkout without re-firing the
-  // InitiateCheckout pixel (it already fired on the pre-login click).
+  // Handle auth/checkout resume params before step impressions fire. Otherwise
+  // a resume load starts at step 1 long enough to record a false first-step view.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (!params.has(RESUME_PARAM)) return;
-    const offerStep = funnel.steps.find((s) => s.kind === "offer");
-    if (offerStep) setCurrentId(offerStep.id);
-  }, [funnel.steps]);
+    let nextStepId: string | null = null;
 
-  // Post-auth funnel resume: the account step's signup/sign-in round-trips
-  // (Google OAuth or /auth/finalize) land back here with ?account_done=1.
-  // Jump to the account step, which now renders its "plan saved" success
-  // state and auto-advances to the offer. Strip the param so a refresh
-  // doesn't replay the jump.
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (!params.has(ACCOUNT_DONE_PARAM)) return;
-    params.delete(ACCOUNT_DONE_PARAM);
-    window.history.replaceState(
-      null,
-      "",
-      `${window.location.pathname}${params.toString() ? `?${params}` : ""}`,
-    );
-    const accountStep = funnel.steps.find((s) => s.kind === "account");
-    if (accountStep) setCurrentId(accountStep.id);
+    // Post-login checkout resume: an offer click while logged out bounces
+    // through /login and lands back here with ?resume_checkout=<offer>.
+    if (params.has(RESUME_PARAM)) {
+      const offerStep = funnel.steps.find((s) => s.kind === "offer");
+      nextStepId = offerStep?.id ?? null;
+    }
+
+    // Post-auth funnel resume: Google OAuth or /auth/finalize land back here
+    // with ?account_done=1. Strip the param so a refresh doesn't replay it.
+    if (params.has(ACCOUNT_DONE_PARAM)) {
+      params.delete(ACCOUNT_DONE_PARAM);
+      window.history.replaceState(
+        null,
+        "",
+        `${window.location.pathname}${params.toString() ? `?${params}` : ""}`,
+      );
+      const accountStep = funnel.steps.find((s) => s.kind === "account");
+      nextStepId = accountStep?.id ?? nextStepId;
+    }
+
+    if (nextStepId) setCurrentId(nextStepId);
+    setResumeParamsHandled(true);
   }, [funnel.steps]);
 
   const step = funnel.steps.find((s) => s.id === currentId)!;
@@ -248,6 +248,8 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
 
   // Step-level impressions are the denominator for diagnosing funnel drop-off.
   useEffect(() => {
+    if (!resumeParamsHandled) return;
+
     const viewKey = `${currentId}:${history.length}`;
     if (lastStepViewKey.current === viewKey) return;
     lastStepViewKey.current = viewKey;
@@ -287,7 +289,7 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
         }),
       });
     }
-  }, [currentId, effectiveAnswers, funnel, history, progressPct, step]);
+  }, [currentId, effectiveAnswers, funnel, history, progressPct, resumeParamsHandled, step]);
 
   // A pagehide while someone is in the quiz is the closest signal we have for
   // "dropped here". Intentional exits (checkout/auth) set a short-lived marker.
@@ -1220,16 +1222,18 @@ function OfferStep({
           action={`/checkout/start?offer=${offer.key}`}
           offerKey={offer.key}
           onCheckoutStart={() => {
-            try {
-              window.sessionStorage.setItem(INTENTIONAL_DEPARTURE_KEY, "1");
-            } catch {
-              // Best-effort guard against counting checkout as abandonment.
-            }
             posthog.capture("web_checkout_cta_clicked", {
               ...offerAnalyticsProperties(),
               cta_label:
                 plan === "annual" ? "Start my free trial" : "Start now",
             });
+          }}
+          onIntentionalDeparture={() => {
+            try {
+              window.sessionStorage.setItem(INTENTIONAL_DEPARTURE_KEY, "1");
+            } catch {
+              // Best-effort guard against counting checkout as abandonment.
+            }
           }}
         >
           <button type="submit" className="checkoutCta">

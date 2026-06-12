@@ -44,10 +44,12 @@ export function EmbeddedCheckoutButton({
   offerKey,
   className,
   children,
+  onCheckoutStart,
 }: {
   offerKey: string;
   className?: string;
   children: ReactNode;
+  onCheckoutStart?: () => void;
 }) {
   const submittingRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
@@ -209,6 +211,7 @@ export function EmbeddedCheckoutButton({
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    onCheckoutStart?.();
     void startCheckout({ firePixel: true });
   }
 

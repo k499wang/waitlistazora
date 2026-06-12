@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import posthog from "posthog-js";
 
 import { OFFERS } from "@/lib/checkout/offers";
@@ -25,6 +25,65 @@ import { InfoStepVisual, StressProjection } from "./info-visuals";
 
 const REASSURANCE_DURATION = 2800; // ms to show reassuring toast before advancing
 const INTERSTITIAL_DURATION = 4000; // ms before an interstitial auto-advances
+const INTENTIONAL_DEPARTURE_KEY = "azora_funnel_intentional_departure";
+
+type FunnelAnalyticsValue = string | number | boolean | null;
+type FunnelAnalyticsProperties = Record<string, FunnelAnalyticsValue>;
+
+function answerSegments(answers: Record<string, string>): FunnelAnalyticsProperties {
+  return {
+    goal: answers.goal ?? null,
+    branch_answer:
+      answers.stress_body ?? answers.sleep_mind ?? answers.general_feel ?? null,
+    tried_before: answers.tried_before ?? null,
+    me_time: answers.me_time ?? null,
+    peace_time: answers.peace_time ?? null,
+    calm_duration: answers.calm_duration ?? null,
+    body_signal: answers.body_signal ?? null,
+    reset_blocker: answers.reset_blocker ?? null,
+  };
+}
+
+function stepTitle(step: FunnelStep): string {
+  switch (step.kind) {
+    case "single_choice":
+      return step.question;
+    case "account":
+    case "info":
+    case "interstitial":
+    case "offer":
+    case "result":
+    case "summary":
+      return step.title;
+  }
+}
+
+function stepAnalyticsProperties({
+  funnel,
+  step,
+  answers,
+  historyLength,
+  progressPct,
+}: {
+  funnel: FunnelConfig;
+  step: FunnelStep;
+  answers: Record<string, string>;
+  historyLength: number;
+  progressPct: number;
+}): FunnelAnalyticsProperties {
+  return {
+    funnel_slug: funnel.slug,
+    funnel_name: funnel.name,
+    step_id: step.id,
+    step_kind: step.kind,
+    step_title: stepTitle(step).slice(0, 120),
+    step_index: funnel.steps.findIndex((s) => s.id === step.id) + 1,
+    step_count: funnel.steps.length,
+    visited_step_count: historyLength + 1,
+    progress_pct: progressPct,
+    ...answerSegments(answers),
+  };
+}
 
 /** Resolve {{step_id}} placeholders in template strings against user answers. */
 function resolveTemplate(
@@ -64,6 +123,7 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
   const [history, setHistory] = useState<string[]>([]);
   const [reassuring, setReassuring] = useState<{ stepId: string; text: string } | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [allowOptionHover, setAllowOptionHover] = useState(false);
   const funnelViewFired = useRef(false);
   const confettiFired = useRef(false);
   const reassuranceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -97,7 +157,10 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
 
   // Personalized copy reads from the merged view; live picks win over the
   // server snapshot. Option highlighting deliberately uses `answers` only.
-  const effectiveAnswers = { ...savedAnswers, ...answers };
+  const effectiveAnswers = useMemo(
+    () => ({ ...savedAnswers, ...answers }),
+    [answers, savedAnswers],
+  );
 
   // Post-login checkout resume: an offer click while logged out bounces through
   // /login and lands back here with ?resume_checkout=<offer>. The runner always
@@ -131,6 +194,132 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
   }, [funnel.steps]);
 
   const step = funnel.steps.find((s) => s.id === currentId)!;
+  const accountIndex = funnel.steps.findIndex((s) => s.kind === "account");
+  const showProgress =
+    accountIndex > 0 && step.kind !== "account" && step.kind !== "offer";
+  const estimatedTotal = Math.max(accountIndex - 2, 1);
+  const ratio = Math.min(history.length, estimatedTotal) / estimatedTotal;
+  const progressPct = Math.round(12 + 88 * Math.pow(ratio, 0.6));
+  const stepEnteredAt = useRef(Date.now());
+  const lastCompletedStepId = useRef<string | null>(null);
+  const lastStepViewKey = useRef("");
+  const latestStep = useRef(step);
+  const latestAnswers = useRef(effectiveAnswers);
+  const latestHistoryLength = useRef(history.length);
+  const latestProgressPct = useRef(progressPct);
+
+  latestStep.current = step;
+  latestAnswers.current = effectiveAnswers;
+  latestHistoryLength.current = history.length;
+  latestProgressPct.current = progressPct;
+
+  const trackStepCompleted = useCallback(
+    ({
+      completedStep,
+      nextId,
+      action,
+      extraProps = {},
+      answersForEvent = effectiveAnswers,
+    }: {
+      completedStep: FunnelStep;
+      nextId: string | null;
+      action: string;
+      extraProps?: FunnelAnalyticsProperties;
+      answersForEvent?: Record<string, string>;
+    }) => {
+      const timeOnStepMs = Math.max(0, Date.now() - stepEnteredAt.current);
+      lastCompletedStepId.current = completedStep.id;
+      posthog.capture("web_funnel_step_completed", {
+        ...stepAnalyticsProperties({
+          funnel,
+          step: completedStep,
+          answers: answersForEvent,
+          historyLength: history.length,
+          progressPct,
+        }),
+        action,
+        next_step_id: nextId,
+        time_on_step_ms: timeOnStepMs,
+        ...extraProps,
+      });
+    },
+    [effectiveAnswers, funnel, history.length, progressPct],
+  );
+
+  // Step-level impressions are the denominator for diagnosing funnel drop-off.
+  useEffect(() => {
+    const viewKey = `${currentId}:${history.length}`;
+    if (lastStepViewKey.current === viewKey) return;
+    lastStepViewKey.current = viewKey;
+
+    stepEnteredAt.current = Date.now();
+    posthog.capture("web_funnel_step_viewed", {
+      ...stepAnalyticsProperties({
+        funnel,
+        step,
+        answers: effectiveAnswers,
+        historyLength: history.length,
+        progressPct,
+      }),
+      previous_step_id: history[history.length - 1] ?? null,
+    });
+
+    if (step.kind === "result") {
+      posthog.capture("web_funnel_result_viewed", {
+        ...stepAnalyticsProperties({
+          funnel,
+          step,
+          answers: effectiveAnswers,
+          historyLength: history.length,
+          progressPct,
+        }),
+      });
+    }
+
+    if (step.kind === "summary") {
+      posthog.capture("web_funnel_summary_viewed", {
+        ...stepAnalyticsProperties({
+          funnel,
+          step,
+          answers: effectiveAnswers,
+          historyLength: history.length,
+          progressPct,
+        }),
+      });
+    }
+  }, [currentId, effectiveAnswers, funnel, history, progressPct, step]);
+
+  // A pagehide while someone is in the quiz is the closest signal we have for
+  // "dropped here". Intentional exits (checkout/auth) set a short-lived marker.
+  useEffect(() => {
+    function reportAbandonment() {
+      try {
+        if (window.sessionStorage.getItem(INTENTIONAL_DEPARTURE_KEY) === "1") {
+          window.sessionStorage.removeItem(INTENTIONAL_DEPARTURE_KEY);
+          return;
+        }
+      } catch {
+        // If storage is blocked, still capture the best-effort exit event.
+      }
+
+      const activeStep = latestStep.current;
+      const timeOnStepMs = Math.max(0, Date.now() - stepEnteredAt.current);
+      posthog.capture("web_funnel_step_abandoned", {
+        ...stepAnalyticsProperties({
+          funnel,
+          step: activeStep,
+          answers: latestAnswers.current,
+          historyLength: latestHistoryLength.current,
+          progressPct: latestProgressPct.current,
+        }),
+        last_completed_step_id: lastCompletedStepId.current,
+        time_on_step_ms: timeOnStepMs,
+      });
+    }
+
+    window.addEventListener("pagehide", reportAbandonment);
+    return () => window.removeEventListener("pagehide", reportAbandonment);
+  }, [funnel]);
 
   // Trigger confetti once when the result step first appears.
   useEffect(() => {
@@ -149,6 +338,12 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
       }
       setReassuring(null);
     };
+  }, [currentId]);
+
+  // A new question can appear under a stationary cursor after auto-advance.
+  // Keep hover styling off until the pointer actually moves on that question.
+  useEffect(() => {
+    setAllowOptionHover(false);
   }, [currentId]);
 
   // Find the next sequential step in the array (default advance when no nextId).
@@ -172,9 +367,20 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
   const goBack = useCallback(() => {
     if (history.length === 0) return;
     const prev = history[history.length - 1];
+    posthog.capture("web_funnel_back_clicked", {
+      ...stepAnalyticsProperties({
+        funnel,
+        step,
+        answers: effectiveAnswers,
+        historyLength: history.length,
+        progressPct,
+      }),
+      to_step_id: prev,
+      time_on_step_ms: Math.max(0, Date.now() - stepEnteredAt.current),
+    });
     setHistory((h) => h.slice(0, -1));
     setCurrentId(prev);
-  }, [history]);
+  }, [effectiveAnswers, funnel, history, progressPct, step]);
 
   const choose = useCallback(
     (stepId: string, optionId: string) => {
@@ -199,6 +405,30 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
           ? s.options.find((o) => o.id === optionId)
           : null;
       const nextId = opt?.nextId ?? defaultNext(stepId);
+      const nextAnswers = { ...effectiveAnswers, [stepId]: optionId };
+
+      if (s) {
+        trackStepCompleted({
+          completedStep: s,
+          nextId,
+          action: "answer_selected",
+          answersForEvent: nextAnswers,
+          extraProps: {
+            option_id: optionId,
+            option_label: opt?.label ?? null,
+            option_position:
+              s.kind === "single_choice"
+                ? s.options.findIndex((o) => o.id === optionId) + 1
+                : null,
+            has_reassurance_delay:
+              s.kind === "single_choice" && Boolean(s.reassurance && nextId),
+            reassurance_delay_ms:
+              s.kind === "single_choice" && s.reassurance && nextId
+                ? REASSURANCE_DURATION
+                : null,
+          },
+        });
+      }
 
       // Calm-style reassuring toast: pause briefly before advancing.
       if (s?.kind === "single_choice" && s.reassurance && nextId) {
@@ -214,7 +444,14 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
 
       if (nextId) navigate(nextId);
     },
-    [funnel.steps, funnel.slug, navigate, defaultNext],
+    [
+      defaultNext,
+      effectiveAnswers,
+      funnel.slug,
+      funnel.steps,
+      navigate,
+      trackStepCompleted,
+    ],
   );
 
   // Interstitial auto-advances after a short, intentional pause.
@@ -222,9 +459,17 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
     if (step.kind !== "interstitial") return;
     const nextId = defaultNext(step.id);
     if (!nextId) return;
-    const t = setTimeout(() => navigate(nextId), INTERSTITIAL_DURATION);
+    const t = setTimeout(() => {
+      trackStepCompleted({
+        completedStep: step,
+        nextId,
+        action: "auto_advance",
+        extraProps: { auto_advance_delay_ms: INTERSTITIAL_DURATION },
+      });
+      navigate(nextId);
+    }, INTERSTITIAL_DURATION);
     return () => clearTimeout(t);
-  }, [currentId, step.kind, defaultNext, navigate]);
+  }, [currentId, step, defaultNext, navigate, trackStepCompleted]);
 
   // Resolve templates for dynamic interstitial / result / info text.
   const displayTitle =
@@ -258,12 +503,6 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
   // array index, so the goal-branch fork doesn't make the bar jump. The "-2"
   // accounts for the two branch follow-ups every user skips, so the bar still
   // reaches ~100% by the result/summary regardless of which branch they took.
-  const accountIndex = funnel.steps.findIndex((s) => s.kind === "account");
-  const showProgress =
-    accountIndex > 0 && step.kind !== "account" && step.kind !== "offer";
-  const estimatedTotal = Math.max(accountIndex - 2, 1);
-  const ratio = Math.min(history.length, estimatedTotal) / estimatedTotal;
-  const progressPct = Math.round(12 + 88 * Math.pow(ratio, 0.6));
 
   return (
     <div className="container funnelContainer">
@@ -306,7 +545,16 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
                 {displayBody ? (
                   <p className="funnelSubtext">{displayBody}</p>
                 ) : null}
-                <div className="funnelOptions">
+                <div
+                  className={`funnelOptions${
+                    allowOptionHover ? " funnelOptionsCanHover" : ""
+                  }`}
+                  onPointerMove={(event) => {
+                    if (event.pointerType === "mouse") {
+                      setAllowOptionHover(true);
+                    }
+                  }}
+                >
                   {step.options.map((opt) => (
                     <button
                       key={opt.id}
@@ -387,6 +635,11 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
               className="funnelPrimaryBtn"
               onClick={() => {
                 const nextId = defaultNext(step.id);
+                trackStepCompleted({
+                  completedStep: step,
+                  nextId,
+                  action: "continue_clicked",
+                });
                 if (nextId) navigate(nextId);
               }}
             >
@@ -429,6 +682,11 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
               className="funnelPrimaryBtn"
               onClick={() => {
                 const nextId = defaultNext(step.id);
+                trackStepCompleted({
+                  completedStep: step,
+                  nextId,
+                  action: "result_unlock_clicked",
+                });
                 if (nextId) navigate(nextId);
               }}
             >
@@ -444,6 +702,11 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
             answers={effectiveAnswers}
             onContinue={() => {
               const nextId = defaultNext(step.id);
+              trackStepCompleted({
+                completedStep: step,
+                nextId,
+                action: "summary_save_clicked",
+              });
               if (nextId) navigate(nextId);
             }}
           />
@@ -455,6 +718,11 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
             slug={funnel.slug}
             onContinue={() => {
               const nextId = defaultNext(step.id);
+              trackStepCompleted({
+                completedStep: step,
+                nextId,
+                action: "account_continue_clicked",
+              });
               if (nextId) navigate(nextId);
             }}
           />
@@ -693,6 +961,7 @@ function OfferStep({
   const offer = OFFERS[plan];
   const display = OFFER_DISPLAY[plan];
   const { loaded, email } = useSupabaseSession();
+  const offerEnteredAt = useRef(Date.now());
 
   // Spin-the-wheel discount. Read in an effect (not during render) so SSR and
   // the first client render match; until then neither the overlay nor the
@@ -734,6 +1003,24 @@ function OfferStep({
       spin_discount_claimed: readSpinDiscount() !== null,
     });
   }, [funnelSlug, step.offerKey, answers.goal]);
+
+  function offerAnalyticsProperties(): FunnelAnalyticsProperties {
+    return {
+      funnel_slug: funnelSlug,
+      step_id: step.id,
+      step_kind: step.kind,
+      default_offer_key: step.offerKey,
+      selected_plan: plan,
+      selected_offer_id: offer.offerId,
+      selected_offer_name: offer.displayName,
+      signed_in: email !== null,
+      auth_loaded: loaded,
+      spin_discount_claimed: discount !== null,
+      discount_pct: discount?.pct ?? null,
+      time_on_paywall_ms: Math.max(0, Date.now() - offerEnteredAt.current),
+      ...answerSegments(answers),
+    };
+  }
 
   const title = GOAL_HEADLINES[answers.goal] ?? step.title;
   const duration = DURATION_LABELS[answers.calm_duration];
@@ -799,7 +1086,16 @@ function OfferStep({
               role="radio"
               aria-checked={plan === key}
               className={`planToggleBtn${plan === key ? " planToggleBtnActive" : ""}`}
-              onClick={() => setPlan(key)}
+              onClick={() => {
+                if (plan === key) return;
+                posthog.capture("web_offer_plan_toggled", {
+                  ...offerAnalyticsProperties(),
+                  from_plan: plan,
+                  to_plan: key,
+                  to_offer_id: OFFERS[key].offerId,
+                });
+                setPlan(key);
+              }}
             >
               <span className="planToggleLabel">
                 {key === "annual" ? "Annual" : "Weekly"}
@@ -923,6 +1219,18 @@ function OfferStep({
         <CheckoutForm
           action={`/checkout/start?offer=${offer.key}`}
           offerKey={offer.key}
+          onCheckoutStart={() => {
+            try {
+              window.sessionStorage.setItem(INTENTIONAL_DEPARTURE_KEY, "1");
+            } catch {
+              // Best-effort guard against counting checkout as abandonment.
+            }
+            posthog.capture("web_checkout_cta_clicked", {
+              ...offerAnalyticsProperties(),
+              cta_label:
+                plan === "annual" ? "Start my free trial" : "Start now",
+            });
+          }}
         >
           <button type="submit" className="checkoutCta">
             {plan === "annual" ? "Start my free trial" : "Start now"}

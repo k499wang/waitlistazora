@@ -1884,7 +1884,7 @@ body::after {
   transition: all 0.18s ease;
 }
 
-.funnelOption:hover {
+.funnelOptionsCanHover .funnelOption:hover {
   border-color: var(--brand);
   transform: translateY(-1px);
   box-shadow: 0 8px 20px -10px rgba(62, 111, 119, 0.5);

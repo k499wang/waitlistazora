@@ -17,17 +17,23 @@ export function CheckoutForm({
   offerKey,
   className,
   children,
+  onCheckoutStart,
 }: {
   action: string;
   offerKey: string;
   className?: string;
   children: ReactNode;
+  onCheckoutStart?: () => void;
 }) {
   const submittedRef = useRef(false);
 
   if (EMBEDDED_CHECKOUT) {
     return (
-      <EmbeddedCheckoutButton offerKey={offerKey} className={className}>
+      <EmbeddedCheckoutButton
+        offerKey={offerKey}
+        className={className}
+        onCheckoutStart={onCheckoutStart}
+      >
         {children}
       </EmbeddedCheckoutButton>
     );
@@ -45,6 +51,7 @@ export function CheckoutForm({
 
         submittedRef.current = true;
         event.preventDefault();
+        onCheckoutStart?.();
 
         const form = event.currentTarget;
         let continued = false;

@@ -31,6 +31,34 @@ export function clientIpFromRequest(req: Request): string | null {
   return req.headers.get("x-real-ip");
 }
 
+function funnelContextFromRequest(
+  requestUrl: URL,
+  referrer: string | null,
+): { funnelSlug: string | null; landingPath: string } {
+  if (referrer) {
+    try {
+      const path = new URL(referrer).pathname;
+      if (path.startsWith("/f/")) {
+        return {
+          funnelSlug: path.split("/")[2] ?? null,
+          landingPath: path,
+        };
+      }
+    } catch {
+      // Fall through to the checkout URL.
+    }
+  }
+
+  if (requestUrl.pathname.startsWith("/f/")) {
+    return {
+      funnelSlug: requestUrl.pathname.split("/")[2] ?? null,
+      landingPath: requestUrl.pathname,
+    };
+  }
+
+  return { funnelSlug: null, landingPath: requestUrl.pathname };
+}
+
 export type CreateCheckoutIntentResult =
   | { kind: "unauthenticated" }
   | { kind: "profile_error" }
@@ -80,6 +108,8 @@ export async function createCheckoutIntent(
   });
 
   const admin = createAdminSupabaseClient();
+  const referrer = req.headers.get("referer");
+  const funnelContext = funnelContextFromRequest(requestUrl, referrer);
 
   try {
     await ensureWebProfile(admin, user);
@@ -91,15 +121,30 @@ export async function createCheckoutIntent(
   const cookieStore = await cookies();
   const sessionId = await getOrCreateFunnelSession(admin, {
     userId: user.id,
-    funnelSlug: checkout.offer.offerId,
-    landingPath: requestUrl.pathname,
+    funnelSlug: funnelContext.funnelSlug ?? checkout.offer.offerId,
+    landingPath: funnelContext.landingPath,
     initialUrl: req.url,
     cookieSessionId: cookieStore.get(FUNNEL_SESSION_COOKIE)?.value,
-    referrer: req.headers.get("referer"),
+    referrer,
     userAgent: req.headers.get("user-agent"),
     ipAddress: clientIpFromRequest(req),
     ipCountry: req.headers.get("x-vercel-ip-country"),
   });
+  let sessionFunnelSlug = funnelContext.funnelSlug ?? checkout.offer.offerId;
+  let sessionLandingPath = funnelContext.landingPath;
+
+  try {
+    const { data: session } = await admin
+      .from("web_funnel_sessions")
+      .select("funnel_slug, landing_path")
+      .eq("id", sessionId)
+      .maybeSingle();
+
+    sessionFunnelSlug = session?.funnel_slug ?? sessionFunnelSlug;
+    sessionLandingPath = session?.landing_path ?? sessionLandingPath;
+  } catch {
+    // Best-effort analytics context; checkout should not depend on it.
+  }
 
   // Persist the browser's _fbp/_fbc at checkout time so the webhook's CAPI
   // Purchase/StartTrial always has match keys, even when the landing beacon
@@ -154,7 +199,8 @@ export async function createCheckoutIntent(
         offer_id: checkout.offer.offerId,
         environment: checkout.environment,
         session_id: sessionId,
-        funnel_slug: checkout.offer.offerId,
+        funnel_slug: sessionFunnelSlug,
+        landing_path: sessionLandingPath,
         $set: { email: user.email },
       },
     });

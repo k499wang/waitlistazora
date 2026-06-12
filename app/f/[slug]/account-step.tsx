@@ -11,6 +11,7 @@ import type { FunnelStep } from "@/lib/funnels/types";
 // sees it, strips it, and jumps straight back to the account step so the
 // funnel resumes where the user left off instead of restarting at question 1.
 export const ACCOUNT_DONE_PARAM = "account_done";
+const INTENTIONAL_DEPARTURE_KEY = "azora_funnel_intentional_departure";
 
 type SessionState = { loaded: boolean; email: string | null };
 
@@ -97,8 +98,22 @@ export function FunnelAccountStep({
       if (!data.url) {
         throw new Error("Google sign-in did not return a redirect URL.");
       }
+      posthog.capture("web_auth_redirect_started", {
+        funnel_slug: slug,
+        method: "google",
+      });
+      try {
+        window.sessionStorage.setItem(INTENTIONAL_DEPARTURE_KEY, "1");
+      } catch {
+        // Best-effort guard against counting OAuth as funnel abandonment.
+      }
       window.location.assign(data.url);
     } catch (err) {
+      try {
+        window.sessionStorage.removeItem(INTENTIONAL_DEPARTURE_KEY);
+      } catch {
+        // Storage may be unavailable in locked-down browsers.
+      }
       setError(err instanceof Error ? err.message : "Google sign-in failed.");
       setPending(null);
     }

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { getFunnel, listActiveFunnelSlugs } from "@/lib/funnels/registry";
-import { TopBar } from "@/app/components/top-bar";
 
 import { FunnelRunner } from "./funnel-runner";
 
@@ -41,13 +40,10 @@ export default async function FunnelPage({
   }
 
   return (
-    <>
-      <TopBar next={`/f/${slug}`} />
-      <main className="funnelPage">
-        <div className="glass-orb orb-brand orb-md" style={{ top: "12%", right: "-8%" }} />
-        <div className="glass-orb orb-sm" style={{ top: "60%", left: "-5%" }} />
-        <FunnelRunner funnel={funnel} />
-      </main>
-    </>
+    <main className="funnelPage">
+      <div className="glass-orb orb-brand orb-md" style={{ top: "12%", right: "-8%" }} />
+      <div className="glass-orb orb-sm" style={{ top: "60%", left: "-5%" }} />
+      <FunnelRunner funnel={funnel} />
+    </main>
   );
 }

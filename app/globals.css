@@ -1782,23 +1782,82 @@ body::after {
 /* ── Funnel ── */
 .funnelPage {
   position: relative;
-  min-height: calc(100vh - 4rem);
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
-  align-items: center;
-  padding: 3rem 0 5rem;
+  align-items: flex-start;
+  /* Clears the fixed app header + progress bar on top, and the pinned
+     action bar on the bottom (only the question screens use the bar, but the
+     extra space at the bottom is harmless on the others). */
+  padding: 4.75rem 0 7rem;
   background: var(--bg);
   overflow: hidden;
 }
 
 .funnelContainer { max-width: 540px; }
 
-/* Full-width loading bar pinned flush under the 4rem top bar (z-index 90 keeps
-   it above page content but below the sticky bar's 100). Sitting exactly at the
-   header's bottom edge means it's always visible and never tucked behind the
-   menu — on mobile and desktop alike, since the top bar is 4rem on both. */
+/* ── App-style nav header (replaces the marketing top bar in funnels) ── */
+.funnelAppHeader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  background: rgba(250, 249, 246, 0.82);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 1px solid var(--border);
+}
+
+.funnelAppWordmark {
+  font-size: 1.0625rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.funnelAppBadge {
+  margin-left: 0.25rem;
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  vertical-align: super;
+  color: var(--brand);
+}
+
+.funnelAppBack {
+  position: absolute;
+  left: max(1.1rem, calc(50vw - 264px));
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.funnelAppBack:hover {
+  background: var(--brand-soft);
+  color: var(--text-primary);
+}
+
+/* Full-width loading bar pinned flush under the 3.25rem app header (z-index 90
+   keeps it above page content but below the header's 100). Sitting exactly at
+   the header's bottom edge means it's always visible — mobile and desktop. */
 .funnelProgress {
   position: fixed;
-  top: 4rem;
+  top: 3.25rem;
   left: 0;
   width: 100%;
   height: 6px;
@@ -1813,32 +1872,6 @@ body::after {
   background: var(--brand);
   transition: width 0.5s var(--ease-out-expo);
 }
-
-/* Pinned just under the top bar, aligned with the funnel column's left edge,
-   so it sits in the same spot on every screen instead of riding the
-   vertically-centered step content. */
-.funnelBack {
-  position: fixed;
-  top: 5rem;
-  left: max(2rem, calc(50vw - 238px));
-  z-index: 50;
-  background: none;
-  border: none;
-  padding: 0.25rem 0;
-  font-family: inherit;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-
-@media (max-width: 640px) {
-  .funnelBack {
-    top: 4.5rem;
-    left: 1.25rem;
-  }
-}
-.funnelBack:hover { color: var(--text-primary); }
 
 .funnelStep { animation: funnelFade 0.4s var(--ease-out-expo) both; }
 
@@ -1864,8 +1897,9 @@ body::after {
   white-space: pre-line;
 }
 
-.funnelOptions { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.75rem; }
+.funnelOptions { display: flex; flex-direction: column; gap: 0.7rem; margin-top: 1.75rem; }
 
+/* Soft, app-style pills: tinted fill, borderless until selected. */
 .funnelOption {
   display: flex;
   align-items: center;
@@ -1873,15 +1907,16 @@ body::after {
   width: 100%;
   padding: 1.1rem 1.25rem;
   border-radius: var(--radius-md);
-  background: var(--bg-card);
-  border: 1.5px solid var(--border-strong);
+  background: var(--brand-soft);
+  border: 1.5px solid transparent;
   font-family: inherit;
   font-size: 1rem;
   font-weight: 600;
   color: var(--text-primary);
   text-align: left;
   cursor: pointer;
-  transition: all 0.18s ease;
+  transition: background 0.18s ease, border-color 0.18s ease,
+    transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 .funnelOptionsCanHover .funnelOption:hover {
@@ -1890,13 +1925,59 @@ body::after {
   box-shadow: 0 8px 20px -10px rgba(62, 111, 119, 0.5);
 }
 
-.funnelOptionSelected { border-color: var(--brand); background: var(--brand-soft); }
+.funnelOptionSelected {
+  border-color: var(--brand);
+  background: rgba(62, 111, 119, 0.18);
+}
 .funnelOptionEmoji { font-size: 1.3rem; line-height: 1; }
 
+/* Pinned bottom action bar (question screens). Holds the Continue button at
+   the funnel column width, with a soft fade so content scrolls under it. */
+.funnelFooter {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  z-index: 90;
+  display: flex;
+  justify-content: center;
+  padding: 0.85rem 1.25rem calc(0.85rem + env(safe-area-inset-bottom));
+  background: linear-gradient(
+    to top,
+    var(--bg) 55%,
+    rgba(250, 249, 246, 0)
+  );
+}
+
+.funnelFooterBtn {
+  width: 100%;
+  max-width: 540px;
+  margin-top: 0;
+}
+
+.funnelFooterBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .funnelInterstitial,
+.funnelOffer { text-align: center; }
+
+/* Info / result / summary share the question-screen rhythm: left-aligned
+   title at the top, subtitle under it, then the visual below. */
+.funnelInfo,
 .funnelResult,
-.funnelOffer,
-.funnelInfo { text-align: center; }
+.funnelSummary { text-align: left; }
+
+/* Free-text step (e.g. name). Centered to match the other funnel steps. */
+.funnelTextInput { text-align: center; }
+
+.funnelTextInput .authInput {
+  margin: 1.5rem 0 1.25rem;
+  text-align: center;
+}
+
+.funnelTextInput .funnelPrimaryBtn { width: 100%; }
 
 .funnelResult { position: relative; }
 
@@ -1915,7 +1996,7 @@ body::after {
 .funnelResultBadge {
   width: 56px;
   height: 56px;
-  margin: 0 auto 1.5rem;
+  margin: 1.5rem auto 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1935,42 +2016,29 @@ body::after {
 }
 
 /* ── Funnel info screen (proof / education) ── */
+/* Visual sits below the title/subtitle now, centered in the column. */
 .funnelInfoIcon {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   width: 72px;
   height: 72px;
-  margin: 0 auto 1.25rem;
+  margin: 0.75rem auto 0;
   border-radius: 50%;
   background: var(--brand-soft);
   font-size: 2rem;
   line-height: 1;
 }
 
-.funnelInfo .funnelQuestion {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
-}
-
 .funnelInfo .funnelSubtext {
-  max-width: 420px;
-  margin-left: auto;
-  margin-right: auto;
-  margin-bottom: 1.75rem;
-}
-
-.funnelInfo .funnelPrimaryBtn {
-  max-width: 220px;
-  margin-left: auto;
-  margin-right: auto;
+  margin-bottom: 1.5rem;
 }
 
 /* ── Funnel info visuals (inline SVG diagrams) ── */
 .funnelVisual {
   display: flex;
   justify-content: center;
-  margin: 0 auto 1.5rem;
+  margin: 0.5rem auto 0;
 }
 
 .funnelVisual svg {
@@ -2085,21 +2153,12 @@ body::after {
 }
 
 /* ── Funnel summary: personalized plan recap ── */
-.funnelSummary { text-align: center; }
-
-.funnelSummary .funnelQuestion {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
-}
-
 .funnelSummary .funnelSubtext {
-  max-width: 420px;
-  margin: 0 auto 1.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .summaryPlanCard {
-  max-width: 420px;
-  margin: 0 auto 1.5rem;
+  margin: 0 0 1.5rem;
   padding: 0.5rem 1.25rem;
   border: 1px solid var(--border-strong);
   border-radius: 18px;
@@ -2136,8 +2195,7 @@ body::after {
 }
 
 .summaryProjection {
-  max-width: 420px;
-  margin: 0 auto 1.5rem;
+  margin: 0 0 1.5rem;
 }
 
 .summaryProjectionTitle {
@@ -2151,8 +2209,7 @@ body::after {
 
 /* "Based on your answers, we predict…" forecast callout */
 .summaryPrediction {
-  max-width: 420px;
-  margin: 0 auto 1.5rem;
+  margin: 0 0 1.5rem;
   padding: 1rem 1.25rem;
   border-radius: 14px;
   border: 1px solid rgba(201, 163, 106, 0.4);
@@ -2179,17 +2236,10 @@ body::after {
 .summaryPredictionText strong { font-weight: 800; color: var(--brand); }
 
 .summaryCompare {
-  max-width: 420px;
-  margin: 0 auto 1.75rem;
+  margin: 0 0 0.5rem;
   font-size: 0.9rem;
   line-height: 1.55;
   color: var(--text-secondary);
-}
-
-.funnelSummary .funnelPrimaryBtn {
-  max-width: 340px;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 /* ── Paywall: results-first recap, guarantee, reviews ── */

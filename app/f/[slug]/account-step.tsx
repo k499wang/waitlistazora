@@ -7,11 +7,12 @@ import { LOGIN_NEXT_COOKIE } from "@/lib/checkout/funnel-session";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { FunnelStep } from "@/lib/funnels/types";
 
+import { INTENTIONAL_DEPARTURE_KEY } from "./funnel-constants";
+
 // Query param marking a return from the Google OAuth round-trip. The runner
 // sees it, strips it, and jumps straight back to the account step so the
 // funnel resumes where the user left off instead of restarting at question 1.
 export const ACCOUNT_DONE_PARAM = "account_done";
-const INTENTIONAL_DEPARTURE_KEY = "azora_funnel_intentional_departure";
 
 type SessionState = { loaded: boolean; email: string | null };
 

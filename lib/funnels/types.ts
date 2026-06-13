@@ -49,6 +49,18 @@ export type FunnelStep =
       options: FunnelOption[];
     }
   | {
+      // Free-text answer (e.g. the user's first name) used to personalize
+      // later copy via {{step_id}} templates. The raw trimmed string is stored
+      // as the answer and persisted like any other answer.
+      kind: "text_input";
+      id: string;
+      question: string;
+      subtext?: string;
+      placeholder?: string;
+      /** Max characters accepted; the runner defaults this when unset. */
+      maxLength?: number;
+    }
+  | {
       kind: "interstitial";
       id: string;
       title: string;
@@ -112,6 +124,71 @@ export type FunnelStep =
       offerKey: OfferKey;
     };
 
+/**
+ * Per-funnel personalization: everything the runner derives from the user's
+ * answers (summary plan card, paywall headline/body, analytics segments) plus
+ * the offer-step copy blocks that are funnel-specific. Keeping this in config
+ * keeps the runner funnel-agnostic.
+ *
+ * Template strings here support:
+ *   {{step_id:short}}           → the short label for the user's answer to that
+ *                                 step, looked up in `shortAnswers`
+ *   {{step_id:short|fallback}}  → same, but renders the fallback when the step
+ *                                 is unanswered
+ *   {{projection_date}}         → a concrete date 2 weeks out (e.g. "Jun 26")
+ *   **bold**                    → rendered as <strong>
+ * A template that references an unanswered step with no |fallback resolves to
+ * null, and the runner omits that row/line entirely.
+ */
+export interface FunnelPersonalization {
+  /**
+   * Answer-derived PostHog event properties: property name → step IDs checked
+   * in order (first answered wins; null when none answered). Lets branching
+   * funnels coalesce branch follow-ups into one segment property.
+   */
+  analyticsSegments: Record<string, string[]>;
+  /**
+   * Short, sentence-friendly forms of answers for {{step_id:short}} tokens:
+   * step ID → option ID → label. Full option labels are full sentences, so
+   * recap copy uses these instead.
+   */
+  shortAnswers: Record<string, Record<string, string>>;
+  summary: {
+    /**
+     * Plan recap rows (shown on the summary step and again on the paywall).
+     * `value` is a template; rows referencing an unanswered step with no
+     * fallback are omitted.
+     */
+    planRows: { label: string; value: string }[];
+    /** Projection chart under the plan card. Omit to hide the chart. */
+    projection?: {
+      title: string;
+      /** Step whose answer names where the curve lands. */
+      stepId: string;
+      endLabels: Record<string, string>;
+      fallbackEndLabel: string;
+    };
+    /** "Based on your answers, we predict…" block. */
+    prediction?: { kicker: string; text: string };
+    /** Comparison line ("X gave you no feedback…"); template, omitted when unresolved. */
+    compare?: string;
+  };
+  offer: {
+    /** Paywall headline keyed by the answer to `stepId`; falls back to the offer step's title. */
+    headline?: { stepId: string; byAnswer: Record<string, string> };
+    /** Paywall subline template; falls back to the offer step's body when unresolved. */
+    body?: string;
+    /** Value-anchor line under the feature list. */
+    anchorNote?: string;
+    /** "How your free trial works" timeline (annual plan only). */
+    trialTimeline?: { day: string; text: string }[];
+    /** Accuracy/credibility block at the bottom of the checkout card. */
+    validation?: { line: string; sources: string };
+    /** Member reviews under the checkout card. */
+    testimonials?: { name: string; meta: string; text: string }[];
+  };
+}
+
 export interface FunnelConfig {
   slug: string;
   name: string;
@@ -119,4 +196,5 @@ export interface FunnelConfig {
   /** Short copy under the headline on the first step. */
   intro: string;
   steps: FunnelStep[];
+  personalization: FunnelPersonalization;
 }

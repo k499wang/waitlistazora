@@ -6,6 +6,7 @@ import { FunnelAccountStep } from "./account-step";
 import { InfoStep } from "./info-step";
 import { InterstitialStep } from "./interstitial-step";
 import { OfferStep } from "./offer-step";
+import { ProjectionStep } from "./projection-step";
 import { ResultStep } from "./result-step";
 import { SingleChoiceStep } from "./single-choice-step";
 import { SummaryStep } from "./summary-step";
@@ -64,7 +65,7 @@ export function FunnelStepRenderer({
         />
       );
     case "interstitial":
-      return <InterstitialStep title={title} body={body} />;
+      return <InterstitialStep step={step} title={title} body={body} />;
     case "info":
       return (
         <InfoStep
@@ -81,6 +82,15 @@ export function FunnelStepRenderer({
     case "summary":
       return (
         <SummaryStep
+          title={title}
+          body={body}
+          personalization={funnel.personalization}
+          answers={effectiveAnswers}
+        />
+      );
+    case "projection":
+      return (
+        <ProjectionStep
           title={title}
           body={body}
           personalization={funnel.personalization}

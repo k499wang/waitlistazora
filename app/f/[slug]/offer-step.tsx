@@ -14,35 +14,16 @@ import {
 import type { FunnelConfig, FunnelStep } from "@/lib/funnels/types";
 
 import { useSupabaseSession } from "./account-step";
-import {
-  DISCOUNT_TIMER_MS,
-  DiscountSpinnerOverlay,
-  readSpinDiscount,
-  type SpinDiscount,
-} from "./discount-spinner";
+import { DiscountSpinnerOverlay, readSpinDiscount } from "./discount-spinner";
 import { INTENTIONAL_DEPARTURE_KEY } from "./funnel-constants";
+import {
+  OfferDiscountBanner,
+  OfferJourneySteps,
+  OfferPlanToggle,
+  OfferTestimonials,
+} from "./offer-step-components";
 import { PlanRecap } from "./plan-recap";
-
-/** Inline 5-star row. */
-function Stars() {
-  return (
-    <span className="starRow" aria-hidden>
-      {Array.from({ length: 5 }).map((_, i) => (
-        <svg key={i} width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.8 5.9 21.4l1.4-6.8L2.2 9.9l6.9-.8z" />
-        </svg>
-      ))}
-    </span>
-  );
-}
-
-/** mm:ss for the "discount reserved" countdown. */
-function formatCountdown(ms: number): string {
-  const totalSec = Math.ceil(ms / 1000);
-  const m = Math.floor(totalSec / 60);
-  const s = totalSec % 60;
-  return `${m}:${String(s).padStart(2, "0")}`;
-}
+import { useOfferDiscount } from "./use-offer-discount";
 
 export function OfferStep({
   step,
@@ -60,33 +41,8 @@ export function OfferStep({
   const display = OFFER_DISPLAY[plan];
   const { loaded, email } = useSupabaseSession();
   const offerEnteredAt = useRef(Date.now());
-
-  // Spin-the-wheel discount. Read in an effect (not during render) so SSR and
-  // the first client render match; until then neither the overlay nor the
-  // discounted prices show. New visitors get the spinner overlay once;
-  // returning visitors land with their discount already applied.
-  const [discount, setDiscount] = useState<SpinDiscount | null>(null);
-  const [showSpinner, setShowSpinner] = useState(false);
-  useEffect(() => {
-    const existing = readSpinDiscount();
-    if (existing) setDiscount(existing);
-    else setShowSpinner(true);
-  }, []);
-
-  // Countdown ticks down from the moment the discount was claimed. After it
-  // hits zero the timer disappears but the discount stays applied — the
-  // price never actually changes.
-  const [countdownMs, setCountdownMs] = useState(0);
-  useEffect(() => {
-    if (!discount) return;
-    const tick = () =>
-      setCountdownMs(
-        Math.max(0, discount.claimedAt + DISCOUNT_TIMER_MS - Date.now()),
-      );
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, [discount]);
+  const { countdownMs, discount, showSpinner, claimDiscount } =
+    useOfferDiscount();
 
   // Fire web_paywall_viewed once when the offer step mounts, so paywall
   // conversion can be measured separately from quiz completion.
@@ -138,20 +94,13 @@ export function OfferStep({
       {showSpinner && !discount ? (
         <DiscountSpinnerOverlay
           funnelSlug={funnelSlug}
-          onClaim={(won) => {
-            setDiscount(won);
-            setShowSpinner(false);
-          }}
+          onClaim={claimDiscount}
         />
       ) : null}
 
       {/* Mini journey strip: makes the account requirement explicit instead of
           surprising the user with a login bounce when they hit the CTA. */}
-      <ol className="offerSteps" aria-label="Checkout steps">
-        <li className="offerStepDone">Plan built</li>
-        <li className={email ? "offerStepDone" : "offerStepCurrent"}>Account</li>
-        <li className={email ? "offerStepCurrent" : ""}>Unlock Pro</li>
-      </ol>
+      <OfferJourneySteps email={email} />
 
       {title ? (
         <h1 className="funnelQuestion">{title}</h1>
@@ -163,53 +112,33 @@ export function OfferStep({
       {/* Results-first framing: the personalized plan the user just built,
           repeated at the point of payment so the value is in view at the CTA. */}
       <div className="offerRecap">
-        <PlanRecap personalization={personalization} answers={answers} />
+        {/* Projection chart lives on its own `projection` step; keep the
+            paywall recap to the plan card only. */}
+        <PlanRecap
+          personalization={personalization}
+          answers={answers}
+          showProjection={false}
+        />
       </div>
 
       {discount ? (
-        <div className="discountBanner" role="status">
-          <span className="discountBannerPct">{discount.pct}% OFF</span>
-          <span className="discountBannerText">applied to your plan</span>
-          {countdownMs > 0 ? (
-            <span className="discountBannerTimer">
-              reserved for {formatCountdown(countdownMs)}
-            </span>
-          ) : null}
-        </div>
+        <OfferDiscountBanner discount={discount} countdownMs={countdownMs} />
       ) : null}
 
       {/* Plan toggle */}
-      <div className="planToggle" role="radiogroup" aria-label="Billing period">
-        {(["annual", "weekly"] as const).map((key) => {
-          const d = OFFER_DISPLAY[key];
-          return (
-            <button
-              key={key}
-              type="button"
-              role="radio"
-              aria-checked={plan === key}
-              className={`planToggleBtn${plan === key ? " planToggleBtnActive" : ""}`}
-              onClick={() => {
-                if (plan === key) return;
-                posthog.capture("web_offer_plan_toggled", {
-                  ...offerAnalyticsProperties(),
-                  from_plan: plan,
-                  to_plan: key,
-                  to_offer_id: OFFERS[key].offerId,
-                });
-                setPlan(key);
-              }}
-            >
-              <span className="planToggleLabel">
-                {key === "annual" ? "Annual" : "Weekly"}
-              </span>
-              {d.badge ? (
-                <span className="planToggleBadge">{d.badge}</span>
-              ) : null}
-            </button>
-          );
-        })}
-      </div>
+      <OfferPlanToggle
+        plan={plan}
+        onChange={(nextPlan) => {
+          if (plan === nextPlan) return;
+          posthog.capture("web_offer_plan_toggled", {
+            ...offerAnalyticsProperties(),
+            from_plan: plan,
+            to_plan: nextPlan,
+            to_offer_id: OFFERS[nextPlan].offerId,
+          });
+          setPlan(nextPlan);
+        }}
+      />
 
       {/* Single checkout card */}
       <div className="checkoutCard">
@@ -396,19 +325,7 @@ export function OfferStep({
 
       {/* Social proof: member reviews under the card, reinforcing the CTA. */}
       {personalization.offer.testimonials?.length ? (
-        <section className="offerTestimonials" aria-label="Member reviews">
-          <p className="offerTestimonialsHeading">What members say</p>
-          {personalization.offer.testimonials.map((t) => (
-            <figure key={t.name} className="testimonialCard">
-              <Stars />
-              <blockquote className="testimonialText">{t.text}</blockquote>
-              <figcaption className="testimonialMeta">
-                <span className="testimonialName">{t.name}</span>
-                <span className="testimonialSub">{t.meta}</span>
-              </figcaption>
-            </figure>
-          ))}
-        </section>
+        <OfferTestimonials testimonials={personalization.offer.testimonials} />
       ) : null}
     </div>
   );

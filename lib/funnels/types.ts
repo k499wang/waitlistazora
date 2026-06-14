@@ -23,7 +23,20 @@ export type InfoVisualKey =
   | "stat_ring"
   | "stress_signature"
   | "camera_ppg"
-  | "stress_projection";
+  | "stress_projection"
+  | "breath_wave";
+
+/**
+ * Reference to an image asset under /public (or any valid next/image src),
+ * with required alt text. Shared by the info-step `image` and `logos` fields
+ * so new funnels can drop in brand assets without touching the renderer.
+ */
+export interface FunnelImageRef {
+  /** Path under /public, e.g. "/q1.png" or "/harvard.png". */
+  src: string;
+  /** Accessible description (logo wordmark, or what the photo shows). */
+  alt: string;
+}
 
 export interface FunnelOption {
   /** Stable id stored with the answer. */
@@ -65,6 +78,8 @@ export type FunnelStep =
       id: string;
       title: string;
       body: string;
+      /** Optional loading checklist rendered as animated progress rows. */
+      loadingItems?: string[];
     }
   | {
       kind: "info";
@@ -76,12 +91,31 @@ export type FunnelStep =
        * icon. The icon remains the fallback when this is unset.
        */
       visual?: InfoVisualKey;
+      /**
+       * Photo/illustration rendered as the centerpiece instead of the emoji
+       * icon or SVG visual (e.g. a "/q1.png" person clipart). Takes precedence
+       * over `visual` and `icon`. Ignored when `backgroundImage` is set.
+       */
+      image?: FunnelImageRef;
+      /**
+       * Full-bleed background photo for the whole step (e.g. "/sea.jpg"). When
+       * set, the step renders text-only over the photo — the icon, visual,
+       * image, and logos are all suppressed, since a foreground graphic and a
+       * background photo fight for the same space.
+       */
+      backgroundImage?: string;
       title: string;
       body: string;
       /**
+       * Logo images rendered as a "backed by" credibility strip under the body
+       * (e.g. university marks). Reusable social-proof slot for any funnel.
+       * Suppressed on `backgroundImage` steps.
+       */
+      logos?: FunnelImageRef[];
+      /**
        * Institution names rendered as a wordmark credibility strip under the
-       * body (e.g. "MIT Media Lab"). Text-only for now; swap in licensed logo
-       * assets later without changing the data shape.
+       * body (e.g. "MIT Media Lab"). Text-only alternative to `logos` when you
+       * don't have a logo asset (or licensing) for a name.
        */
       institutions?: string[];
       /** Small-print study citation line rendered under the strip. */
@@ -103,6 +137,16 @@ export type FunnelStep =
       // projection, vs. what they tried) are derived from the user's answers
       // in the runner, so the step itself only carries the framing copy.
       kind: "summary";
+      id: string;
+      title: string;
+      body: string;
+    }
+  | {
+      // Standalone screen for the 2-week projection chart, so it reads as its
+      // own beat instead of being embedded in the summary recap. The chart is
+      // derived from the user's answers + `personalization.summary.projection`,
+      // so the step only carries framing copy (title/body support {{templates}}).
+      kind: "projection";
       id: string;
       title: string;
       body: string;
@@ -167,6 +211,11 @@ export interface FunnelPersonalization {
       stepId: string;
       endLabels: Record<string, string>;
       fallbackEndLabel: string;
+      planLabel?: string;
+      comparisonLabel?: string;
+      startLabel?: string;
+      endLabel?: string;
+      caption?: string[];
     };
     /** "Based on your answers, we predict…" block. */
     prediction?: { kicker: string; text: string };

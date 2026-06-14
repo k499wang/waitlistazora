@@ -45,7 +45,12 @@ export function SummaryStep({
       {title ? <h1 className="funnelQuestion">{title}</h1> : null}
       {body ? <p className="funnelSubtext">{body}</p> : null}
 
-      <PlanRecap personalization={personalization} answers={answers} />
+      {/* Projection chart lives on its own `projection` step now, not here. */}
+      <PlanRecap
+        personalization={personalization}
+        answers={answers}
+        showProjection={false}
+      />
 
       {prediction && predictionText ? (
         <div className="summaryPrediction">

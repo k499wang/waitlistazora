@@ -400,74 +400,116 @@ function StressSignature() {
 
 /** Live PPG heart-rate reading displayed inside a phone frame. */
 function CameraPpg() {
-  // Smooth PPG pulse beats sized to span the phone screen (~44px period).
-  const beat = "c6 -20 11 -18 15 -6 c3 8 7 7 11 8 c7 1 12 0 18 -2";
   return (
     <svg
-      viewBox="0 0 320 156"
+      viewBox="0 0 320 220"
       role="img"
-      aria-label="A phone showing a live PPG heart-rate reading of 72 beats per minute"
+      aria-label="A fingertip resting on a phone camera while Azora shows a live heart-rate reading"
     >
-      {/* Phone frame */}
+      <defs>
+        <linearGradient id="cameraPhoneBody" x1="88" y1="16" x2="234" y2="210" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="100%" stopColor="#eef5f2" />
+        </linearGradient>
+        <linearGradient id="cameraScreen" x1="106" y1="42" x2="214" y2="184" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#f9fbf8" />
+          <stop offset="100%" stopColor="#e4efea" />
+        </linearGradient>
+        <radialGradient id="cameraGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor={ACCENT} stopOpacity={0.5} />
+          <stop offset="58%" stopColor={BRAND} stopOpacity={0.16} />
+          <stop offset="100%" stopColor={BRAND} stopOpacity={0} />
+        </radialGradient>
+        <linearGradient id="fingerTip" x1="212" y1="24" x2="276" y2="98" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#f6c7a8" />
+          <stop offset="100%" stopColor="#d99070" />
+        </linearGradient>
+        <filter id="cameraSoftShadow" x="-20%" y="-20%" width="140%" height="150%">
+          <feDropShadow dx="0" dy="14" stdDeviation="12" floodColor="#1d2b33" floodOpacity="0.14" />
+        </filter>
+      </defs>
+
+      <ellipse cx={160} cy={204} rx={82} ry={12} fill={TEXT} opacity={0.08} />
+
       <rect
-        x={102}
-        y={6}
-        width={116}
-        height={144}
-        rx={20}
-        fill="#fff"
+        x={88}
+        y={10}
+        width={144}
+        height={194}
+        rx={30}
+        fill="url(#cameraPhoneBody)"
         stroke={TEXT}
-        strokeWidth={2.5}
+        strokeWidth={2.25}
+        filter="url(#cameraSoftShadow)"
       />
-      {/* Notch */}
-      <rect x={140} y={14} width={40} height={6} rx={3} fill={TEXT} opacity={0.18} />
-      {/* Live reading */}
+      <rect
+        x={104}
+        y={34}
+        width={112}
+        height={150}
+        rx={22}
+        fill="url(#cameraScreen)"
+        stroke={BRAND}
+        strokeOpacity={0.14}
+      />
+      <rect x={139} y={20} width={42} height={5} rx={2.5} fill={TEXT} opacity={0.16} />
+
+      <circle cx={160} cy={74} r={35} fill={BRAND_SOFT} />
+      <circle className="visualPulse" cx={160} cy={74} r={24} fill={BRAND} opacity={0.18} />
+      <path
+        className="visualDraw"
+        d="M128 77 c8 -24 15 -22 20 -6 c4 12 9 11 14 4 c6 -9 13 -8 18 2 c5 9 11 8 16 1"
+        fill="none"
+        stroke={BRAND}
+        strokeWidth={4}
+        strokeLinecap="round"
+      />
+
       <text
         x={160}
-        y={62}
+        y={132}
         textAnchor="middle"
-        fontSize={30}
+        fontSize={34}
         fontWeight={800}
         fill={TEXT}
       >
         72
       </text>
       <text
-        x={160}
-        y={78}
+        x={190}
+        y={129}
         textAnchor="middle"
-        fontSize={10}
+        fontSize={11}
         fontWeight={700}
-        letterSpacing={1}
         fill={SECONDARY}
       >
         BPM
       </text>
-      {/* PPG wave across the screen */}
-      <path
-        className="visualDraw"
-        d={`M114 116 ${beat} ${beat}`}
-        fill="none"
-        stroke={BRAND}
-        strokeWidth={3}
-        strokeLinecap="round"
-      />
-      {/* Live pulse dot at the wave's end */}
-      <circle className="visualPulse" cx={202} cy={116} r={4.5} fill={BRAND} opacity={0.5} />
-      <circle cx={202} cy={116} r={4.5} fill={BRAND} />
-      {/* LIVE chip */}
-      <rect x={134} y={130} width={52} height={14} rx={7} fill={BRAND_SOFT} />
+      <rect x={124} y={150} width={72} height={18} rx={9} fill="#ffffff" opacity={0.84} />
+      <circle cx={137} cy={159} r={4} fill={BRAND} />
       <text
-        x={160}
-        y={140}
-        textAnchor="middle"
+        x={147}
+        y={163}
         fontSize={9}
         fontWeight={800}
-        letterSpacing={1}
         fill={BRAND}
       >
         LIVE
       </text>
+
+      <circle cx={230} cy={54} r={48} fill="url(#cameraGlow)" />
+      <rect x={196} y={18} width={68} height={70} rx={30} fill="url(#fingerTip)" />
+      <path
+        d="M210 78 c14 10 37 10 52 -2"
+        fill="none"
+        stroke="#a6604b"
+        strokeWidth={2}
+        strokeLinecap="round"
+        opacity={0.22}
+      />
+      <circle cx={230} cy={64} r={17} fill="#1d2b33" opacity={0.12} />
+      <circle cx={230} cy={64} r={9} fill={BRAND} opacity={0.55} />
+      <circle cx={230} cy={64} r={4} fill="#ffffff" opacity={0.85} />
     </svg>
   );
 }
@@ -478,53 +520,229 @@ function CameraPpg() {
  * summary plan card can embed it directly, not only via an info step.
  */
 export function StressProjection({
+  title = "Your stress response",
   endLabel = "Calm",
   targetDateLabel = "2 weeks",
+  planLabel = "Azora plan",
+  comparisonLabel = "Unguided",
+  startLabel = "Today",
+  endTimeLabel,
+  caption = ["Your personalized plan helps", "keep progress going."],
 }: {
+  /** Large chart title inside the card. */
+  title?: string;
   /** Outcome the curve lands on, named for the user's goal (e.g. "Rested"). */
   endLabel?: string;
   /** Right-axis time label, e.g. "by Jun 24". */
   targetDateLabel?: string;
+  /** Label attached to the lower plan curve. */
+  planLabel?: string;
+  /** Label attached to the rebound/comparison curve. */
+  comparisonLabel?: string;
+  /** Left-axis time label. */
+  startLabel?: string;
+  /** Optional right-axis time label override. */
+  endTimeLabel?: string;
+  /** Claim-safe caption below the graph. */
+  caption?: string[];
 } = {}) {
+  const finalTimeLabel = endTimeLabel ?? targetDateLabel;
+  const captionLines = caption.slice(0, 2);
+
+  return (
+    <svg
+      viewBox="0 0 360 360"
+      role="img"
+      aria-label={`${title}: ${planLabel} trends toward ${endLabel}, while ${comparisonLabel} rebounds`}
+    >
+      <defs>
+        <linearGradient id="projectionPlanFill" x1="50" y1="0" x2="302" y2="0" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor={TEXT} stopOpacity={0.14} />
+          <stop offset="70%" stopColor={TEXT} stopOpacity={0.05} />
+          <stop offset="100%" stopColor={TEXT} stopOpacity={0} />
+        </linearGradient>
+        <clipPath id="projectionPlotClip">
+          <rect x={50} y={92} width={252} height={116} />
+        </clipPath>
+      </defs>
+
+      <rect
+        x={12}
+        y={10}
+        width={336}
+        height={334}
+        rx={28}
+        fill="#f7f7f6"
+      />
+
+      <text x={42} y={62} fontSize={23} fontWeight={800} fill={TEXT}>
+        {title}
+      </text>
+
+      <line x1={50} y1={94} x2={302} y2={94} stroke="#d2d2cf" strokeWidth={1.4} strokeDasharray="3 5" />
+      <line x1={50} y1={146} x2={302} y2={146} stroke="#d2d2cf" strokeWidth={1.4} strokeDasharray="3 5" />
+      <line x1={50} y1={207} x2={302} y2={207} stroke={TEXT} strokeWidth={1.6} />
+
+      <path
+        d="M50 94 C84 94 113 95 140 115 S174 166 204 137 S248 72 302 58"
+        fill="none"
+        stroke="#d67370"
+        strokeWidth={3.8}
+        strokeLinecap="round"
+      />
+
+      <g clipPath="url(#projectionPlotClip)">
+        <path
+          d="M50 94 C100 92 145 94 178 125 S228 198 302 207 L50 207 Z"
+          fill="url(#projectionPlanFill)"
+        />
+      </g>
+      <path
+        className="visualDraw"
+        d="M50 94 C100 92 145 94 178 125 S228 198 302 207"
+        fill="none"
+        stroke={TEXT}
+        strokeWidth={4.1}
+        strokeLinecap="round"
+      />
+
+      <circle cx={50} cy={94} r={7.5} fill="#f7f7f6" stroke={TEXT} strokeWidth={3.8} />
+      <circle cx={302} cy={207} r={7.5} fill="#f7f7f6" stroke={TEXT} strokeWidth={3.8} />
+
+      <rect x={50} y={186} width={88} height={22} rx={11} fill="#ffffff" opacity={0.9} />
+      <circle cx={62} cy={197} r={6} fill={TEXT} />
+      <text x={74} y={201} fontSize={10.5} fontWeight={800} fill={TEXT}>
+        {planLabel}
+      </text>
+
+      <text x={214} y={116} fontSize={12.5} fontWeight={800} fill={TEXT}>
+        {comparisonLabel}
+      </text>
+
+      <text x={50} y={235} fontSize={15.5} fontWeight={800} fill={TEXT}>
+        {startLabel}
+      </text>
+      <text x={302} y={235} textAnchor="end" fontSize={15.5} fontWeight={800} fill={TEXT}>
+        {finalTimeLabel}
+      </text>
+
+      <text x={302} y={190} textAnchor="end" fontSize={12} fontWeight={800} fill={BRAND}>
+        {endLabel}
+      </text>
+
+      {captionLines.map((line, index) => (
+        <text
+          key={line}
+          x={180}
+          y={286 + index * 22}
+          textAnchor="middle"
+          fontSize={16}
+          fontWeight={800}
+          fill={SECONDARY}
+        >
+          {line}
+        </text>
+      ))}
+    </svg>
+  );
+}
+
+/**
+ * A breathing curve that starts shallow and tight on the left (anxiety reaching
+ * the breath) and smoothly opens into deep, steady waves on the right (the
+ * breath is intact and trainable, not broken). Props let a step retune the
+ * labels, palette, and how dramatic the shallow→deep shift reads. Exported so
+ * other surfaces can embed it, mirroring StressProjection.
+ */
+export function BreathWave({
+  startLabel = "Shallow now",
+  endLabel = "Deep & steady",
+  stroke = BRAND,
+  shallowAmplitude = 5,
+  deepAmplitude = 26,
+  shallowPeriod = 22,
+  deepPeriod = 78,
+}: {
+  /** Caption under the tight left side. */
+  startLabel?: string;
+  /** Caption under the open right side. */
+  endLabel?: string;
+  /** Wave + accent color. */
+  stroke?: string;
+  /** Wave height at the left (anxious) edge, in px. */
+  shallowAmplitude?: number;
+  /** Wave height at the right (trained) edge, in px. */
+  deepAmplitude?: number;
+  /** Wave spacing at the left edge, in px (smaller = faster/tighter). */
+  shallowPeriod?: number;
+  /** Wave spacing at the right edge, in px (larger = slower/calmer). */
+  deepPeriod?: number;
+} = {}) {
+  // Sample y(x) densely, accumulating phase so frequency can drift smoothly
+  // from tight (left) to slow (right) while amplitude grows. At ~3px spacing
+  // the polyline reads as a smooth curve without bezier bookkeeping.
+  const x0 = 12;
+  const x1 = 308;
+  const baseline = 66;
+  const points: Array<[number, number]> = [];
+  let phase = 0;
+  let prevX = x0;
+  for (let x = x0; x <= x1; x += 3) {
+    const t = (x - x0) / (x1 - x0);
+    const period = shallowPeriod + t * (deepPeriod - shallowPeriod);
+    const amplitude = shallowAmplitude + t * (deepAmplitude - shallowAmplitude);
+    phase += ((x - prevX) / period) * 2 * Math.PI;
+    prevX = x;
+    points.push([x, baseline - amplitude * Math.sin(phase)]);
+  }
+  const round = (n: number) => Math.round(n * 10) / 10;
+  const line = points
+    .map(([x, y], i) => `${i === 0 ? "M" : "L"}${round(x)} ${round(y)}`)
+    .join(" ");
+  const [crestX, crestY] = points[points.length - 1];
+
   return (
     <svg
       viewBox="0 0 320 132"
       role="img"
-      aria-label="Projected stress level trending down from high today to low within two weeks of daily use"
+      aria-label="A breathing wave starting shallow and tight, then opening into deep, steady breaths"
     >
       <defs>
-        <linearGradient id="projFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={BRAND} stopOpacity={0.16} />
-          <stop offset="100%" stopColor={BRAND} stopOpacity={0} />
+        <linearGradient id="breathWaveFade" x1="0" y1="0" x2="320" y2="0">
+          <stop offset="0%" stopColor={stroke} stopOpacity={0.28} />
+          <stop offset="100%" stopColor={stroke} stopOpacity={1} />
         </linearGradient>
       </defs>
-      {/* Jagged early section settling into a smooth low tail. */}
-      <path
-        d="M16 30 l10 14 l10 -18 l10 22 l10 -10 C90 50 118 78 150 86 S214 104 260 104 S294 106 304 106 L304 128 L16 128 Z"
-        fill="url(#projFill)"
-      />
       <path
         className="visualDraw"
-        d="M16 30 l10 14 l10 -18 l10 22 l10 -10 C90 50 118 78 150 86 S214 104 260 104 S294 106 304 106"
+        d={line}
         fill="none"
-        stroke={BRAND}
+        stroke="url(#breathWaveFade)"
         strokeWidth={3}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <text x={16} y={20} fontSize={11} fontWeight={700} fill="#d05757">
-        High alert
+      <circle
+        className="visualPulse"
+        cx={round(crestX)}
+        cy={round(crestY)}
+        r={5}
+        fill={stroke}
+        opacity={0.5}
+      />
+      <circle cx={round(crestX)} cy={round(crestY)} r={4} fill={stroke} />
+      <text x={x0} y={120} fontSize={11} fontWeight={600} fill={MUTED}>
+        {startLabel}
       </text>
-      <text x={16} y={122} fontSize={11} fontWeight={600} fill={SECONDARY}>
-        Today
-      </text>
-      <circle className="visualPulse" cx={304} cy={106} r={5} fill={BRAND} opacity={0.5} />
-      <circle cx={304} cy={106} r={5} fill={BRAND} />
-      <text x={304} y={90} textAnchor="end" fontSize={12} fontWeight={800} fill={BRAND}>
+      <text
+        x={x1}
+        y={120}
+        textAnchor="end"
+        fontSize={11}
+        fontWeight={700}
+        fill={stroke}
+      >
         {endLabel}
-      </text>
-      <text x={304} y={122} textAnchor="end" fontSize={11} fontWeight={600} fill={SECONDARY}>
-        {targetDateLabel}
       </text>
     </svg>
   );
@@ -539,6 +757,7 @@ const VISUALS: Record<InfoVisualKey, () => React.JSX.Element> = {
   stress_signature: StressSignature,
   camera_ppg: CameraPpg,
   stress_projection: StressProjection,
+  breath_wave: BreathWave,
 };
 
 export function InfoStepVisual({ visual }: { visual: InfoVisualKey }) {

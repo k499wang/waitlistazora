@@ -1852,18 +1852,18 @@ body::after {
   color: var(--text-primary);
 }
 
-/* Full-width loading bar pinned flush under the 3.25rem app header (z-index 90
-   keeps it above page content but below the header's 100). Sitting exactly at
-   the header's bottom edge means it's always visible — mobile and desktop. */
+/* App-style progress, centered to the funnel column on larger screens. */
 .funnelProgress {
   position: fixed;
   top: 3.25rem;
-  left: 0;
-  width: 100%;
+  left: 50%;
+  width: min(540px, calc(100% - 2.5rem));
   height: 6px;
+  transform: translateX(-50%);
   background: var(--border);
   overflow: hidden;
   z-index: 90;
+  border-radius: 999px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
@@ -1873,7 +1873,10 @@ body::after {
   transition: width 0.5s var(--ease-out-expo);
 }
 
-.funnelStep { animation: funnelFade 0.4s var(--ease-out-expo) both; }
+.funnelStep {
+  width: 100%;
+  animation: funnelFade 0.4s var(--ease-out-expo) both;
+}
 
 @keyframes funnelFade {
   from { opacity: 0; transform: translateY(8px); }
@@ -1897,7 +1900,12 @@ body::after {
   white-space: pre-line;
 }
 
-.funnelOptions { display: flex; flex-direction: column; gap: 0.7rem; margin-top: 1.75rem; }
+.funnelOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  margin-top: 3.15rem;
+}
 
 /* Soft, app-style pills: tinted fill, borderless until selected. */
 .funnelOption {
@@ -1963,17 +1971,27 @@ body::after {
 .funnelInterstitial,
 .funnelOffer { text-align: center; }
 
-/* Info / result / summary share the question-screen rhythm: left-aligned
-   title at the top, subtitle under it, then the visual below. */
-.funnelInfo,
-.funnelResult,
+.funnelInterstitial,
+.funnelResult {
+  min-height: calc(100dvh - 11.75rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.funnelResult {
+  text-align: center;
+}
+
+/* Result / summary share the question-screen rhythm. Info screens use a
+   visual-first onboarding layout below. */
 .funnelSummary { text-align: left; }
 
 /* Free-text step (e.g. name). Centered to match the other funnel steps. */
 .funnelTextInput { text-align: center; }
 
 .funnelTextInput .authInput {
-  margin: 1.5rem 0 1.25rem;
+  margin: 2.9rem 0 1.25rem;
   text-align: center;
 }
 
@@ -1992,6 +2010,85 @@ body::after {
 }
 
 @keyframes funnelSpin { to { transform: rotate(360deg); } }
+
+.funnelLoadingList {
+  display: grid;
+  gap: 0.85rem;
+  width: 100%;
+  margin-top: 2rem;
+  text-align: left;
+}
+
+.funnelLoadingItem {
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 10px 28px -22px rgba(29, 43, 51, 0.34);
+}
+
+.funnelLoadingItemTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+  min-height: 1.1rem;
+  margin-bottom: 0.62rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.funnelLoadingCheck {
+  display: grid;
+  place-items: center;
+  width: 1.08rem;
+  height: 1.08rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #fff;
+  font-size: 0.68rem;
+  opacity: 0;
+  transform: scale(0.7);
+  animation: loadingCheck 3.2s var(--ease-out-expo) both;
+}
+
+.funnelLoadingTrack {
+  height: 0.42rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--brand-soft);
+}
+
+.funnelLoadingFill {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--brand), var(--accent));
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: loadingFill 3.2s var(--ease-out-expo) both;
+}
+
+.funnelLoadingItem:nth-child(2) .funnelLoadingFill,
+.funnelLoadingItem:nth-child(2) .funnelLoadingCheck { animation-delay: 1.2s; }
+
+.funnelLoadingItem:nth-child(3) .funnelLoadingFill,
+.funnelLoadingItem:nth-child(3) .funnelLoadingCheck { animation-delay: 2.4s; }
+
+.funnelLoadingItem:nth-child(4) .funnelLoadingFill,
+.funnelLoadingItem:nth-child(4) .funnelLoadingCheck { animation-delay: 3.6s; }
+
+@keyframes loadingFill {
+  0% { transform: scaleX(0); }
+  42%, 100% { transform: scaleX(1); }
+}
+
+@keyframes loadingCheck {
+  0%, 36% { opacity: 0; transform: scale(0.7); }
+  44%, 100% { opacity: 1; transform: scale(1); }
+}
 
 .funnelResultBadge {
   width: 56px;
@@ -2016,33 +2113,115 @@ body::after {
 }
 
 /* ── Funnel info screen (proof / education) ── */
-/* Visual sits below the title/subtitle now, centered in the column. */
+.funnelInfo {
+  min-height: calc(100dvh - 11.75rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.funnelInfo .funnelQuestion {
+  max-width: 440px;
+  margin: 1.2rem auto 0;
+}
+
+.funnelInfo .funnelSubtext {
+  max-width: 360px;
+  margin: 0.65rem auto 0;
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.42;
+  color: rgba(29, 43, 51, 0.74);
+}
+
 .funnelInfoIcon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 72px;
-  height: 72px;
-  margin: 0.75rem auto 0;
+  width: 132px;
+  height: 132px;
+  margin: 0 auto;
   border-radius: 50%;
   background: var(--brand-soft);
-  font-size: 2rem;
+  font-size: 4rem;
   line-height: 1;
 }
 
-.funnelInfo .funnelSubtext {
-  margin-bottom: 1.5rem;
+/* ── Funnel info photo centerpiece (q1/q2/q3 people clipart, etc.) ── */
+.funnelInfoPhoto {
+  position: relative;
+  width: min(240px, 62vw);
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+}
+
+.funnelInfoPhotoImg {
+  object-fit: contain;
+}
+
+/* ── Funnel info full-bleed background photo (text-only screens) ── */
+/* Breaks out of the centered funnel column to span the viewport. */
+.funnelInfoBg {
+  position: relative;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  min-height: calc(100dvh - 3.25rem);
+  padding: 6rem 1.75rem calc(7rem + env(safe-area-inset-bottom));
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Darkening gradient so light text stays legible over any photo. */
+.funnelInfoBgScrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(15, 28, 32, 0.34) 0%,
+    rgba(15, 28, 32, 0.52) 55%,
+    rgba(15, 28, 32, 0.74) 100%
+  );
+}
+
+.funnelInfoBgText {
+  position: relative;
+  max-width: 440px;
+}
+
+.funnelInfoBg .funnelQuestion,
+.funnelInfoBg .funnelSubtext {
+  color: #fff;
+}
+
+.funnelInfoBg .funnelSubtext {
+  color: rgba(255, 255, 255, 0.86);
+}
+
+/* ── Standalone projection screen chart ── */
+.funnelProjectionChart {
+  width: min(360px, 92vw);
+  margin: 0 auto 0.5rem;
+}
+
+.funnelProjectionChart svg {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 /* ── Funnel info visuals (inline SVG diagrams) ── */
 .funnelVisual {
   display: flex;
   justify-content: center;
-  margin: 0.5rem auto 0;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .funnelVisual svg {
-  width: min(320px, 86vw);
+  width: min(390px, 92vw);
   height: auto;
 }
 
@@ -2110,16 +2289,39 @@ body::after {
 .funnelVideoWrap {
   display: flex;
   justify-content: center;
-  margin: -0.5rem auto 1.75rem;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .funnelVideo {
-  width: min(250px, 68vw);
+  width: min(220px, 58vw);
   aspect-ratio: 9 / 16;
   border: 0;
   border-radius: 18px;
   background: #000;
   box-shadow: 0 16px 40px -16px rgba(20, 40, 44, 0.45);
+}
+
+/* ── Credibility strip: institution logo marks (social proof) ── */
+.funnelLogos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem 2rem;
+  max-width: 440px;
+  margin: 1.5rem auto 0.35rem;
+}
+
+.funnelLogo {
+  position: relative;
+  width: 132px;
+  height: 52px;
+  opacity: 0.9;
+}
+
+.funnelLogoImg {
+  object-fit: contain;
 }
 
 /* ── Credibility strip: research institution wordmarks ── */
@@ -2130,7 +2332,7 @@ body::after {
   justify-content: center;
   gap: 0.5rem 1.5rem;
   max-width: 440px;
-  margin: -0.75rem auto 0.6rem;
+  margin: 1.15rem auto 0.45rem;
 }
 
 .funnelInstitution {
@@ -2146,10 +2348,36 @@ body::after {
 
 .funnelCitation {
   max-width: 420px;
-  margin: 0 auto 1.75rem;
+  margin: 0 auto;
   font-size: 0.66rem;
   line-height: 1.5;
   color: var(--text-muted);
+}
+
+@media (max-width: 640px) {
+  .funnelInfo {
+    min-height: calc(100dvh - 11.75rem);
+  }
+
+  .funnelInfo .funnelQuestion {
+    max-width: 20rem;
+    font-size: 1.55rem;
+  }
+
+  .funnelInfo .funnelSubtext {
+    max-width: 19rem;
+    font-size: 0.95rem;
+  }
+
+  .funnelVisual svg {
+    width: min(360px, 94vw);
+  }
+
+  .funnelInfoIcon {
+    width: 120px;
+    height: 120px;
+    font-size: 3.5rem;
+  }
 }
 
 /* ── Funnel summary: personalized plan recap ── */
@@ -2196,6 +2424,12 @@ body::after {
 
 .summaryProjection {
   margin: 0 0 1.5rem;
+}
+
+.summaryProjection svg {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 .summaryProjectionTitle {

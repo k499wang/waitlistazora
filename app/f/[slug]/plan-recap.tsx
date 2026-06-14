@@ -42,13 +42,18 @@ export function PlanRecap({
 
       {showProjection && projection ? (
         <div className="summaryProjection">
-          <p className="summaryProjectionTitle">{projection.title}</p>
           <StressProjection
+            title={projection.title}
             endLabel={
               projection.endLabels[answers[projection.stepId]] ??
               projection.fallbackEndLabel
             }
             targetDateLabel={`by ${projectionDateLabel()}`}
+            planLabel={projection.planLabel}
+            comparisonLabel={projection.comparisonLabel}
+            startLabel={projection.startLabel}
+            endTimeLabel={projection.endLabel}
+            caption={projection.caption}
           />
         </div>
       ) : null}

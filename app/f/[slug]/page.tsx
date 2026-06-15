@@ -20,7 +20,7 @@ export async function generateMetadata({
     return { title: "Azora" };
   }
   return {
-    title: `${funnel.name} — Azora`,
+    title: `${funnel.name} | Azora`,
     description: funnel.intro,
     // Funnel pages are paid-traffic landing pages, not organic search targets.
     robots: { index: false, follow: false },

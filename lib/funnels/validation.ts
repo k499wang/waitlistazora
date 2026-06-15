@@ -17,6 +17,10 @@ function titleTemplates(step: FunnelStep): string[] {
     case "single_choice":
     case "text_input":
       return [step.question, step.subtext ?? ""];
+    case "scale":
+      return [step.statement, step.subtext ?? ""];
+    case "breathing":
+      return [step.title, step.subtext ?? ""];
     case "account":
     case "info":
     case "interstitial":
@@ -108,6 +112,24 @@ export function validateFunnelConfig(
           message: `${stepLabel(step)} has duplicate option id "${optionId}"`,
         });
       }
+    }
+
+    // Conditional/unconditional routing targets must exist.
+    if ((step.kind === "info" || step.kind === "interstitial") && step.branch) {
+      for (const target of Object.values(step.branch.to)) {
+        if (!seenStepIds.has(target)) {
+          issues.push({
+            funnelSlug: funnel.slug,
+            message: `${stepLabel(step)} branch points to unknown step "${target}"`,
+          });
+        }
+      }
+    }
+    if (step.kind === "info" && step.nextId && !seenStepIds.has(step.nextId)) {
+      issues.push({
+        funnelSlug: funnel.slug,
+        message: `${stepLabel(step)} nextId points to unknown step "${step.nextId}"`,
+      });
     }
 
     for (const text of titleTemplates(step)) {

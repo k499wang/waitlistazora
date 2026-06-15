@@ -1,6 +1,6 @@
 // Inline SVG diagrams for funnel info screens, keyed by InfoVisualKey.
 // Colors mirror the :root palette in globals.css (brand #3e6f77,
-// accent #c9a36a, muted #92a0a4, text #1d2b33) — SVG presentation
+// accent #c9a36a, muted #92a0a4, text #1d2b33), SVG presentation
 // attributes can't use var(), so the hex values are repeated here.
 // Animation classes (.visualDraw, .visualPulse, .visualRingFill,
 // .visualDash) are defined in globals.css with reduced-motion fallbacks.
@@ -166,7 +166,7 @@ function OpenVsClosedLoop() {
 
 /** ECG vs PPG waveforms tracking each other, with a ±2% badge. */
 function PpgVsEcg() {
-  // Identical pulse shape for both traces — the point of the diagram is
+  // Identical pulse shape for both traces, the point of the diagram is
   // that the two readings overlap almost perfectly (within 2%).
   const beat = "c14 -34 26 -30 34 -12 c6 12 14 10 22 12 c10 2 22 0 34 0";
   return (
@@ -183,7 +183,7 @@ function PpgVsEcg() {
         strokeWidth={2.5}
         strokeLinecap="round"
       />
-      {/* PPG trace (Azora) — same shape, 3px offset: visibly overlapping */}
+      {/* PPG trace (Azora), same shape, 3px offset: visibly overlapping */}
       <path
         className="visualDraw"
         d={`M8 79 ${beat} ${beat} ${beat}`}
@@ -342,7 +342,7 @@ function StatRing() {
   );
 }
 
-/** A beating heart writing a fast, jagged trace — stress as a signature. */
+/** A beating heart writing a fast, jagged trace, stress as a signature. */
 function StressSignature() {
   // One fast, slightly elevated beat (~32px period), repeated across the line.
   const beat = "h5 l3 -6 3 6 l3 3 3 -26 3 30 3 -7 h6";
@@ -392,7 +392,7 @@ function StressSignature() {
         fontWeight={600}
         fill={SECONDARY}
       >
-        fast, shallow rhythm — your body bracing
+        fast, shallow rhythm, your body bracing
       </text>
     </svg>
   );
@@ -520,124 +520,156 @@ function CameraPpg() {
  * summary plan card can embed it directly, not only via an info step.
  */
 export function StressProjection({
-  title = "Your stress response",
-  endLabel = "Calm",
+  title = "",
+  endLabel = "With Azora",
   targetDateLabel = "2 weeks",
-  planLabel = "Azora plan",
   comparisonLabel = "Unguided",
   startLabel = "Today",
   endTimeLabel,
+  yAxisLabel = "Stress",
   caption = ["Your personalized plan helps", "keep progress going."],
 }: {
-  /** Large chart title inside the card. */
+  /** Optional chart heading. Empty by default (rendered as its own screen). */
   title?: string;
-  /** Outcome the curve lands on, named for the user's goal (e.g. "Rested"). */
+  /** Label at the plan curve's endpoint (e.g. "With Azora"). */
   endLabel?: string;
   /** Right-axis time label, e.g. "by Jun 24". */
   targetDateLabel?: string;
-  /** Label attached to the lower plan curve. */
-  planLabel?: string;
   /** Label attached to the rebound/comparison curve. */
   comparisonLabel?: string;
   /** Left-axis time label. */
   startLabel?: string;
   /** Optional right-axis time label override. */
   endTimeLabel?: string;
+  /** Vertical axis label. */
+  yAxisLabel?: string;
   /** Claim-safe caption below the graph. */
   caption?: string[];
 } = {}) {
   const finalTimeLabel = endTimeLabel ?? targetDateLabel;
   const captionLines = caption.slice(0, 2);
+  const hasTitle = title.trim().length > 0;
+  const COMP_COLOR = "#d67370";
+
+  // One shared coordinate system so every label hangs off the same plot
+  // geometry instead of being placed by hand. Plot region: x ∈ [PLOT_L, PLOT_R],
+  // y ∈ [PLOT_TOP, BASELINE] (smaller y = more stress, toward the top).
+  const PLOT_L = 54;
+  const PLOT_R = 298;
+  const PLOT_TOP = 92;
+  const BASELINE = 208;
+  // Curve endpoints (both curves share the start; plan settles low, comparison
+  // rebounds high above the start).
+  const START_X = PLOT_L;
+  const START_Y = 100;
+  const PLAN_END_Y = 200;
+  const COMP_END_Y = 84;
+  // Label rows below the plot.
+  const AXIS_Y = BASELINE + 26;
+  const CAPTION_Y = BASELINE + 52;
+
+  // One consistent type scale for the whole chart.
+  const FS_TITLE = 20;
+  const FS_LABEL = 11;
+  const FS_CAPTION = 13;
+
+  const viewTop = hasTitle ? 16 : 60;
+  const viewBottom =
+    captionLines.length > 0
+      ? CAPTION_Y + (captionLines.length - 1) * 20 + 8
+      : AXIS_Y + 12;
+  const viewBox = `14 ${viewTop} 300 ${viewBottom - viewTop}`;
 
   return (
     <svg
-      viewBox="0 0 360 360"
+      viewBox={viewBox}
       role="img"
-      aria-label={`${title}: ${planLabel} trends toward ${endLabel}, while ${comparisonLabel} rebounds`}
+      aria-label={`${
+        hasTitle ? `${title}: ` : ""
+      }${endLabel} trends down, while ${comparisonLabel} rebounds`}
     >
       <defs>
-        <linearGradient id="projectionPlanFill" x1="50" y1="0" x2="302" y2="0" gradientUnits="userSpaceOnUse">
+        <linearGradient id="projectionPlanFill" x1="0" y1={PLOT_TOP} x2="0" y2={BASELINE} gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor={TEXT} stopOpacity={0.14} />
-          <stop offset="70%" stopColor={TEXT} stopOpacity={0.05} />
           <stop offset="100%" stopColor={TEXT} stopOpacity={0} />
         </linearGradient>
         <clipPath id="projectionPlotClip">
-          <rect x={50} y={92} width={252} height={116} />
+          <rect x={PLOT_L} y={PLOT_TOP - 4} width={PLOT_R - PLOT_L} height={BASELINE - PLOT_TOP + 4} />
         </clipPath>
       </defs>
 
-      <rect
-        x={12}
-        y={10}
-        width={336}
-        height={334}
-        rx={28}
-        fill="#f7f7f6"
-      />
+      {hasTitle ? (
+        <text
+          x={(PLOT_L + PLOT_R) / 2}
+          y={44}
+          textAnchor="middle"
+          fontSize={FS_TITLE}
+          fontWeight={700}
+          fill={TEXT}
+        >
+          {title}
+        </text>
+      ) : null}
 
-      <text x={42} y={62} fontSize={23} fontWeight={800} fill={TEXT}>
-        {title}
-      </text>
+      {/* Gridlines + baseline. */}
+      <line x1={PLOT_L} y1={PLOT_TOP} x2={PLOT_R} y2={PLOT_TOP} stroke="#d8d8d4" strokeWidth={1.2} strokeDasharray="2 6" />
+      <line x1={PLOT_L} y1={(PLOT_TOP + BASELINE) / 2} x2={PLOT_R} y2={(PLOT_TOP + BASELINE) / 2} stroke="#d8d8d4" strokeWidth={1.2} strokeDasharray="2 6" />
+      <line x1={PLOT_L} y1={BASELINE} x2={PLOT_R} y2={BASELINE} stroke={TEXT} strokeWidth={1.5} />
 
-      <line x1={50} y1={94} x2={302} y2={94} stroke="#d2d2cf" strokeWidth={1.4} strokeDasharray="3 5" />
-      <line x1={50} y1={146} x2={302} y2={146} stroke="#d2d2cf" strokeWidth={1.4} strokeDasharray="3 5" />
-      <line x1={50} y1={207} x2={302} y2={207} stroke={TEXT} strokeWidth={1.6} />
-
+      {/* Comparison curve (unguided): dips, then rebounds high. */}
       <path
-        d="M50 94 C84 94 113 95 140 115 S174 166 204 137 S248 72 302 58"
+        d="M54 100 C88 98 120 100 146 118 C170 136 188 150 208 138 C236 120 268 94 298 84"
         fill="none"
-        stroke="#d67370"
-        strokeWidth={3.8}
+        stroke={COMP_COLOR}
+        strokeWidth={3.6}
         strokeLinecap="round"
       />
 
+      {/* Plan curve (with Azora): eases down to a calm low, with a soft fill. */}
       <g clipPath="url(#projectionPlotClip)">
         <path
-          d="M50 94 C100 92 145 94 178 125 S228 198 302 207 L50 207 Z"
+          d="M54 100 C90 101 128 105 160 124 C186 142 206 174 232 190 C256 202 278 204 298 200 L298 208 L54 208 Z"
           fill="url(#projectionPlanFill)"
         />
       </g>
       <path
         className="visualDraw"
-        d="M50 94 C100 92 145 94 178 125 S228 198 302 207"
+        d="M54 100 C90 101 128 105 160 124 C186 142 206 174 232 190 C256 202 278 204 298 200"
         fill="none"
         stroke={TEXT}
-        strokeWidth={4.1}
+        strokeWidth={4}
         strokeLinecap="round"
       />
 
-      <circle cx={50} cy={94} r={7.5} fill="#f7f7f6" stroke={TEXT} strokeWidth={3.8} />
-      <circle cx={302} cy={207} r={7.5} fill="#f7f7f6" stroke={TEXT} strokeWidth={3.8} />
+      {/* Endpoint dots. */}
+      <circle cx={START_X} cy={START_Y} r={6.5} fill="var(--bg)" stroke={TEXT} strokeWidth={3.4} />
+      <circle cx={PLOT_R} cy={COMP_END_Y} r={5.5} fill={COMP_COLOR} />
+      <circle cx={PLOT_R} cy={PLAN_END_Y} r={6.5} fill="var(--bg)" stroke={TEXT} strokeWidth={3.4} />
 
-      <rect x={50} y={186} width={88} height={22} rx={11} fill="#ffffff" opacity={0.9} />
-      <circle cx={62} cy={197} r={6} fill={TEXT} />
-      <text x={74} y={201} fontSize={10.5} fontWeight={800} fill={TEXT}>
-        {planLabel}
-      </text>
-
-      <text x={214} y={116} fontSize={12.5} fontWeight={800} fill={TEXT}>
+      {/* Curve labels, anchored to their endpoints. */}
+      <text x={PLOT_R} y={COMP_END_Y - 11} textAnchor="end" fontSize={FS_LABEL} fontWeight={500} fill={COMP_COLOR}>
         {comparisonLabel}
       </text>
+      <text x={PLOT_R - 4} y={PLAN_END_Y - 11} textAnchor="end" fontSize={FS_LABEL} fontWeight={500} fill={BRAND}>
+        {endLabel}
+      </text>
 
-      <text x={50} y={235} fontSize={15.5} fontWeight={800} fill={TEXT}>
+      {/* X-axis time labels, on a shared baseline row. */}
+      <text x={PLOT_L} y={AXIS_Y} fontSize={FS_LABEL} fontWeight={500} fill={MUTED}>
         {startLabel}
       </text>
-      <text x={302} y={235} textAnchor="end" fontSize={15.5} fontWeight={800} fill={TEXT}>
+      <text x={PLOT_R} y={AXIS_Y} textAnchor="end" fontSize={FS_LABEL} fontWeight={500} fill={MUTED}>
         {finalTimeLabel}
-      </text>
-
-      <text x={302} y={190} textAnchor="end" fontSize={12} fontWeight={800} fill={BRAND}>
-        {endLabel}
       </text>
 
       {captionLines.map((line, index) => (
         <text
           key={line}
-          x={180}
-          y={286 + index * 22}
+          x={(PLOT_L + PLOT_R) / 2}
+          y={CAPTION_Y + index * 20}
           textAnchor="middle"
-          fontSize={16}
-          fontWeight={800}
+          fontSize={FS_CAPTION}
+          fontWeight={700}
           fill={SECONDARY}
         >
           {line}
@@ -748,6 +780,239 @@ export function BreathWave({
   );
 }
 
+/**
+ * Two-bar comparison: a low "on your own" bar next to a tall "with Azora" bar,
+ * over dotted gridlines, the classic "guidance beats going alone" chart. Props
+ * let a funnel retune the labels/colors so it drops into any future flow.
+ */
+export function ComparisonBars({
+  selfLabel = ["ON YOUR", "OWN"],
+  brandLabel = ["WITH", "AZORA"],
+  barColor = BRAND,
+}: {
+  /** Two-line label for the short (unguided) bar. */
+  selfLabel?: [string, string];
+  /** Two-line label for the tall (Azora) bar. */
+  brandLabel?: [string, string];
+  /** Fill of the tall bar. */
+  barColor?: string;
+} = {}) {
+  return (
+    <svg
+      viewBox="0 0 320 210"
+      role="img"
+      aria-label="Bar chart: progress on your own stays low, while progress with Azora is far higher"
+    >
+      {/* Dotted gridlines */}
+      {[46, 86, 126, 166].map((y) => (
+        <line
+          key={y}
+          x1={22}
+          y1={y}
+          x2={298}
+          y2={y}
+          stroke={MUTED}
+          strokeWidth={1}
+          strokeDasharray="2 6"
+          opacity={0.55}
+        />
+      ))}
+      {/* Baseline */}
+      <line x1={18} y1={182} x2={302} y2={182} stroke={BRAND} strokeWidth={2} />
+
+      {/* Short "on your own" bar */}
+      <rect
+        className="visualBarGrow"
+        x={66}
+        y={112}
+        width={92}
+        height={70}
+        rx={14}
+        fill="#e7e2d4"
+        style={{ animationDelay: "0.1s" }}
+      />
+      <text
+        x={112}
+        y={141}
+        textAnchor="middle"
+        fontSize={15}
+        fontWeight={800}
+        letterSpacing="0.04em"
+        fill={TEXT}
+      >
+        {selfLabel[0]}
+      </text>
+      <text
+        x={112}
+        y={161}
+        textAnchor="middle"
+        fontSize={15}
+        fontWeight={800}
+        letterSpacing="0.04em"
+        fill={TEXT}
+      >
+        {selfLabel[1]}
+      </text>
+
+      {/* Tall "with Azora" bar */}
+      <rect
+        className="visualBarGrow"
+        x={186}
+        y={40}
+        width={92}
+        height={142}
+        rx={14}
+        fill={barColor}
+        style={{ animationDelay: "0.28s" }}
+      />
+      <text
+        x={232}
+        y={104}
+        textAnchor="middle"
+        fontSize={15}
+        fontWeight={800}
+        letterSpacing="0.04em"
+        fill="#fff"
+      >
+        {brandLabel[0]}
+      </text>
+      <text
+        x={232}
+        y={124}
+        textAnchor="middle"
+        fontSize={15}
+        fontWeight={800}
+        letterSpacing="0.04em"
+        fill="#fff"
+      >
+        {brandLabel[1]}
+      </text>
+    </svg>
+  );
+}
+
+/** Dive reflex: heart rate jagged/high, then dropping sharply through a shaded
+ *  "HOLD" band to a calm low, with a percentage-drop badge. Proof that a gentle
+ *  hold downshifts the nervous system. */
+function DiveReflex() {
+  return (
+    <svg
+      viewBox="0 0 320 160"
+      role="img"
+      aria-label="Heart rate chart: fast and elevated, then dropping about twenty-five percent during a breath hold to a calm, steady low"
+    >
+      <defs>
+        <linearGradient id="diveFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={BRAND} stopOpacity={0.16} />
+          <stop offset="100%" stopColor={BRAND} stopOpacity={0} />
+        </linearGradient>
+      </defs>
+
+      {/* Shaded HOLD band */}
+      <rect x={120} y={20} width={70} height={104} rx={8} fill={BRAND_SOFT} />
+      <text x={155} y={36} textAnchor="middle" fontSize={11} fontWeight={800} letterSpacing="0.08em" fill={BRAND}>
+        HOLD
+      </text>
+
+      {/* Area under the curve */}
+      <path
+        d="M16 56 l10 -8 l8 14 l9 -16 l9 14 l9 -12 l9 12 l10 -10 l10 14 C150 70 168 96 190 104 C220 114 250 116 304 116 L304 124 L16 124 Z"
+        fill="url(#diveFill)"
+      />
+      {/* Jagged elevated trace easing into a calm low after the hold */}
+      <path
+        className="visualDraw"
+        d="M16 56 l10 -8 l8 14 l9 -16 l9 14 l9 -12 l9 12 l10 -10 l10 14 C150 70 168 96 190 104 C220 114 250 116 304 116"
+        fill="none"
+        stroke={BRAND}
+        strokeWidth={3}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      {/* Endpoint pulse */}
+      <circle className="visualPulse" cx={304} cy={116} r={5} fill={BRAND} opacity={0.5} />
+      <circle cx={304} cy={116} r={5} fill={BRAND} />
+
+      {/* −25% badge */}
+      <g>
+        <rect x={214} y={52} width={64} height={28} rx={14} fill={BRAND} />
+        <text x={246} y={71} textAnchor="middle" fontSize={14} fontWeight={800} fill="#fff">
+          −25%
+        </text>
+      </g>
+
+      {/* Axis labels */}
+      <text x={16} y={146} fontSize={11} fontWeight={600} fill={MUTED}>
+        Anxious
+      </text>
+      <text x={304} y={146} textAnchor="end" fontSize={11} fontWeight={700} fill={BRAND}>
+        Calm
+      </text>
+    </svg>
+  );
+}
+
+/** Stress-impact gauge: a four-band meter (Minimal → High) with a marker
+ *  sitting in the elevated zone. Paired with an "informational reflection, not
+ *  a medical assessment" disclaimer on the step. Reflective, not diagnostic. */
+function ImpactGauge() {
+  const bands = [
+    { label: "Minimal", x: 16, fill: "#6fb39a" },
+    { label: "Low", x: 88, fill: "#a9c77e" },
+    { label: "Moderate", x: 160, fill: "#e0b25c" },
+    { label: "High", x: 232, fill: "#d67370" },
+  ];
+  const W = 72;
+  const markerX = 232 + W / 2; // centered on the "High" band
+
+  return (
+    <svg
+      viewBox="0 0 320 150"
+      role="img"
+      aria-label="Stress impact meter reading in the elevated range, from minimal to high"
+    >
+      {/* "Today" marker above the elevated band */}
+      <g>
+        <rect x={markerX - 32} y={12} width={64} height={26} rx={13} fill={TEXT} />
+        <text x={markerX} y={29} textAnchor="middle" fontSize={12} fontWeight={700} fill="#fff">
+          Today
+        </text>
+        <path d={`M${markerX - 7} 38 L${markerX + 7} 38 L${markerX} 48 Z`} fill={TEXT} />
+      </g>
+
+      {/* Four bands */}
+      {bands.map((b, i) => (
+        <rect
+          key={b.label}
+          x={b.x}
+          y={58}
+          width={W - 6}
+          height={22}
+          rx={6}
+          fill={b.fill}
+          opacity={i === 3 ? 1 : 0.92}
+        />
+      ))}
+
+      {/* Band labels */}
+      {bands.map((b, i) => (
+        <text
+          key={b.label}
+          x={b.x + (W - 6) / 2}
+          y={100}
+          textAnchor="middle"
+          fontSize={12}
+          fontWeight={i === 3 ? 700 : 500}
+          fill={i === 3 ? TEXT : MUTED}
+        >
+          {b.label}
+        </text>
+      ))}
+    </svg>
+  );
+}
+
 const VISUALS: Record<InfoVisualKey, () => React.JSX.Element> = {
   fading_streak: FadingStreak,
   open_vs_closed_loop: OpenVsClosedLoop,
@@ -758,6 +1023,9 @@ const VISUALS: Record<InfoVisualKey, () => React.JSX.Element> = {
   camera_ppg: CameraPpg,
   stress_projection: StressProjection,
   breath_wave: BreathWave,
+  comparison_bars: ComparisonBars,
+  dive_reflex: DiveReflex,
+  impact_gauge: ImpactGauge,
 };
 
 export function InfoStepVisual({ visual }: { visual: InfoVisualKey }) {

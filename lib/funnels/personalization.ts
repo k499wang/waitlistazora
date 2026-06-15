@@ -9,7 +9,7 @@ export type FunnelAnalyticsProperties = Record<string, FunnelAnalyticsValue>;
 
 /**
  * Answer-derived PostHog event properties. Each configured segment maps a
- * property name to the step IDs checked in order — the first answered step
+ * property name to the step IDs checked in order, the first answered step
  * wins, null when none are answered. Lets branching funnels coalesce their
  * branch follow-ups into a single segment property.
  */
@@ -60,7 +60,7 @@ export function resolveTemplate(
  * Resolve a personalization template ({{step_id:short}}, optional |fallback,
  * {{projection_date}}) against the user's answers and the funnel's short-label
  * maps. Returns null when the template references an unanswered step with no
- * fallback — callers omit that row/line or fall back to generic copy.
+ * fallback, callers omit that row/line or fall back to generic copy.
  */
 export function resolvePersonalTemplate(
   template: string,

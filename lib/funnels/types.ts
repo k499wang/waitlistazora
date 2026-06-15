@@ -24,7 +24,10 @@ export type InfoVisualKey =
   | "stress_signature"
   | "camera_ppg"
   | "stress_projection"
-  | "breath_wave";
+  | "breath_wave"
+  | "comparison_bars"
+  | "dive_reflex"
+  | "impact_gauge";
 
 /**
  * Reference to an image asset under /public (or any valid next/image src),
@@ -62,6 +65,29 @@ export type FunnelStep =
       options: FunnelOption[];
     }
   | {
+      // 5-point agree/disagree Likert. Renders the statement above a
+      // horizontal slider with 5 snap points from `minLabel` (left) to
+      // `maxLabel` (right). Selecting a point records its value ("1".."5")
+      // and auto-advances after a brief, resettable pause — letting the user
+      // adjust before it commits. Used to make the user reflect on their
+      // problem. The stored value can feed reflective recap copy.
+      kind: "scale";
+      id: string;
+      /** The agree/disagree statement the user rates. */
+      statement: string;
+      subtext?: string;
+      /** Left anchor label. Defaults to "Strongly disagree". */
+      minLabel?: string;
+      /** Right anchor label. Defaults to "Strongly agree". */
+      maxLabel?: string;
+      /**
+       * Optional emoji anchors rendered one per snap point (5 entries, left to
+       * right, e.g. ["👎","🤔","🤷","👍","🙌"]). Purely decorative; makes the
+       * slider friendlier. Omit for a plain dotted track.
+       */
+      emojis?: string[];
+    }
+  | {
       // Free-text answer (e.g. the user's first name) used to personalize
       // later copy via {{step_id}} templates. The raw trimmed string is stored
       // as the answer and persisted like any other answer.
@@ -74,18 +100,45 @@ export type FunnelStep =
       maxLength?: number;
     }
   | {
+      // Interactive "follow along" breathing/breath-hold exercise. An animated
+      // orb expands/holds/contracts through the phases for the given number of
+      // rounds; once finished (or skipped) the Continue button unlocks. Pair it
+      // with a follow-up single_choice asking how the user feels.
+      kind: "breathing";
+      id: string;
+      title: string;
+      /** Optional intro line under the title. */
+      subtext?: string;
+      /**
+       * One round's ordered phases. `scale` is the orb size target for that
+       * phase (≈1 = full inhale, ≈0.55 = full exhale; hold reuses the prior).
+       */
+      phases: { label: string; seconds: number; scale?: number }[];
+      /** How many rounds to run. */
+      rounds: number;
+    }
+  | {
       kind: "interstitial";
       id: string;
       title: string;
       body: string;
       /** Optional loading checklist rendered as animated progress rows. */
       loadingItems?: string[];
+      /**
+       * Conditional next: route to a different step based on a prior answer,
+       * same shape as the info-step `branch`. Lets an "analyzing…" loader fan
+       * out to an answer-specific reveal (e.g. a nervous-system archetype).
+       */
+      branch?: { on: string; to: Record<string, string> };
     }
   | {
       kind: "info";
       id: string;
-      /** Emoji/glyph rendered as a large visual above the title. */
-      icon: string;
+      /**
+       * Emoji/glyph rendered as a large visual above the title. Optional when
+       * a richer hero (image, visual, or logos) is provided instead.
+       */
+      icon?: string;
       /**
        * Built-in SVG diagram rendered above the title instead of the emoji
        * icon. The icon remains the fallback when this is unset.
@@ -98,6 +151,11 @@ export type FunnelStep =
        */
       image?: FunnelImageRef;
       /**
+       * Render the centerpiece `image` larger, in a wide (landscape) frame
+       * instead of the default square. Use for screenshots/wide graphics.
+       */
+      imageLarge?: boolean;
+      /**
        * Full-bleed background photo for the whole step (e.g. "/sea.jpg"). When
        * set, the step renders text-only over the photo — the icon, visual,
        * image, and logos are all suppressed, since a foreground graphic and a
@@ -107,11 +165,20 @@ export type FunnelStep =
       title: string;
       body: string;
       /**
+       * Benefit/feature bullets rendered as a checkmark list under the body
+       * (e.g. "what happens when your heart rate drops"). Reusable for any
+       * funnel; suppressed on `backgroundImage` steps.
+       */
+      checklist?: string[];
+      /**
        * Logo images rendered as a "backed by" credibility strip under the body
        * (e.g. university marks). Reusable social-proof slot for any funnel.
+       * Rendered after the citation so logos can sit below a sources line.
        * Suppressed on `backgroundImage` steps.
        */
       logos?: FunnelImageRef[];
+      /** Small grey caption above the `logos` strip (e.g. "Trusted by"). */
+      logosCaption?: string;
       /**
        * Institution names rendered as a wordmark credibility strip under the
        * body (e.g. "MIT Media Lab"). Text-only alternative to `logos` when you
@@ -125,6 +192,39 @@ export type FunnelStep =
        * player between the body and the Continue button.
        */
       youtubeId?: string;
+      /**
+       * Conditional next: route to a different step based on a prior answer.
+       * `on` is the step id whose answer is read; `to` maps that answer to a
+       * target step id. Falls back to the natural next step when the answer
+       * isn't mapped. Lets an info screen sit *before* a branch (e.g. a
+       * reassurance shown right after the goal, ahead of goal-specific Qs).
+       */
+      branch?: { on: string; to: Record<string, string> };
+      /**
+       * Unconditional next step id. Used when an info screen must converge to a
+       * specific step rather than the natural array-order next, e.g. a set of
+       * branched archetype reveals that all flow into the same following screen.
+       * `branch` (when its answer matches) takes precedence over this.
+       */
+      nextId?: string;
+      /**
+       * iOS push-notification-style CTA banner pinned at the top of the screen,
+       * nudging the user to try this feature in the app now. Rendered with the
+       * Azora app icon and an "AZORA · now" header; the whole banner links to
+       * the App Store. Reusable on any info screen.
+       */
+      appNudge?: { title: string; body: string };
+      /**
+       * Aggregate rating shown as a star header above the testimonials
+       * (App Store-style social proof, e.g. 4.8 from 12,000+ members).
+       */
+      rating?: { score: string; stars?: number; count: string };
+      /**
+       * 5-star testimonial cards rendered under the body for trust. Each card
+       * shows a star row, the quote, and an attributed name. Suppressed on
+       * `backgroundImage` steps.
+       */
+      reviews?: { quote: string; name: string; stars?: number }[];
     }
   | {
       kind: "result";
@@ -211,6 +311,10 @@ export interface FunnelPersonalization {
       stepId: string;
       endLabels: Record<string, string>;
       fallbackEndLabel: string;
+      /** Chart heading by `stepId` answer — the metric being tracked, e.g.
+       *  "Your stress" or "Your sleep quality". */
+      metricLabels?: Record<string, string>;
+      fallbackMetricLabel?: string;
       planLabel?: string;
       comparisonLabel?: string;
       startLabel?: string;

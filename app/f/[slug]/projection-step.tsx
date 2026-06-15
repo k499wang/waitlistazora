@@ -21,22 +21,28 @@ export function ProjectionStep({
 }) {
   const projection = personalization.summary.projection;
   const hasBody = body.trim().length > 0;
+  const lowerLabel = (value?: string) => value?.toLocaleLowerCase();
+
+  // Chart heading is the metric the user chose to improve (e.g. "Your stress"
+  // or "Your sleep quality"), keyed off their goal answer — not the screen
+  // headline. Falls back when the answer isn't mapped.
+  const metricTitle = projection
+    ? projection.metricLabels?.[answers[projection.stepId]] ??
+      projection.fallbackMetricLabel ??
+      projection.title
+    : undefined;
 
   return (
     <div className="funnelInfo">
       {projection ? (
         <div className="funnelProjectionChart">
           <StressProjection
-            title={projection.title}
-            endLabel={
-              projection.endLabels[answers[projection.stepId]] ??
-              projection.fallbackEndLabel
-            }
+            title={metricTitle}
+            endLabel="with azora"
             targetDateLabel={`by ${projectionDateLabel()}`}
-            planLabel={projection.planLabel}
-            comparisonLabel={projection.comparisonLabel}
-            startLabel={projection.startLabel}
-            endTimeLabel={projection.endLabel}
+            comparisonLabel={lowerLabel(projection.comparisonLabel)}
+            startLabel={lowerLabel(projection.startLabel)}
+            endTimeLabel={lowerLabel(projection.endLabel)}
             caption={projection.caption}
           />
         </div>

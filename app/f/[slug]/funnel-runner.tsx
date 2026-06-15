@@ -16,7 +16,8 @@ import { useFunnelAnalytics } from "./use-funnel-analytics";
 import { useFunnelNavigation } from "./use-funnel-navigation";
 
 const REASSURANCE_DURATION = 2800; // ms to show reassuring toast before advancing
-const INTERSTITIAL_DURATION = 7600; // ms before an interstitial auto-advances
+const INTERSTITIAL_DURATION = 10800; // ms before an interstitial auto-advances
+const SCALE_ADVANCE_DELAY = 650; // ms after a scale tap before auto-advancing
 
 export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
   const {
@@ -37,6 +38,7 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
   const [allowOptionHover, setAllowOptionHover] = useState(false);
   const confettiFired = useRef(false);
   const reassuranceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scaleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [resumeParamsHandled, setResumeParamsHandled] = useState(false);
 
   // Handle auth/checkout resume params before step impressions fire. Otherwise
@@ -99,6 +101,10 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
       if (reassuranceTimer.current) {
         clearTimeout(reassuranceTimer.current);
         reassuranceTimer.current = null;
+      }
+      if (scaleTimer.current) {
+        clearTimeout(scaleTimer.current);
+        scaleTimer.current = null;
       }
       setReassuring(null);
     };
@@ -165,6 +171,30 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
     [defaultNext, effectiveAnswers, navigate, trackStepCompleted],
   );
 
+  // Agree/disagree scale: tapping a point records it and schedules a brief,
+  // resettable auto-advance. Re-tapping before it fires updates the answer and
+  // restarts the timer, so a mistap can be corrected. Completion is tracked
+  // when the advance actually fires (with the committed value).
+  const selectScale = useCallback(
+    (s: Extract<FunnelStep, { kind: "scale" }>, value: string) => {
+      recordAnswer(s.id, value);
+      if (scaleTimer.current) clearTimeout(scaleTimer.current);
+      const nextId = defaultNext(s.id);
+      scaleTimer.current = setTimeout(() => {
+        scaleTimer.current = null;
+        trackStepCompleted({
+          completedStep: s,
+          nextId,
+          action: "scale_selected",
+          answersForEvent: { ...effectiveAnswers, [s.id]: value },
+          extraProps: { scale_value: Number(value) },
+        });
+        if (nextId) navigate(nextId);
+      }, SCALE_ADVANCE_DELAY);
+    },
+    [defaultNext, effectiveAnswers, navigate, recordAnswer, trackStepCompleted],
+  );
+
   // Free-text answer (e.g. the user's name). Stored and persisted like a
   // choice — the trimmed string goes in the `option_id` slot so it rehydrates
   // through the existing /api/funnel-answer contract. Not sent to PostHog
@@ -191,10 +221,28 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
     [defaultNext, effectiveAnswers, funnel.steps, navigate, recordAnswer, trackStepCompleted],
   );
 
+  // Info screens and "analyzing…" interstitials may route conditionally on a
+  // prior answer (step.branch), so a reassurance/loader can sit *before* a fork.
+  // Info screens may also force an unconditional convergence target (step.nextId)
+  // — e.g. branched archetype reveals that all flow into the same next screen.
+  // Falls back to the natural next step otherwise.
+  const resolveNext = useCallback(
+    (s: FunnelStep): string | null => {
+      if ((s.kind === "info" || s.kind === "interstitial") && s.branch) {
+        const answer = effectiveAnswers[s.branch.on];
+        const target = answer ? s.branch.to[answer] : undefined;
+        if (target) return target;
+      }
+      if (s.kind === "info" && s.nextId) return s.nextId;
+      return defaultNext(s.id);
+    },
+    [defaultNext, effectiveAnswers],
+  );
+
   // Interstitial auto-advances after a short, intentional pause.
   useEffect(() => {
     if (step.kind !== "interstitial") return;
-    const nextId = defaultNext(step.id);
+    const nextId = resolveNext(step);
     if (!nextId) return;
     const t = setTimeout(() => {
       trackStepCompleted({
@@ -206,7 +254,7 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
       navigate(nextId);
     }, INTERSTITIAL_DURATION);
     return () => clearTimeout(t);
-  }, [currentId, step, defaultNext, navigate, trackStepCompleted]);
+  }, [currentId, step, resolveNext, navigate, trackStepCompleted]);
 
   const { title: displayTitle, body: displayBody } = resolveStepDisplayCopy({
     step,
@@ -228,7 +276,7 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
     step.kind !== "interstitial";
 
   const advanceWith = (action: string) => {
-    const nextId = defaultNext(step.id);
+    const nextId = resolveNext(step);
     trackStepCompleted({ completedStep: step, nextId, action });
     if (nextId) navigate(nextId);
   };
@@ -270,6 +318,9 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
           showConfetti={showConfetti}
           onEnableHover={() => setAllowOptionHover(true)}
           onSelectChoice={selectChoice}
+          onSelectScale={(stepId, value) => {
+            if (step.kind === "scale") selectScale(step, value);
+          }}
           onSubmitText={submitText}
           onAccountContinue={() => {
             const nextId = defaultNext(step.id);

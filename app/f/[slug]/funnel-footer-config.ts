@@ -54,5 +54,15 @@ export function getFunnelFooterConfig({
     };
   }
 
+  // Breathing exercise: Continue stays locked until the exercise completes
+  // (completion is recorded as the step's answer, like a selection).
+  if (step.kind === "breathing") {
+    return {
+      label: "Continue",
+      disabled: !hasSelectedAnswer,
+      action: "continue_clicked",
+    };
+  }
+
   return null;
 }

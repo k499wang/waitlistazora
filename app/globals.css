@@ -1939,6 +1939,217 @@ body::after {
 }
 .funnelOptionEmoji { font-size: 1.3rem; line-height: 1; }
 
+/* Agree/disagree Likert rendered as a horizontal slider: a track with a
+   filled portion up to the selected tick, five tappable points, and anchor
+   labels at each end. */
+/* ── Breathing exercise (follow-along orb) ── */
+.funnelBreathing {
+  text-align: center;
+}
+
+.breathOrbWrap {
+  position: relative;
+  width: 100%;
+  height: min(300px, 42vh);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 1.5rem auto 0.5rem;
+}
+
+.breathOrbGlow {
+  position: absolute;
+  width: min(260px, 70vw);
+  height: min(260px, 70vw);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(62, 111, 119, 0.16) 0%,
+    rgba(62, 111, 119, 0) 70%
+  );
+}
+
+.breathOrb {
+  position: absolute;
+  width: min(220px, 60vw);
+  height: min(220px, 60vw);
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #5b929a 0%, var(--brand) 62%, #2f5a61 100%);
+  box-shadow: 0 18px 50px rgba(47, 90, 97, 0.32);
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+  will-change: transform;
+}
+
+.breathOrbCenter {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  color: #fff;
+}
+
+.breathPhaseLabel {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-shadow: 0 1px 8px rgba(20, 40, 44, 0.4);
+}
+
+.breathCount {
+  font-size: 2.1rem;
+  font-weight: 800;
+  line-height: 1;
+  text-shadow: 0 1px 10px rgba(20, 40, 44, 0.45);
+}
+
+.breathBegin {
+  border: none;
+  border-radius: 999px;
+  padding: 0.65rem 1.6rem;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--brand);
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(20, 40, 44, 0.25);
+}
+
+.breathRound {
+  min-height: 1.2rem;
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.breathSkip {
+  margin-top: 0.4rem;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .breathOrb {
+    transition-duration: 0.3s !important;
+  }
+}
+
+.funnelScale {
+  margin-top: 3.4rem;
+  padding: 0 0.4rem;
+}
+
+.funnelScaleTrack {
+  position: relative;
+  height: 6px;
+  margin: 0 0.55rem;
+}
+
+.funnelScaleTrackBase {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--brand-soft);
+}
+
+.funnelScaleTrackFill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+  background: var(--brand);
+  transition: width 0.3s var(--ease-out-expo);
+}
+
+.funnelScalePoints {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: -6px;
+}
+
+/* Each tick is a generous tap target with a small dot centered inside. */
+.funnelScalePoint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.funnelScaleDot {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 2px solid var(--brand);
+  transition: transform 0.2s var(--ease-out-expo), background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.funnelScalePoint:hover .funnelScaleDot {
+  transform: scale(1.15);
+}
+
+/* Selected tick reads as the slider handle. */
+.funnelScalePointSelected .funnelScaleDot {
+  width: 26px;
+  height: 26px;
+  background: var(--brand);
+  box-shadow: 0 6px 16px -6px rgba(62, 111, 119, 0.7);
+}
+
+/* Emoji anchors: one glyph per snap point instead of the plain dot. */
+.funnelScalePointEmoji {
+  width: 48px;
+  height: 48px;
+}
+
+.funnelScaleEmoji {
+  font-size: 1.55rem;
+  line-height: 1;
+  opacity: 0.55;
+  filter: grayscale(0.5);
+  transition: transform 0.2s var(--ease-out-expo), opacity 0.2s ease,
+    filter 0.2s ease;
+}
+
+.funnelScalePoint:hover .funnelScaleEmoji {
+  transform: scale(1.15);
+  opacity: 0.85;
+}
+
+.funnelScalePointSelected .funnelScaleEmoji {
+  opacity: 1;
+  filter: none;
+  transform: scale(1.32);
+}
+
+.funnelScaleLabels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.55rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.funnelScaleLabels span:last-child { text-align: right; }
+
 /* Pinned bottom action bar (question screens). Holds the Continue button at
    the funnel column width, with a soft fade so content scrolls under it. */
 .funnelFooter {
@@ -2051,7 +2262,7 @@ body::after {
   font-size: 0.68rem;
   opacity: 0;
   transform: scale(0.7);
-  animation: loadingCheck 3.2s var(--ease-out-expo) both;
+  animation: loadingCheck 2.6s linear both;
 }
 
 .funnelLoadingTrack {
@@ -2068,26 +2279,28 @@ body::after {
   background: linear-gradient(90deg, var(--brand), var(--accent));
   transform: scaleX(0);
   transform-origin: left;
-  animation: loadingFill 3.2s var(--ease-out-expo) both;
+  animation: loadingFill 2.6s cubic-bezier(0.65, 0, 0.35, 1) both;
 }
 
+/* Sequential fill — each bar starts as the previous finishes, so it reads like
+   a genuine step-by-step process rather than four bars racing at once. */
 .funnelLoadingItem:nth-child(2) .funnelLoadingFill,
-.funnelLoadingItem:nth-child(2) .funnelLoadingCheck { animation-delay: 1.2s; }
+.funnelLoadingItem:nth-child(2) .funnelLoadingCheck { animation-delay: 2.6s; }
 
 .funnelLoadingItem:nth-child(3) .funnelLoadingFill,
-.funnelLoadingItem:nth-child(3) .funnelLoadingCheck { animation-delay: 2.4s; }
+.funnelLoadingItem:nth-child(3) .funnelLoadingCheck { animation-delay: 5.2s; }
 
 .funnelLoadingItem:nth-child(4) .funnelLoadingFill,
-.funnelLoadingItem:nth-child(4) .funnelLoadingCheck { animation-delay: 3.6s; }
+.funnelLoadingItem:nth-child(4) .funnelLoadingCheck { animation-delay: 7.8s; }
 
 @keyframes loadingFill {
   0% { transform: scaleX(0); }
-  42%, 100% { transform: scaleX(1); }
+  100% { transform: scaleX(1); }
 }
 
 @keyframes loadingCheck {
-  0%, 36% { opacity: 0; transform: scale(0.7); }
-  44%, 100% { opacity: 1; transform: scale(1); }
+  0%, 88% { opacity: 0; transform: scale(0.7); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 .funnelResultBadge {
@@ -2152,26 +2365,91 @@ body::after {
 /* ── Funnel info photo centerpiece (q1/q2/q3 people clipart, etc.) ── */
 .funnelInfoPhoto {
   position: relative;
-  width: min(240px, 62vw);
+  width: min(440px, 92vw);
   aspect-ratio: 1 / 1;
-  margin: 0 auto;
+  margin: 0 auto -0.75rem;
+}
+
+/* Question illustrations (q1/q2/q3) ship at mixed aspect ratios — q1 is
+   portrait, q2/q3 are square. A fixed-height frame with centered `contain`
+   makes all three render at the same visible height and stay centered,
+   regardless of their intrinsic dimensions. */
+.funnelInfoPhotoQuestion {
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: auto;
+  height: min(440px, 56vh);
+  margin: -0.75rem auto 0.25rem;
+}
+
+/* The question photo no longer needs the headline pulled onto it (images are
+   trimmed tight), so give a small real gap to prevent overlap with long copy. */
+.funnelInfoPhotoQuestion + .funnelQuestion {
+  margin-top: 0.25rem;
+}
+
+/* Pull the headline up tight under the photo (the clipart carries its own
+   transparent padding, so the default gap reads as too much empty space). */
+.funnelInfoPhoto + .funnelQuestion {
+  margin-top: 0;
+}
+
+/* Wide variant for screenshots / landscape graphics (e.g. the camera-PPG app
+   shot). Bigger, with a landscape frame and rounded corners. */
+.funnelInfoPhotoLarge {
+  width: min(480px, 94vw);
+  aspect-ratio: 16 / 10;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  /* Override the centerpiece's negative bottom margin so the screenshot keeps
+     a real gap above the headline instead of the text riding up onto it. */
+  margin-bottom: 1.25rem;
+}
+
+.funnelInfoPhotoLarge + .funnelQuestion {
+  margin-top: 0.25rem;
 }
 
 .funnelInfoPhotoImg {
   object-fit: contain;
 }
+.funnelInfoPhotoQuestion .funnelInfoPhotoImg {
+  object-fit: contain;
+  object-position: center;
+}
+.funnelInfoPhotoLarge .funnelInfoPhotoImg {
+  object-fit: cover;
+}
 
 /* ── Funnel info full-bleed background photo (text-only screens) ── */
-/* Breaks out of the centered funnel column to span the viewport. */
+/* Covers the entire viewport — behind the header and footer — so the photo
+   reads as a true full-screen background, not a card. */
 .funnelInfoBg {
-  position: relative;
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
-  min-height: calc(100dvh - 3.25rem);
-  padding: 6rem 1.75rem calc(7rem + env(safe-area-inset-bottom));
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 5rem 1.75rem calc(7rem + env(safe-area-inset-bottom));
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+}
+
+/* The step wrapper's fade animation ends on transform: translateY(0), which
+   would create a containing block and trap the fixed background inside the
+   content column. For background steps, fade with opacity only so the fixed
+   element resolves against the viewport. */
+.funnelStep:has(.funnelInfoBg) {
+  animation: funnelFadeOpacity 0.4s var(--ease-out-expo) both;
+}
+
+@keyframes funnelFadeOpacity {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* Darkening gradient so light text stays legible over any photo. */
@@ -2202,8 +2480,8 @@ body::after {
 
 /* ── Standalone projection screen chart ── */
 .funnelProjectionChart {
-  width: min(360px, 92vw);
-  margin: 0 auto 0.5rem;
+  width: min(360px, 84vw);
+  margin: 0 auto 0.75rem;
 }
 
 .funnelProjectionChart svg {
@@ -2258,6 +2536,18 @@ body::after {
 
 @keyframes visualDash { to { stroke-dashoffset: -24; } }
 
+/* Comparison bars grow up from the baseline. */
+.visualBarGrow {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: visualBarGrow 0.9s var(--ease-out-expo) both;
+}
+
+@keyframes visualBarGrow {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
 /* Quick double-thump heartbeat on the stress-signature heart. */
 .visualHeartbeat {
   transform-box: fill-box;
@@ -2279,6 +2569,10 @@ body::after {
   .visualPulse,
   .visualDash,
   .visualHeartbeat { animation: none; }
+  .visualBarGrow {
+    animation: none;
+    transform: none;
+  }
   .visualRingFill {
     animation: none;
     stroke-dashoffset: 18.1;
@@ -2303,21 +2597,245 @@ body::after {
 }
 
 /* ── Credibility strip: institution logo marks (social proof) ── */
+/* ── Benefit checklist on info steps ── */
+.funnelChecklist {
+  list-style: none;
+  margin: 1.6rem auto 0.35rem;
+  padding: 0;
+  max-width: 360px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.funnelChecklistItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+
+.funnelChecklistCheck {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  margin-top: 0.05rem;
+  border-radius: 999px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+/* ── Star ratings + testimonial cards (social proof) ── */
+.funnelStars {
+  display: inline-flex;
+  gap: 0.1rem;
+  font-size: 1rem;
+  line-height: 1;
+  color: #f5a623;
+  letter-spacing: 0.02em;
+}
+
+.funnelStarEmpty {
+  color: rgba(29, 43, 51, 0.18);
+}
+
+.funnelRating {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1.4rem auto 0.25rem;
+}
+
+.funnelRating .funnelStars {
+  font-size: 1.15rem;
+}
+
+.funnelRatingScore {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.funnelRatingCount {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.funnelReviews {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 380px;
+  margin: 1rem auto 0.35rem;
+  text-align: left;
+}
+
+.funnelReview {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius-md);
+  background: #fff;
+  border: 1px solid rgba(29, 43, 51, 0.08);
+  box-shadow: 0 1px 3px rgba(29, 43, 51, 0.05);
+}
+
+.funnelReviewQuote {
+  margin: 0.45rem 0 0.5rem;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: var(--text-primary);
+}
+
+.funnelReviewName {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+/* iOS push-notification-style banner pinned to the top of an info screen.
+   Mirrors the real lock-screen card: app icon, "AZORA · now" header, a bold
+   title and a message line. The whole card links to the App Store. */
+.funnelAppNudge {
+  position: sticky;
+  top: 0.5rem;
+  z-index: 20;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  width: 100%;
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 18px;
+  background: rgba(250, 250, 250, 0.72);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 14px 34px -14px rgba(29, 43, 51, 0.4);
+  text-decoration: none;
+  color: inherit;
+  animation: appNudgeIn 0.5s var(--ease-out-expo, ease) both;
+}
+
+@keyframes appNudgeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.funnelAppNudgeIcon {
+  position: relative;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+.funnelAppNudgeText {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+  text-align: left;
+  padding-top: 1px;
+}
+
+.funnelAppNudgeHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 1px;
+}
+
+.funnelAppNudgeApp {
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(29, 43, 51, 0.5);
+}
+
+.funnelAppNudgeTime {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: rgba(29, 43, 51, 0.4);
+}
+
+.funnelAppNudgeTitle {
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+.funnelAppNudgeBody {
+  font-size: 0.82rem;
+  line-height: 1.3;
+  color: rgba(29, 43, 51, 0.7);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .funnelAppNudge {
+    animation: none;
+  }
+}
+
+.funnelLogosBlock {
+  margin: 1.6rem auto 0.35rem;
+}
+
+/* Logos as the hero (top of an info screen, in place of an icon). */
+.funnelLogosHero {
+  margin: 0.5rem auto 1.25rem;
+}
+
+.funnelLogosHero .funnelLogosCaption {
+  margin: 0.6rem 0 0;
+}
+
+.funnelLogosCaption {
+  margin: 0 0 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+}
+
 .funnelLogos {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 1rem 2rem;
-  max-width: 440px;
-  margin: 1.5rem auto 0.35rem;
+  gap: 0.25rem 0.75rem;
+  max-width: 480px;
+  margin: 0 auto;
 }
 
 .funnelLogo {
   position: relative;
-  width: 132px;
-  height: 52px;
-  opacity: 0.9;
+  width: min(210px, 46vw);
+  height: 92px;
+  opacity: 1;
 }
 
 .funnelLogoImg {
@@ -2347,10 +2865,12 @@ body::after {
 }
 
 .funnelCitation {
-  max-width: 420px;
-  margin: 0 auto;
-  font-size: 0.66rem;
-  line-height: 1.5;
+  max-width: 440px;
+  margin: 0.95rem auto 0;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(29, 43, 51, 0.1);
+  font-size: 0.72rem;
+  line-height: 1.55;
   color: var(--text-muted);
 }
 

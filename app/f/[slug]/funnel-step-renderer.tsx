@@ -3,11 +3,13 @@
 import type { FunnelConfig, FunnelStep } from "@/lib/funnels/types";
 
 import { FunnelAccountStep } from "./account-step";
+import { BreathingStep } from "./breathing-step";
 import { InfoStep } from "./info-step";
 import { InterstitialStep } from "./interstitial-step";
 import { OfferStep } from "./offer-step";
 import { ProjectionStep } from "./projection-step";
 import { ResultStep } from "./result-step";
+import { ScaleStep } from "./scale-step";
 import { SingleChoiceStep } from "./single-choice-step";
 import { SummaryStep } from "./summary-step";
 import { TextInputStep } from "./text-input-step";
@@ -24,6 +26,7 @@ export function FunnelStepRenderer({
   showConfetti,
   onEnableHover,
   onSelectChoice,
+  onSelectScale,
   onSubmitText,
   onAccountContinue,
 }: {
@@ -38,6 +41,7 @@ export function FunnelStepRenderer({
   showConfetti: boolean;
   onEnableHover: () => void;
   onSelectChoice: (stepId: string, optionId: string) => void;
+  onSelectScale: (stepId: string, value: string) => void;
   onSubmitText: (stepId: string, value: string) => void;
   onAccountContinue: () => void;
 }) {
@@ -55,6 +59,16 @@ export function FunnelStepRenderer({
           onSelect={(optionId) => onSelectChoice(step.id, optionId)}
         />
       );
+    case "scale":
+      return (
+        <ScaleStep
+          step={step}
+          title={title}
+          body={body}
+          selectedValue={answers[step.id]}
+          onSelect={(value) => onSelectScale(step.id, value)}
+        />
+      );
     case "text_input":
       return (
         <TextInputStep
@@ -62,6 +76,16 @@ export function FunnelStepRenderer({
           title={title}
           body={body}
           onSubmit={(value) => onSubmitText(step.id, value)}
+        />
+      );
+    case "breathing":
+      return (
+        <BreathingStep
+          step={step}
+          title={title}
+          body={body}
+          isComplete={Boolean(answers[step.id])}
+          onComplete={() => onSelectChoice(step.id, "completed")}
         />
       );
     case "interstitial":

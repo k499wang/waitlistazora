@@ -168,7 +168,7 @@ export function DiscountSpinnerOverlay({
             <p className="spinKicker">You landed on</p>
             <h2 className="spinHeadline spinHeadlineWon">{DISCOUNT_PCT}% off</h2>
             <p className="spinSub">
-              Your one-time discount is locked in — it&apos;s already applied to
+              Your one-time discount is locked in. It&apos;s already applied to
               the plans below.
             </p>
           </>

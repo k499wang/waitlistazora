@@ -17,13 +17,10 @@ import { useSupabaseSession } from "./account-step";
 import { DiscountSpinnerOverlay, readSpinDiscount } from "./discount-spinner";
 import { INTENTIONAL_DEPARTURE_KEY } from "./funnel-constants";
 import {
-  OfferDiscountBanner,
   OfferJourneySteps,
-  OfferPlanToggle,
-  OfferRating,
+  OfferPlanRows,
   OfferTestimonials,
 } from "./offer-step-components";
-import { PlanRecap } from "./plan-recap";
 import { useOfferDiscount } from "./use-offer-discount";
 
 export function OfferStep({
@@ -42,7 +39,7 @@ export function OfferStep({
   const display = OFFER_DISPLAY[plan];
   const { loaded, email } = useSupabaseSession();
   const offerEnteredAt = useRef(Date.now());
-  const { countdownMs, discount, showSpinner, claimDiscount } =
+  const { discount, showSpinner, claimDiscount } =
     useOfferDiscount();
 
   // Fire web_paywall_viewed once when the offer step mounts, so paywall
@@ -110,125 +107,55 @@ export function OfferStep({
         <p className="funnelSubtext">{body}</p>
       ) : null}
 
-      {/* Social proof: aggregate rating near the top, before the plan. */}
-      <OfferRating />
+      {/* Feature checkmarks — above the card so the value props are read before
+          the price. */}
+      <ul className="checkoutFeatures checkoutFeaturesAbove">
+        {display.features.map((feature) => (
+          <li key={feature}>
+            <svg
+              className="checkoutFeatureIcon"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            {feature}
+          </li>
+        ))}
+      </ul>
 
-      {/* Results-first framing: the personalized plan the user just built,
-          repeated at the point of payment so the value is in view at the CTA. */}
-      <div className="offerRecap">
-        {/* Projection chart lives on its own `projection` step; keep the
-            paywall recap to the plan card only. */}
-        <PlanRecap
-          personalization={personalization}
-          answers={answers}
-          showProjection={false}
-        />
-      </div>
-
-      {discount ? (
-        <OfferDiscountBanner discount={discount} countdownMs={countdownMs} />
-      ) : null}
-
-      {/* Plan toggle */}
-      <OfferPlanToggle
-        plan={plan}
-        onChange={(nextPlan) => {
-          if (plan === nextPlan) return;
-          posthog.capture("web_offer_plan_toggled", {
-            ...offerAnalyticsProperties(),
-            from_plan: plan,
-            to_plan: nextPlan,
-            to_offer_id: OFFERS[nextPlan].offerId,
-          });
-          setPlan(nextPlan);
-        }}
-      />
-
-      {/* Single checkout card */}
+      {/* Checkout block (no card): plan rows + trial details, on the open page. */}
       <div className="checkoutCard">
-        {/* Risk-reversal badge pinned to the card (not the CTA): defuses the
-            "I'll forget to cancel" objection right where the price lives. */}
-        <div className="checkoutGuaranteeBadge">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M12 1l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V4l8-3zm-1.2 14.2l5.5-5.5-1.4-1.4-4.1 4.1-1.9-1.9-1.4 1.4 3.3 3.3z" />
-          </svg>
-          <span>Cancel anytime · we&apos;ll remind you 2 days before billing</span>
-        </div>
-
-        {/* Trial headline — the main message. */}
-        <p className="checkoutTrialHeadline">
-          {plan === "annual" ? (
-            <>
-              Try Azora <em className="freeAccent">free</em> for 7 days
-            </>
-          ) : (
-            "No commitment"
-          )}
-        </p>
-        {plan === "annual" ? (
-          <p className="checkoutTrialSub">
-            <strong>$0.00 today</strong> · cancel anytime during the trial
-          </p>
-        ) : null}
-
-        {/* Pre-spin, the un-discounted anchor renders as the plain price (the
-            spinner overlay is covering the card); winning the spin crosses it
-            out and reveals the real price — which is what checkout charges. */}
-        <div
-          className={`checkoutCardPrice${discount ? " checkoutCardPriceDeal" : ""}`}
-        >
-          {discount ? (
-            <span className="priceDealChip">{discount.pct}% OFF</span>
-          ) : null}
-          <p className="checkoutHeroPrice">
-            {discount ? (
-              <s className="priceAnchor">{display.anchorWeeklyPrice}</s>
-            ) : null}
-            <span className="priceHeroAmount">
-              {discount ? display.weeklyPrice : display.anchorWeeklyPrice}
-            </span>
-            <span className="pricePeriod">/wk</span>
-          </p>
-          <p className="priceBillingNote">
-            {display.billingNote}
-            {/* Weekly's full price IS the weekly price above — skip the echo. */}
-            {discount && plan === "annual" ? (
-              <>
-                {" · "}
-                <s>{display.anchorFullPrice}</s> <strong>{display.price}{display.period}</strong>
-              </>
-            ) : null}
-          </p>
-        </div>
-
-        {/* Feature checkmarks */}
-        <ul className="checkoutFeatures">
-          {display.features.map((feature) => (
-            <li key={feature}>
-              <svg
-                className="checkoutFeatureIcon"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-              {feature}
-            </li>
-          ))}
-        </ul>
+        {/* Plan selection: stacked, full-width rows (app-paywall style) that
+            each carry their own per-week price. The won discount renders as an
+            overlay badge on the annual row, not a separate banner. */}
+        <OfferPlanRows
+          plan={plan}
+          discount={discount}
+          onChange={(nextPlan) => {
+            if (plan === nextPlan) return;
+            posthog.capture("web_offer_plan_toggled", {
+              ...offerAnalyticsProperties(),
+              from_plan: plan,
+              to_plan: nextPlan,
+              to_offer_id: OFFERS[nextPlan].offerId,
+            });
+            setPlan(nextPlan);
+          }}
+        />
 
         {personalization.offer.anchorNote ? (
           <p className="checkoutAnchorNote">{personalization.offer.anchorNote}</p>
         ) : null}
 
-        {plan === "annual" && personalization.offer.trialTimeline?.length ? (
+        {personalization.offer.trialTimeline?.length ? (
           <ol className="trialTimeline" aria-label="How your free trial works">
             {personalization.offer.trialTimeline.map((item) => (
               <li key={item.day}>
@@ -239,6 +166,64 @@ export function OfferStep({
           </ol>
         ) : null}
 
+        {/* Risk-reversal line in the most-read spot, near the price. */}
+        <p className="checkoutGuaranteeLine">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 1l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V4l8-3zm-1.2 14.2l5.5-5.5-1.4-1.4-4.1 4.1-1.9-1.9-1.4 1.4 3.3 3.3z" />
+          </svg>
+          {plan === "annual"
+            ? "Risk-free: you won't be charged until your trial ends, and you can cancel any time."
+            : "Cancel any time, no questions asked."}
+        </p>
+
+        {/* Tell signed-out users upfront that checkout needs an account. */}
+        {loaded && !email ? (
+          <p className="checkoutAccountNote">
+            Your subscription is linked to a free Azora account. You&apos;ll
+            create one at checkout.
+          </p>
+        ) : null}
+
+        {/* Guaranteed safe checkout: card-network logos + encryption reassurance. */}
+        <div className="safeCheckout">
+          <p className="safeCheckoutHeading">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 1a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2h-1V6a5 5 0 0 0-5-5zm-3 8V6a3 3 0 1 1 6 0v3H9z" />
+            </svg>
+            Guaranteed safe checkout
+          </p>
+          <div className="safeCheckoutCards" aria-label="Accepted payment methods">
+            <span className="cardTile">
+              <svg viewBox="0 0 48 16" role="img" aria-label="Visa">
+                <text x="24" y="13" textAnchor="middle" fontFamily="Arial, sans-serif" fontWeight="700" fontStyle="italic" fontSize="13" fill="#1434CB">VISA</text>
+              </svg>
+            </span>
+            <span className="cardTile">
+              <svg viewBox="0 0 48 30" role="img" aria-label="Mastercard">
+                <circle cx="20" cy="15" r="9" fill="#EB001B" />
+                <circle cx="28" cy="15" r="9" fill="#F79E1B" fillOpacity="0.85" />
+              </svg>
+            </span>
+            <span className="cardTile">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/cards/amex.png" alt="American Express" />
+            </span>
+          </div>
+          <p className="safeCheckoutNote">
+            All transactions are secure and encrypted
+          </p>
+        </div>
+      </div>
+
+      {/* Social proof: member reviews under the card, reinforcing the CTA. */}
+      {personalization.offer.testimonials?.length ? (
+        <OfferTestimonials testimonials={personalization.offer.testimonials} />
+      ) : null}
+
+      {/* Sticky checkout bar: pins the CTA to the bottom of the viewport so it's
+          always reachable while the rest of the paywall scrolls behind it —
+          the native-app paywall pattern. */}
+      <div className="checkoutStickyBar">
         <CheckoutForm
           action={`/checkout/start?offer=${offer.key}`}
           offerKey={offer.key}
@@ -246,7 +231,7 @@ export function OfferStep({
             posthog.capture("web_checkout_cta_clicked", {
               ...offerAnalyticsProperties(),
               cta_label:
-                plan === "annual" ? "Start my free trial" : "Start now",
+                plan === "annual" ? "Try for free for 7 days" : "Start now",
             });
           }}
           onCheckoutActive={() => {
@@ -265,7 +250,7 @@ export function OfferStep({
           }}
         >
           <button type="submit" className="checkoutCta">
-            {plan === "annual" ? "Start my free trial" : "Start now"}
+            {plan === "annual" ? "Try for free for 7 days" : "Start now"}
             <svg
               width="16"
               height="16"
@@ -282,86 +267,7 @@ export function OfferStep({
             </svg>
           </button>
         </CheckoutForm>
-
-        {/* Risk-reversal line in the most-read spot, right under the CTA. */}
-        <p className="checkoutGuaranteeLine">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M12 1l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V4l8-3zm-1.2 14.2l5.5-5.5-1.4-1.4-4.1 4.1-1.9-1.9-1.4 1.4 3.3 3.3z" />
-          </svg>
-          {plan === "annual"
-            ? "Risk-free: you won't be charged until your trial ends, and you can cancel any time."
-            : "Cancel any time, no questions asked."}
-        </p>
-
-        <p className="checkoutDueToday">{display.dueTodayLine}</p>
-
-        {/* Account status: reassure signed-in users their plan is attached;
-            tell signed-out users upfront that checkout needs an account. */}
-        {loaded ? (
-          email ? (
-            <p className="checkoutAccountNote checkoutAccountNoteSaved">
-              ✓ Plan saved to <strong>{email}</strong>
-            </p>
-          ) : (
-            <p className="checkoutAccountNote">
-              Your subscription is linked to a free Azora account. You&apos;ll
-              create one at checkout.
-            </p>
-          )
-        ) : null}
-
-        {/* Trust badges */}
-        <div className="checkoutTrust">
-          <span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M12 1a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2h-1V6a5 5 0 0 0-5-5zm-3 8V6a3 3 0 1 1 6 0v3H9z" />
-            </svg>
-            Secure checkout
-          </span>
-          <span>·</span>
-          <span>Cancel anytime</span>
-          <span>·</span>
-          <span>Web &amp; app</span>
-        </div>
-
-        {/* Payment-method / secure icons for checkout legitimacy. */}
-        <div className="checkoutPayIcons" aria-label="Accepted payment methods">
-          <svg className="checkoutPayLock" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M12 1a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2h-1V6a5 5 0 0 0-5-5zm-3 8V6a3 3 0 1 1 6 0v3H9z" />
-          </svg>
-          <svg width="34" height="22" viewBox="0 0 34 22" fill="none" aria-hidden="true">
-            <rect x="0.5" y="0.5" width="33" height="21" rx="3.5" stroke="currentColor" opacity="0.35" />
-            <rect x="4" y="5" width="9" height="3" rx="1" fill="currentColor" opacity="0.7" />
-            <rect x="4" y="13" width="16" height="2" rx="1" fill="currentColor" opacity="0.45" />
-          </svg>
-          <svg width="34" height="22" viewBox="0 0 34 22" fill="none" aria-hidden="true">
-            <rect x="0.5" y="0.5" width="33" height="21" rx="3.5" stroke="currentColor" opacity="0.35" />
-            <circle cx="15" cy="11" r="6" fill="currentColor" opacity="0.7" />
-            <circle cx="21" cy="11" r="6" fill="currentColor" opacity="0.4" />
-          </svg>
-          <svg width="34" height="22" viewBox="0 0 34 22" fill="none" aria-hidden="true">
-            <rect x="0.5" y="0.5" width="33" height="21" rx="3.5" stroke="currentColor" opacity="0.35" />
-            <path d="M10 14l2-6h1.6l-2 6H10zm5.4 0l1.2-6h1.5l-1.2 6h-1.5z" fill="currentColor" opacity="0.7" />
-          </svg>
-        </div>
-
-        {/* Accuracy credibility block (e.g. PPG validation sources). */}
-        {personalization.offer.validation ? (
-          <div className="checkoutValidation">
-            <p className="checkoutValidationLine">
-              {personalization.offer.validation.line}
-            </p>
-            <p className="checkoutValidationSources">
-              {personalization.offer.validation.sources}
-            </p>
-          </div>
-        ) : null}
       </div>
-
-      {/* Social proof: member reviews under the card, reinforcing the CTA. */}
-      {personalization.offer.testimonials?.length ? (
-        <OfferTestimonials testimonials={personalization.offer.testimonials} />
-      ) : null}
     </div>
   );
 }

@@ -5,17 +5,22 @@ import type { FunnelConfig } from "./types";
 // biofeedback breathing ("Heart-Guided Breathing") is the named mechanism
 // that solves all of them.
 //
-// Questions and info screens are interleaved so the user never sits through
-// more than two info screens in a row, info pairs stay together
-// conceptually but are broken up by a question to keep momentum:
-//   goal + branch + tried_before → failure-reframe pair → me_time →
-//   phone-HR "did you know" → peace_time → live feedback + accuracy proof →
-//   calm_duration → social proof → body_signal → reset_blocker →
-//   building interstitial → result → account → offer
+// Two-act structure (diagnose → reveal → solve):
+//   ACT 1 — DIAGNOSE: goal + branch + duration → reassurance → severity /
+//     impact / triggers + lifestyle questions (me_time, evenings, caffeine,
+//     sleep) → tried_before + failure reframe → peace_time / calm_duration /
+//     body_signal / reset_blocker → agreement scales → "analyzing" loader →
+//     nervous-system ARCHETYPE reveal (the hinge).
+//   ACT 2 — SOLVE: the mechanism (camera-PPG Heart-Guided Breathing), proof,
+//     a live breathing round, the 2-week projection, then personalization
+//     (gender / age / name) → building interstitial → result → summary →
+//     account → offer.
 //
-// Branching: goal (stress / sleep / general) → 1 branch follow-up → joins the
-// common path at `tried_before`. Info screens are intentional stops with a
-// visual + Continue button; the building interstitial auto-advances.
+// Branching: goal → assess_intro carries the branch to the matching "feeling"
+// question; all feeling answers rejoin at `duration`. The "analyzing" loader
+// branches on goal to the matching archetype, which converges into the solve
+// act via nextId. Info screens are intentional stops with a visual + Continue;
+// interstitials auto-advance.
 //
 // The accuracy info screen cites real published PPG validation studies
 // (citation strings below). Institution names render as text wordmarks, not
@@ -28,6 +33,8 @@ export const calmResetFunnel: FunnelConfig = {
     intro:
       "A few quick questions to build your plan. Then watch your own heart rate fall, live, using just your phone's camera.",
     steps: [
+      // ════════════════════════ ACT 1 — DIAGNOSE ════════════════════════
+
       // ── Q1: Goal (branches: stress, sleep, or general) ───────────────
       {
         kind: "single_choice",
@@ -233,14 +240,136 @@ export const calmResetFunnel: FunnelConfig = {
         ],
       },
 
-      // ── Projection: the 2-week trend, shown early as a motivating preview.
-      // Name-free title (the name isn't collected until later in the funnel).
-      // Chart data comes from personalization.summary.projection + answers.
+      // ── Q: Severity (how much it takes over) ──────────────────────────
       {
-        kind: "projection",
-        id: "projection",
-        title: "Here's where you're headed",
-        body: "Your daily resets are built to soften the spikes first, then settle your baseline.",
+        kind: "single_choice",
+        id: "severity",
+        question: "When your stress peaks, how much does it take over?",
+        subtext: "There's no wrong answer. This tells us how much support to build in.",
+        options: [
+          { id: "mild", emoji: "🌤️", label: "I notice it but can push through" },
+          { id: "nagging", emoji: "🌥️", label: "It nags at me in the background all day" },
+          { id: "hard", emoji: "🌧️", label: "It's hard to focus on anything else" },
+          { id: "takeover", emoji: "⛈️", label: "It completely takes over" },
+        ],
+      },
+
+      // ── Q: Life impact (what it's costing them) ───────────────────────
+      {
+        kind: "single_choice",
+        id: "life_impact",
+        question: "Where is it costing you the most right now?",
+        subtext: "Knowing what it touches most helps us aim your plan.",
+        options: [
+          { id: "sleep", emoji: "😴", label: "My sleep" },
+          { id: "focus", emoji: "🎯", label: "Focus and work" },
+          { id: "mood", emoji: "❤️", label: "My mood and relationships" },
+          { id: "energy", emoji: "🔋", label: "My energy" },
+        ],
+      },
+
+      // ── Q: Triggers (what sets it off) ────────────────────────────────
+      {
+        kind: "single_choice",
+        id: "triggers",
+        question: "What sets it off most?",
+        subtext: "Spotting your trigger helps us time your resets for when you need them.",
+        options: [
+          { id: "work", emoji: "💼", label: "Work and deadlines" },
+          { id: "money", emoji: "💸", label: "Money and the future" },
+          { id: "people", emoji: "👥", label: "People and relationships" },
+          { id: "nothing", emoji: "🌫️", label: "No clear trigger, it's just there" },
+        ],
+      },
+
+      // ── INFO: warm reassurance after the heavy diagnosis cluster ──────
+      // The "we've got you" exhale right after severity / impact / triggers,
+      // before the lighter lifestyle questions. Mirrors breathhold's
+      // `reassure_fit`.
+      {
+        kind: "info",
+        id: "reassure_fit",
+        icon: "🫶",
+        title: "We've got you from here",
+        body: "However it's showing up, you're in good hands. A daily reset is a perfect fit for what you're dealing with, and we'll build it around you, one calm breath at a time.",
+      },
+
+      // ── Q4: Self-care frequency ───────────────────────────────────────
+      {
+        kind: "single_choice",
+        id: "me_time",
+        question: "How often do you take a moment just for yourself?",
+        subtext:
+          "Not a workout. Not scrolling your phone. Just a quiet pause where you're not doing anything for anyone.",
+        options: [
+          {
+            id: "rarely",
+            emoji: "💨",
+            label: "Almost never, who has the time",
+          },
+          {
+            id: "sometimes",
+            emoji: "🌤️",
+            label: "Once in a while, when things pile up",
+          },
+          {
+            id: "often",
+            emoji: "🕯️",
+            label: "Most days, I protect a few minutes",
+          },
+        ],
+      },
+
+      // ── Q: Evenings / wind-down (lifestyle) ───────────────────────────
+      {
+        kind: "single_choice",
+        id: "evenings",
+        question: "What do your evenings usually look like?",
+        subtext: "How you wind down shapes how your nervous system settles for the night.",
+        options: [
+          { id: "scroll", emoji: "📱", label: "Scrolling my phone in bed" },
+          { id: "work_late", emoji: "💻", label: "Working or answering messages late" },
+          { id: "tv", emoji: "📺", label: "TV to try to switch off" },
+          { id: "awake", emoji: "🌙", label: "Lying awake, mind still going" },
+        ],
+      },
+
+      // ── Q: Caffeine (lifestyle) ───────────────────────────────────────
+      {
+        kind: "single_choice",
+        id: "caffeine",
+        question: "How's your caffeine through the day?",
+        subtext: "Caffeine keeps your system primed, so it's useful for us to know.",
+        options: [
+          { id: "high", emoji: "☕", label: "A lot, and often late in the day" },
+          { id: "moderate", emoji: "🍵", label: "Moderate, mostly mornings" },
+          { id: "low", emoji: "🚫", label: "Little to none" },
+          { id: "untracked", emoji: "🤷", label: "Honestly, I don't track it" },
+        ],
+      },
+
+      // ── Q: Sleep quality (lifestyle) ──────────────────────────────────
+      {
+        kind: "single_choice",
+        id: "sleep_quality",
+        question: "How's your sleep been lately?",
+        subtext: "Sleep and stress feed each other, so this shapes your plan.",
+        options: [
+          { id: "slow", emoji: "⏳", label: "Takes forever to fall asleep" },
+          { id: "wake", emoji: "⏰", label: "I wake up during the night" },
+          { id: "unrefreshed", emoji: "😵‍💫", label: "I sleep but wake up unrefreshed" },
+          { id: "fine", emoji: "🙂", label: "Sleep's actually okay" },
+        ],
+      },
+
+      // ── INFO: second reassurance beat, a hopeful affirmation heading
+      // into the back half of the diagnosis ─────────────────────────────
+      {
+        kind: "info",
+        id: "affirm_calm",
+        icon: "🌱",
+        title: "Your calm isn't gone, it's just buried",
+        body: "Stress doesn't erase your baseline, it just sits on top of it. With the right daily reset, your nervous system remembers how to settle.",
       },
 
       // ── Q3: What they've tried (sets up the failure reframe) ─────────
@@ -292,31 +421,214 @@ export const calmResetFunnel: FunnelConfig = {
         body: "Your brain sticks with habits when it can see a clear reward.",
       },
 
-      // ── Q4: Self-care frequency ───────────────────────────────────────
+      // ── Q5: Peaceful moment ───────────────────────────────────────────
       {
         kind: "single_choice",
-        id: "me_time",
-        question: "How often do you take a moment just for yourself?",
-        subtext:
-          "Not a workout. Not scrolling your phone. Just a quiet pause where you're not doing anything for anyone.",
+        id: "peace_time",
+        question: "When do you feel most at peace during your day?",
         options: [
           {
-            id: "rarely",
-            emoji: "💨",
-            label: "Almost never, who has the time",
+            id: "morning",
+            emoji: "🌅",
+            label: "Early morning, before the world wakes up",
           },
           {
-            id: "sometimes",
-            emoji: "🌤️",
-            label: "Once in a while, when things pile up",
+            id: "midday",
+            emoji: "☀️",
+            label: "Midday, I need a reset in the middle of things",
           },
           {
-            id: "often",
-            emoji: "🕯️",
-            label: "Most days, I protect a few minutes",
+            id: "evening",
+            emoji: "🌆",
+            label: "Evening, winding down from the day",
+          },
+          {
+            id: "late",
+            emoji: "🌌",
+            label: "Late at night, when everything is finally quiet",
           },
         ],
       },
+
+      // ── Q6: Session length ────────────────────────────────────────────
+      {
+        kind: "single_choice",
+        id: "calm_duration",
+        question: "How long do you need to feel truly calmed?",
+        subtext:
+          "Even 2 minutes of paced breathing shifts your nervous system. " +
+          "This is about what fits your life, not what's 'enough.'",
+        options: [
+          {
+            id: "two_min",
+            emoji: "⏱️",
+            label: "2 minutes, just enough to catch my breath",
+          },
+          {
+            id: "five_min",
+            emoji: "🕐",
+            label: "5 minutes, a real pause that sticks",
+          },
+          {
+            id: "ten_min",
+            emoji: "🕙",
+            label: "10 minutes, I want to go deep",
+          },
+        ],
+      },
+
+      // ── Q7: Body signals ──────────────────────────────────────────────
+      {
+        kind: "single_choice",
+        id: "body_signal",
+        question: "How does your body tell you it needs a reset?",
+        subtext:
+          "Before your mind registers stress, your heart has already spoken. " +
+          "What do you notice first?",
+        options: [
+          {
+            id: "shallow",
+            emoji: "🫁",
+            label: "My breathing gets shallow, short quick inhales",
+          },
+          {
+            id: "heart",
+            emoji: "💓",
+            label: "My heart races or pounds without reason",
+          },
+          {
+            id: "tight",
+            emoji: "🪨",
+            label: "My shoulders or jaw tighten up",
+          },
+          {
+            id: "fatigue",
+            emoji: "🪫",
+            label: "Sudden exhaustion, like a wave of heavy",
+          },
+        ],
+      },
+
+      // ── Q8: What blocks the reset (skeptics get answered next) ───────
+      {
+        kind: "single_choice",
+        id: "reset_blocker",
+        question: "What usually gets in the way of taking a pause?",
+        options: [
+          {
+            id: "scroll",
+            emoji: "📱",
+            label: "I scroll my phone instead of actually stopping",
+          },
+          {
+            id: "later",
+            emoji: "⏳",
+            label: "I keep telling myself \"I'll do it later\"",
+          },
+          {
+            id: "overwhelm",
+            emoji: "🌪️",
+            label: "The moment I sit still, everything I have to do takes over",
+          },
+          {
+            id: "skeptical",
+            emoji: "🤔",
+            label: "I'm not convinced it'll actually work for me",
+          },
+        ],
+      },
+
+      // ── SEGUE 2: diagnostic framing for the agreement scales ──────────
+      {
+        kind: "info",
+        id: "scales_intro",
+        icon: "📊",
+        title: "Now we'll measure your baseline",
+        body: "These are statements, not questions. Rate how true each one feels, so we can pinpoint your starting point and track exactly how far you've come.",
+      },
+
+      // ── Agreement section: rate how much each statement sounds like you ─
+      // 5-point agree/disagree Likert sliders, one statement per screen, each
+      // auto-advancing. Surfaces the user's self-perception before the recap
+      // reflects the pattern back to them.
+      {
+        kind: "scale",
+        id: "scale_mind",
+        emojis: ["👎", "🤔", "🤷", "👍", "🙌"],
+        statement: "My mind races when I'm trying to relax.",
+        subtext:
+          "There are no right answers, just tell us how much this sounds like you.",
+      },
+      {
+        kind: "scale",
+        id: "scale_stuck",
+        emojis: ["👎", "🤔", "🤷", "👍", "🙌"],
+        statement: "I've tried to build a calming routine before, but it didn't stick.",
+      },
+      {
+        kind: "scale",
+        id: "scale_body",
+        emojis: ["👎", "🤔", "🤷", "👍", "🙌"],
+        statement: "I notice stress in my body before my mind catches up.",
+      },
+
+      // ── REVEAL: "analyzing" loader → nervous-system archetype ─────────
+      // The hinge between diagnose and solve. The loader auto-advances and
+      // branches on `goal` to one of the three archetype screens; each
+      // converges into the solve act (phone_hr) via nextId.
+      {
+        kind: "interstitial",
+        id: "analyzing",
+        title: "Analyzing your responses…",
+        body: "Mapping your answers to your nervous system's pattern right now.",
+        loadingItems: [
+          "Reading your stress signals",
+          "Comparing to common patterns",
+          "Matching your reset plan",
+        ],
+        branch: {
+          on: "goal",
+          to: {
+            stress: "arch_flight",
+            focus: "arch_flight",
+            explore: "arch_flight",
+            sleep: "arch_night",
+            wellness: "arch_empty",
+          },
+        },
+      },
+      {
+        kind: "info",
+        id: "arch_flight",
+        visual: "impact_gauge",
+        title: "Your pattern: Flight Mode",
+        body: "Your nervous system tends to stay switched on, your mind keeps moving even when your body wants to rest. That's what makes it hard to truly unwind. Here's what calms a system stuck in Flight Mode.",
+        citation:
+          "This is an informational reflection based on your quiz answers, not a medical assessment.",
+        nextId: "phone_hr",
+      },
+      {
+        kind: "info",
+        id: "arch_night",
+        visual: "impact_gauge",
+        title: "Your pattern: The Night Loop",
+        body: "Your system stays alert right when it should be powering down, so your mind loops instead of letting go. Here's what guides a system stuck in the Night Loop back toward rest.",
+        citation:
+          "This is an informational reflection based on your quiz answers, not a medical assessment.",
+        nextId: "phone_hr",
+      },
+      {
+        kind: "info",
+        id: "arch_empty",
+        visual: "impact_gauge",
+        title: "Your pattern: Running on Empty",
+        body: "Long stretches in stress mode have left your reserves low, so calm feels just out of reach. Here's what rebuilds a system that's Running on Empty.",
+        citation:
+          "This is an informational reflection based on your quiz answers, not a medical assessment.",
+        nextId: "phone_hr",
+      },
+
+      // ════════════════════════ ACT 2 — SOLVE ════════════════════════
 
       // ── INFO: "Did you know?", your phone can read your heart rate ───
       // Educational reveal using the real in-app camera-PPG image plus a
@@ -423,150 +735,15 @@ export const calmResetFunnel: FunnelConfig = {
         ],
       },
 
-      // ── Q5: Peaceful moment ───────────────────────────────────────────
+      // ── Projection: the 2-week trend, shown after they've felt a round
+      // so the outcome curve lands as a payoff. Name-free title (the name
+      // isn't collected until later). Chart data comes from
+      // personalization.summary.projection + answers.
       {
-        kind: "single_choice",
-        id: "peace_time",
-        question: "When do you feel most at peace during your day?",
-        options: [
-          {
-            id: "morning",
-            emoji: "🌅",
-            label: "Early morning, before the world wakes up",
-          },
-          {
-            id: "midday",
-            emoji: "☀️",
-            label: "Midday, I need a reset in the middle of things",
-          },
-          {
-            id: "evening",
-            emoji: "🌆",
-            label: "Evening, winding down from the day",
-          },
-          {
-            id: "late",
-            emoji: "🌌",
-            label: "Late at night, when everything is finally quiet",
-          },
-        ],
-      },
-
-      // ── Q6: Session length ────────────────────────────────────────────
-      {
-        kind: "single_choice",
-        id: "calm_duration",
-        question: "How long do you need to feel truly calmed?",
-        subtext:
-          "Even 2 minutes of paced breathing shifts your nervous system. " +
-          "This is about what fits your life, not what's 'enough.'",
-        options: [
-          {
-            id: "two_min",
-            emoji: "⏱️",
-            label: "2 minutes, just enough to catch my breath",
-          },
-          {
-            id: "five_min",
-            emoji: "🕐",
-            label: "5 minutes, a real pause that sticks",
-          },
-          {
-            id: "ten_min",
-            emoji: "🕙",
-            label: "10 minutes, I want to go deep",
-          },
-        ],
-      },
-
-      // ── SEGUE 2: diagnostic framing for the agreement scales ──────────
-      {
-        kind: "info",
-        id: "scales_intro",
-        icon: "📊",
-        title: "Now we'll measure your baseline",
-        body: "These are statements, not questions. Rate how true each one feels, so we can pinpoint your starting point and track exactly how far you've come.",
-      },
-
-      // ── Agreement section: rate how much each statement sounds like you ─
-      // 5-point agree/disagree Likert sliders, one statement per screen, each
-      // auto-advancing. Surfaces the user's self-perception before the recap
-      // reflects the pattern back to them.
-      {
-        kind: "scale",
-        id: "scale_mind",
-        emojis: ["👎", "🤔", "🤷", "👍", "🙌"],
-        statement: "My mind races when I'm trying to relax.",
-        subtext:
-          "There are no right answers, just tell us how much this sounds like you.",
-      },
-      {
-        kind: "scale",
-        id: "scale_stuck",
-        emojis: ["👎", "🤔", "🤷", "👍", "🙌"],
-        statement: "I've tried to build a calming routine before, but it didn't stick.",
-      },
-      {
-        kind: "scale",
-        id: "scale_body",
-        emojis: ["👎", "🤔", "🤷", "👍", "🙌"],
-        statement: "I notice stress in my body before my mind catches up.",
-      },
-
-      // ── RECAP: "analyzing" loader → nervous-system archetype reveal ──
-      // The loader auto-advances and branches on `goal` to one of the three
-      // archetype screens below; each converges back to `with_azora` via
-      // nextId, so the others are skipped.
-      {
-        kind: "interstitial",
-        id: "analyzing",
-        title: "Analyzing your responses…",
-        body: "Mapping your answers to your nervous system's pattern right now.",
-        loadingItems: [
-          "Reading your stress signals",
-          "Comparing to common patterns",
-          "Matching your reset plan",
-        ],
-        branch: {
-          on: "goal",
-          to: {
-            stress: "arch_flight",
-            focus: "arch_flight",
-            explore: "arch_flight",
-            sleep: "arch_night",
-            wellness: "arch_empty",
-          },
-        },
-      },
-      {
-        kind: "info",
-        id: "arch_flight",
-        visual: "impact_gauge",
-        title: "Your pattern: Flight Mode",
-        body: "Your nervous system tends to stay switched on, your mind keeps moving even when your body wants to rest. That's what makes it hard to truly unwind. Next, we'll help your body relearn how to downshift, so calm comes naturally again.",
-        citation:
-          "This is an informational reflection based on your quiz answers, not a medical assessment.",
-        nextId: "with_azora",
-      },
-      {
-        kind: "info",
-        id: "arch_night",
-        visual: "impact_gauge",
-        title: "Your pattern: The Night Loop",
-        body: "Your system stays alert right when it should be powering down, so your mind loops instead of letting go. Next, we'll guide your body back toward the slow, steady rhythm that makes deep sleep possible.",
-        citation:
-          "This is an informational reflection based on your quiz answers, not a medical assessment.",
-        nextId: "with_azora",
-      },
-      {
-        kind: "info",
-        id: "arch_empty",
-        visual: "impact_gauge",
-        title: "Your pattern: Running on Empty",
-        body: "Long stretches in stress mode have left your reserves low, so calm feels just out of reach. Next, we'll rebuild your baseline gently, so steady energy and ease come back.",
-        citation:
-          "This is an informational reflection based on your quiz answers, not a medical assessment.",
-        nextId: "with_azora",
+        kind: "projection",
+        id: "projection",
+        title: "Here's where you're headed",
+        body: "Your daily resets are built to soften the spikes first, then settle your baseline.",
       },
 
       // ── INFO: Guidance beats going alone (comparison bars) ───────────
@@ -577,67 +754,6 @@ export const calmResetFunnel: FunnelConfig = {
         visual: "comparison_bars",
         title: "Support makes it stick",
         body: "It's tough to build a calm routine alone. Azora guides you with proven techniques and live feedback you can see.",
-      },
-
-      // ── Q7: Body signals ──────────────────────────────────────────────
-      {
-        kind: "single_choice",
-        id: "body_signal",
-        question: "How does your body tell you it needs a reset?",
-        subtext:
-          "Before your mind registers stress, your heart has already spoken. " +
-          "What do you notice first?",
-        options: [
-          {
-            id: "shallow",
-            emoji: "🫁",
-            label: "My breathing gets shallow, short quick inhales",
-          },
-          {
-            id: "heart",
-            emoji: "💓",
-            label: "My heart races or pounds without reason",
-          },
-          {
-            id: "tight",
-            emoji: "🪨",
-            label: "My shoulders or jaw tighten up",
-          },
-          {
-            id: "fatigue",
-            emoji: "🪫",
-            label: "Sudden exhaustion, like a wave of heavy",
-          },
-        ],
-      },
-
-      // ── Q8: What blocks the reset (skeptics get answered next) ───────
-      {
-        kind: "single_choice",
-        id: "reset_blocker",
-        question: "What usually gets in the way of taking a pause?",
-        options: [
-          {
-            id: "scroll",
-            emoji: "📱",
-            label: "I scroll my phone instead of actually stopping",
-          },
-          {
-            id: "later",
-            emoji: "⏳",
-            label: "I keep telling myself \"I'll do it later\"",
-          },
-          {
-            id: "overwhelm",
-            emoji: "🌪️",
-            label: "The moment I sit still, everything I have to do takes over",
-          },
-          {
-            id: "skeptical",
-            emoji: "🤔",
-            label: "I'm not convinced it'll actually work for me",
-          },
-        ],
       },
 
       // ── SEGUE 3: diagnostic framing for the personalization block ─────
@@ -719,17 +835,6 @@ export const calmResetFunnel: FunnelConfig = {
           "Your daily plan has been approved and built.",
       },
 
-      // ── Summary: personalized plan recap ──────────────────────────────
-      // Commitment anchor before the paywall: restates the user's own answers
-      // as a concrete plan and contrasts it with what they've already tried —
-      // turning data collection into proof the app understood them.
-      {
-        kind: "summary",
-        id: "summary",
-        title: "Here's your Heart-Guided Breathing plan, {{name}}",
-        body: "Built from your answers. This is the daily reset we'll set up for you.",
-      },
-
       // ── Account (save the plan) ───────────────────────────────────────
       // Web2app pattern: account creation sits between the result and the
       // offer, framed as saving the plan the user just built. Purchases are
@@ -770,6 +875,12 @@ export const calmResetFunnel: FunnelConfig = {
         goal: ["goal"],
         branch_answer: ["stress_body", "sleep_mind", "general_feel"],
         duration: ["duration"],
+        severity: ["severity"],
+        life_impact: ["life_impact"],
+        triggers: ["triggers"],
+        evenings: ["evenings"],
+        caffeine: ["caffeine"],
+        sleep_quality: ["sleep_quality"],
         tried_before: ["tried_before"],
         me_time: ["me_time"],
         peace_time: ["peace_time"],
@@ -841,11 +952,15 @@ export const calmResetFunnel: FunnelConfig = {
             explore: "Calm",
           },
           fallbackEndLabel: "Calm",
+          // The chart curve trends DOWNWARD, so every metric here must be a
+          // burden that *falls* with Azora (less = better). Don't use "more is
+          // better" labels (sleep quality / wellbeing / focus) — a downward
+          // line on those reads as Azora making them worse.
           metricLabels: {
             stress: "Your stress",
-            sleep: "Your sleep quality",
-            wellness: "Your wellbeing",
-            focus: "Your focus",
+            sleep: "Time to fall asleep",
+            wellness: "Your daily stress",
+            focus: "Your brain fog",
             explore: "Your stress",
           },
           fallbackMetricLabel: "Your stress",

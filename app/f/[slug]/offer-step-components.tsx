@@ -27,20 +27,6 @@ function formatCountdown(ms: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-export function OfferRating() {
-  // NOTE: 5.0 / "2,000+ ratings" are PLACEHOLDERS. Replace with a real,
-  // verifiable App Store rating + count before running paid traffic (FTC /
-  // ad-platform requirement).
-  return (
-    <div className="offerRating" aria-label="Average member rating 5 out of 5">
-      <Stars />
-      <span className="offerRatingText">
-        <strong>5.0</strong> · 2,000+ ratings
-      </span>
-    </div>
-  );
-}
-
 export function OfferJourneySteps({ email }: { email: string | null }) {
   return (
     <ol className="offerSteps" aria-label="Checkout steps">
@@ -71,32 +57,66 @@ export function OfferDiscountBanner({
   );
 }
 
-export function OfferPlanToggle({
+/**
+ * Stacked, full-width selectable plan rows — the signature app-paywall layout
+ * (vs. a web-style segmented toggle). Each row carries its own per-week price,
+ * so the price lives with the choice rather than in a separate hero block.
+ * Discount strikethrough mirrors the spinner-win logic: pre-win the anchor
+ * shows as the plain price; once `discount` is set, the anchor is crossed out
+ * and the real (charged) price is revealed.
+ */
+export function OfferPlanRows({
   plan,
+  discount,
   onChange,
 }: {
   plan: PlanKey;
+  discount: SpinDiscount | null;
   onChange: (nextPlan: PlanKey) => void;
 }) {
   return (
-    <div className="planToggle" role="radiogroup" aria-label="Billing period">
+    <div className="planRows" role="radiogroup" aria-label="Choose your plan">
       {(["annual", "weekly"] as const).map((key) => {
         const display = OFFER_DISPLAY[key];
+        const selected = plan === key;
+        // The spin discount only marks down the annual plan; weekly stays flat.
+        const dealApplies = discount !== null && key === "annual";
+        const perWeek = dealApplies
+          ? display.weeklyPrice
+          : display.anchorWeeklyPrice;
+        const anchorWeekly = dealApplies ? display.anchorWeeklyPrice : null;
+        const label = key === "annual" ? "Start 7-day free trial" : "Weekly";
         return (
           <button
             key={key}
             type="button"
             role="radio"
-            aria-checked={plan === key}
-            className={`planToggleBtn${plan === key ? " planToggleBtnActive" : ""}`}
+            aria-checked={selected}
+            className={`planRow${selected ? " planRowActive" : ""}`}
             onClick={() => onChange(key)}
           >
-            <span className="planToggleLabel">
-              {key === "annual" ? "Annual" : "Weekly"}
-            </span>
-            {display.badge ? (
-              <span className="planToggleBadge">{display.badge}</span>
+            {/* Won discount sits as an overlay badge on the annual row. */}
+            {discount && key === "annual" ? (
+              <span className="planRowDeal">{discount.pct}% OFF</span>
             ) : null}
+            <span className="planRowRadio" aria-hidden />
+            <span className="planRowMain">
+              <span className="planRowTop">
+                <span className="planRowLabel">
+                  {label}
+                </span>
+                {display.badge && key !== "annual" ? (
+                  <span className="planRowBadge">{display.badge}</span>
+                ) : null}
+              </span>
+            </span>
+            <span className="planRowPrice">
+              {anchorWeekly ? (
+                <s className="planRowAnchor">{anchorWeekly}</s>
+              ) : null}
+              <span className="planRowAmount">{perWeek}</span>
+              <span className="planRowPer">/wk</span>
+            </span>
           </button>
         );
       })}

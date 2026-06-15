@@ -1326,6 +1326,12 @@ body::after {
   margin-bottom: 1.75rem;
 }
 
+.authOauthGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 .authOauthBtn {
   display: inline-flex;
   align-items: center;
@@ -3172,6 +3178,9 @@ body::after {
 .funnelAccountBenefitIcon { flex-shrink: 0; margin-top: 0.1rem; color: var(--brand); }
 
 .funnelAccountCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
   max-width: 400px;
   margin: 1.75rem auto 0;
   padding: 1.5rem;
@@ -4042,23 +4051,26 @@ body::after {
 
 /* QR + App Store badge block (confirmed state) */
 .checkoutSuccessGetApp {
-  display: flex;
+  display: grid;
+  grid-template-columns: 124px auto;
+  grid-template-areas:
+    "qr badge"
+    "caption .";
   align-items: center;
   justify-content: center;
-  gap: 1.5rem;
+  column-gap: 1.5rem;
+  row-gap: 0.5rem;
   margin-top: 1.75rem;
   padding-top: 1.75rem;
   border-top: 1px solid var(--border-strong);
 }
 
 .checkoutSuccessQrBox {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
+  display: contents;
 }
 
 .checkoutSuccessQr {
+  grid-area: qr;
   width: 124px;
   height: 124px;
   padding: 8px;
@@ -4068,6 +4080,8 @@ body::after {
 }
 
 .checkoutSuccessQrCaption {
+  grid-area: caption;
+  justify-self: center;
   font-size: 0.72rem;
   font-weight: 600;
   color: var(--text-muted);
@@ -4076,6 +4090,8 @@ body::after {
 }
 
 .checkoutSuccessBadgeCol {
+  grid-area: badge;
+  align-self: center;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -4099,7 +4115,11 @@ body::after {
 /* The QR is the iPhone-camera path — pointless on the phone itself, where
    tapping the badge is the direct route. */
 @media (max-width: 600px) {
+  .checkoutSuccessGetApp {
+    display: flex;
+  }
   .checkoutSuccessQrBox { display: none; }
+  .checkoutSuccessBadgeCol { grid-area: auto; }
   .checkoutSuccessOr { display: none; }
 }
 
@@ -4679,29 +4699,6 @@ body::after {
   border-color: var(--border);
 }
 
-/* ── New trust elements ────────────────────────────────────────────── */
-
-/* Aggregate rating near the top of the paywall. */
-.offerRating {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  margin: 0.85rem auto 0;
-}
-.offerRating .starRow {
-  color: var(--pw-ink);
-}
-.offerRatingText {
-  font-size: 0.88rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-}
-.offerRatingText strong {
-  font-weight: 800;
-  color: var(--text-primary);
-}
-
 /* Risk-reversal line under the CTA. */
 .checkoutGuaranteeLine {
   display: flex;
@@ -4730,4 +4727,323 @@ body::after {
 }
 .checkoutPayIcons .checkoutPayLock {
   color: var(--pw-ink);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   App-paywall layout: stacked plan rows + sticky CTA bar
+   Restructures the offer step to read like a native subscription screen
+   (full-width selectable rows carrying their own price, a CTA pinned to
+   the bottom) while keeping the monochrome theme above. Scoped to
+   .funnelOffer so other pricing surfaces are untouched.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* Leave room so the sticky bar never hides the last bit of content. */
+.funnelOffer {
+  padding-bottom: 6.5rem;
+}
+
+/* No card: the checkout block sits directly on the page as one open sheet.
+   A flex column with a single gap owns the vertical rhythm so the elements
+   are evenly spaced without the boxed-card look. */
+.funnelOffer .checkoutCard {
+  margin-top: 1.5rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+/* Let the gap own spacing; drop the children's legacy stacking margins. */
+.funnelOffer .checkoutCard > * {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* Feature list lifted above the card: a soft "what's included" panel with
+   filled circular check badges, distinct from the white price card below. */
+.funnelOffer .checkoutFeaturesAbove {
+  margin: 1.5rem 0 0;
+  padding: 1.15rem 1.2rem;
+  border: none;
+  border-radius: var(--radius-lg);
+  background: var(--brand-soft);
+  gap: 0.8rem;
+}
+.funnelOffer .checkoutFeaturesAbove li {
+  align-items: center;
+  gap: 0.7rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.funnelOffer .checkoutFeaturesAbove .checkoutFeatureIcon {
+  width: 22px;
+  height: 22px;
+  margin-top: 0;
+  padding: 4px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: var(--pw-ink);
+  color: #fff;
+}
+
+/* ── Stacked plan rows ── */
+.funnelOffer .planRows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+  text-align: left;
+}
+
+.funnelOffer .planRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  width: 100%;
+  min-height: 80px;
+  padding: 1.4rem 1.15rem;
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-strong);
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+/* Won discount as an overlay badge clipped to the (annual) row's top edge. */
+.funnelOffer .planRowDeal {
+  position: absolute;
+  top: -0.65rem;
+  right: 0.9rem;
+  padding: 0.24rem 0.65rem;
+  border-radius: 999px;
+  background: var(--pw-accent);
+  color: #fff;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  box-shadow: 0 4px 12px -4px rgba(15, 18, 22, 0.45);
+}
+
+.funnelOffer .planRowActive {
+  border-color: var(--pw-ink);
+  box-shadow: 0 0 0 1px var(--pw-ink),
+    0 10px 24px -16px rgba(15, 18, 22, 0.4);
+}
+
+/* Radio dot */
+.funnelOffer .planRowRadio {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: 2px solid var(--border-strong);
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+.funnelOffer .planRowActive .planRowRadio {
+  border-color: var(--pw-ink);
+  background: radial-gradient(
+    circle at center,
+    var(--pw-ink) 0 5px,
+    transparent 6px
+  );
+}
+
+.funnelOffer .planRowMain {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  flex: 1;
+  min-width: 0;
+}
+.funnelOffer .planRowTop {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.funnelOffer .planRowLabel {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+.funnelOffer .planRowBadge {
+  padding: 0.16rem 0.5rem;
+  border-radius: 999px;
+  background: var(--pw-ink);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.funnelOffer .planRowSub {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.funnelOffer .planRowSub s {
+  color: var(--text-muted);
+}
+.funnelOffer .planRowSub strong {
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.funnelOffer .planRowPrice {
+  display: flex;
+  align-items: baseline;
+  gap: 0.18rem;
+  flex-shrink: 0;
+  color: var(--text-primary);
+}
+.funnelOffer .planRowAnchor {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-right: 0.2rem;
+  color: var(--text-muted);
+  text-decoration-color: var(--text-muted);
+}
+.funnelOffer .planRowAmount {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.funnelOffer .planRowPer {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* ── Bigger, longer trial timeline ── */
+.funnelOffer .trialTimeline {
+  gap: 1.7rem;
+  margin: 0.5rem 0;
+}
+.funnelOffer .trialTimeline li {
+  padding-left: 2.7rem;
+  font-size: 1rem;
+}
+.funnelOffer .trialTimeline li::before {
+  width: 1.2rem;
+  height: 1.2rem;
+  top: 0.1rem;
+}
+.funnelOffer .trialTimeline li:not(:last-child)::after {
+  left: calc(0.6rem - 1px);
+  top: 1.5rem;
+  bottom: -1.85rem;
+  width: 2.5px;
+}
+.funnelOffer .trialTimelineDay {
+  font-size: 0.82rem;
+  margin-bottom: 0.1rem;
+}
+.funnelOffer .trialTimelineText {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* ── Guaranteed safe checkout block ── */
+.funnelOffer .safeCheckout {
+  text-align: center;
+  margin: 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+.funnelOffer .safeCheckoutHeading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 0 0 0.7rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.funnelOffer .safeCheckoutHeading svg {
+  color: var(--pw-ink);
+  flex-shrink: 0;
+}
+.funnelOffer .safeCheckoutCards {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+.funnelOffer .cardTile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 30px;
+  padding: 4px 6px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(15, 18, 22, 0.05);
+}
+.funnelOffer .cardTile svg,
+.funnelOffer .cardTile img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.funnelOffer .safeCheckoutNote {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* ── Sticky checkout bar ── */
+.funnelOffer .checkoutStickyBar {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  margin-top: 1.5rem;
+  padding: 0.85rem 0 calc(0.6rem + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(
+    to top,
+    var(--bg) 62%,
+    rgba(255, 255, 255, 0)
+  );
+}
+.funnelOffer .checkoutStickyBar .checkoutDueToday {
+  margin-top: 0.55rem;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 480px) {
+  /* Plan rows: keep label/price on one tidy line and stop the long sub copy
+     from knocking the price out of alignment on narrow screens. */
+  .funnelOffer .planRow {
+    padding: 1.2rem 0.95rem;
+    gap: 0.7rem;
+  }
+  .funnelOffer .planRowLabel {
+    font-size: 0.95rem;
+  }
+  .funnelOffer .planRowSub {
+    font-size: 0.74rem;
+    line-height: 1.3;
+  }
+  .funnelOffer .planRowBadge {
+    font-size: 0.56rem;
+    padding: 0.14rem 0.4rem;
+  }
+  .funnelOffer .planRowPrice {
+    white-space: nowrap;
+  }
+  .funnelOffer .planRowAmount {
+    font-size: 1.3rem;
+  }
 }

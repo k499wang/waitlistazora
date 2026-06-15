@@ -41,8 +41,9 @@ export function useSupabaseSession(): SessionState {
 }
 
 type AccountStepConfig = Extract<FunnelStep, { kind: "account" }>;
+type OAuthProvider = "apple" | "google";
 
-// Inline account creation, styled as a funnel step. Uses Google OAuth only;
+// Inline account creation, styled as a funnel step. Uses OAuth;
 // the page leaves for the provider round-trip and lands back with
 // ?account_done=1, so the post-auth experience is the signed-in success state
 // below — "plan saved" — with a Continue button to the offer.
@@ -58,7 +59,7 @@ export function FunnelAccountStep({
   const { loaded, email: sessionEmail } = useSupabaseSession();
 
   const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState<null | "google">(null);
+  const [pending, setPending] = useState<null | OAuthProvider>(null);
 
   const viewFired = useRef(false);
   useEffect(() => {
@@ -75,21 +76,22 @@ export function FunnelAccountStep({
     return `/f/${slug}?${ACCOUNT_DONE_PARAM}=1`;
   }
 
-  async function signInWithGoogle() {
+  async function signInWithProvider(provider: OAuthProvider) {
+    const providerName = provider === "apple" ? "Apple" : "Google";
     setError(null);
-    setPending("google");
+    setPending(provider);
     posthog.capture("web_funnel_account_submitted", {
       funnel_slug: slug,
-      method: "google",
+      method: provider,
     });
     try {
       const supabase = createBrowserSupabaseClient();
       // Same cookie handshake as the login page: Supabase doesn't reliably
-      // carry a nested `next` param through the Google round-trip, so
+      // carry a nested `next` param through the OAuth round-trip, so
       // /auth/callback reads it back from this cookie.
       document.cookie = `${LOGIN_NEXT_COOKIE}=${encodeURIComponent(returnUrl())}; path=/; max-age=600; samesite=lax`;
       const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider: "google",
+        provider,
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
           skipBrowserRedirect: true,
@@ -97,11 +99,11 @@ export function FunnelAccountStep({
       });
       if (oauthError) throw oauthError;
       if (!data.url) {
-        throw new Error("Google sign-in did not return a redirect URL.");
+        throw new Error(`${providerName} sign-in did not return a redirect URL.`);
       }
       posthog.capture("web_auth_redirect_started", {
         funnel_slug: slug,
-        method: "google",
+        method: provider,
       });
       try {
         window.sessionStorage.setItem(INTENTIONAL_DEPARTURE_KEY, "1");
@@ -115,7 +117,7 @@ export function FunnelAccountStep({
       } catch {
         // Storage may be unavailable in locked-down browsers.
       }
-      setError(err instanceof Error ? err.message : "Google sign-in failed.");
+      setError(err instanceof Error ? err.message : `${providerName} sign-in failed.`);
       setPending(null);
     }
   }
@@ -137,8 +139,7 @@ export function FunnelAccountStep({
         </div>
         <h1 className="funnelQuestion">Your plan is saved</h1>
         <p className="funnelSubtext">
-          Linked to <strong>{sessionEmail}</strong>. It&apos;ll be waiting in the
-          app too.
+          Linked to your email. It&apos;ll be waiting in the app too.
         </p>
         <button type="button" className="funnelPrimaryBtn" onClick={onContinue}>
           Continue
@@ -178,11 +179,21 @@ export function FunnelAccountStep({
         <button
           type="button"
           className="authOauthBtn"
-          onClick={signInWithGoogle}
+          onClick={() => signInWithProvider("apple")}
+          disabled={pending !== null}
+        >
+          <AppleIcon />
+          {pending === "apple" ? "Redirecting…" : "Continue with Apple"}
+        </button>
+
+        <button
+          type="button"
+          className="authOauthBtn"
+          onClick={() => signInWithProvider("google")}
           disabled={pending !== null}
         >
           <GoogleIcon />
-          {pending === "google" ? "Redirecting…" : "Save my plan, it's free"}
+          {pending === "google" ? "Redirecting…" : "Continue with Google"}
         </button>
 
         {error ? (
@@ -196,6 +207,14 @@ export function FunnelAccountStep({
         Free to create · No spam, just your plan on web and iOS
       </p>
     </div>
+  );
+}
+
+function AppleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M16.39 12.66c-.02-2.02 1.66-2.99 1.74-3.04-.95-1.38-2.42-1.57-2.93-1.59-1.23-.13-2.43.73-3.05.73-.64 0-1.61-.71-2.65-.69-1.34.02-2.6.8-3.29 2.02-1.42 2.46-.36 6.07 1 8.06.68.97 1.47 2.06 2.5 2.02 1.01-.04 1.39-.65 2.61-.65 1.21 0 1.56.65 2.62.63 1.09-.02 1.78-.98 2.43-1.96.79-1.11 1.1-2.21 1.11-2.27-.03-.01-2.07-.8-2.09-3.26zM14.39 6.73c.55-.69.93-1.62.82-2.56-.8.04-1.8.55-2.38 1.22-.52.6-.99 1.57-.86 2.47.9.07 1.85-.46 2.42-1.13z" />
+    </svg>
   );
 }
 

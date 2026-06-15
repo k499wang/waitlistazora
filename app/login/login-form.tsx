@@ -4,53 +4,30 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
+import { LOGIN_NEXT_COOKIE } from "@/lib/checkout/funnel-session";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
-type Mode = "signin" | "signup";
+type OAuthProvider = "apple" | "google";
 
-// Proper multi-method auth for web checkout:
-//   - Google OAuth (PKCE -> /auth/callback)
-//   - Email + password (sign in / create account)
-//   - Magic-link email as a passwordless fallback
-// On success the Supabase session lands in cookies and the user continues to
-// `next`. The Supabase user.id is the RevenueCat App User ID by contract.
+// OAuth (PKCE -> /auth/callback). On success the Supabase session lands
+// in cookies and the user continues to `next`. The Supabase user.id is the
+// RevenueCat App User ID by contract.
 export function LoginForm({ next, initialError }: { next: string; initialError?: string }) {
-  const [mode, setMode] = useState<Mode>("signin");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(initialError ?? null);
-  const [notice, setNotice] = useState<string | null>(null);
-  const [pending, setPending] = useState<null | "password" | "google">(null);
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [pending, setPending] = useState<null | OAuthProvider>(null);
 
-  // Account creation requires explicit consent to the Terms & Privacy Policy
-  // (which includes marketing email consent). Google sign-in can also create
-  // an account, so it's gated too while in signup mode.
-  function requireConsent(): boolean {
-    if (mode === "signup" && !acceptedTerms) {
-      setError("Please accept the Terms & Conditions and Privacy Policy to create an account.");
-      return false;
-    }
-    return true;
-  }
-
-  function callbackUrl() {
-    return `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
-  }
-
-  async function signInWithGoogle() {
+  async function signInWithProvider(provider: OAuthProvider) {
+    const providerName = provider === "apple" ? "Apple" : "Google";
     setError(null);
-    setNotice(null);
-    if (!requireConsent()) return;
-    setPending("google");
+    setPending(provider);
     try {
       const supabase = createBrowserSupabaseClient();
       // Stash `next` in a cookie — Supabase doesn't reliably preserve a nested
-      // `next` query param through the Google round-trip. /auth/callback reads
+      // `next` query param through the OAuth round-trip. /auth/callback reads
       // this cookie back. Use a bare callback URL as redirectTo.
-      document.cookie = `wf_login_next=${encodeURIComponent(next)}; path=/; max-age=600; samesite=lax`;
+      document.cookie = `${LOGIN_NEXT_COOKIE}=${encodeURIComponent(next)}; path=/; max-age=600; samesite=lax`;
       const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider: "google",
+        provider,
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
           skipBrowserRedirect: true,
@@ -58,55 +35,11 @@ export function LoginForm({ next, initialError }: { next: string; initialError?:
       });
       if (oauthError) throw oauthError;
       if (!data.url) {
-        throw new Error("Google sign-in did not return a redirect URL.");
+        throw new Error(`${providerName} sign-in did not return a redirect URL.`);
       }
       window.location.assign(data.url);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Google sign-in failed.");
-      setPending(null);
-    }
-  }
-
-  async function submitPassword(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setNotice(null);
-    if (!requireConsent()) return;
-    setPending("password");
-    try {
-      const supabase = createBrowserSupabaseClient();
-      const normalizedEmail = email.trim().toLowerCase();
-
-      if (mode === "signup") {
-        const { data, error: signUpError } = await supabase.auth.signUp({
-          email: normalizedEmail,
-          password,
-          options: { emailRedirectTo: callbackUrl() },
-        });
-        if (signUpError) throw signUpError;
-
-        // If email confirmation is required, no session is returned yet.
-        if (!data.session) {
-          setNotice("Check your email to confirm your account, then sign in.");
-          setMode("signin");
-          return;
-        }
-      } else {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: normalizedEmail,
-          password,
-        });
-        if (signInError) throw signInError;
-      }
-
-      // Route through /auth/finalize (full navigation) so password logins run
-      // the same post-login side effects as OAuth — web_email_captured, the
-      // session claim, and the server-side Meta CAPI Lead.
-      window.location.assign(`/auth/finalize?next=${encodeURIComponent(next)}`);
-      return;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Authentication failed.");
-    } finally {
+      setError(err instanceof Error ? err.message : `${providerName} sign-in failed.`);
       setPending(null);
     }
   }
@@ -118,136 +51,57 @@ export function LoginForm({ next, initialError }: { next: string; initialError?:
         Azora
       </Link>
 
-      <h1 className="authTitle">
-        {mode === "signup" ? "Create your account" : "Welcome back"}
-      </h1>
-      <p className="authSubtitle">
-        {mode === "signup"
-          ? "Create your account to get started."
-          : "Sign in to your account."}
-      </p>
+      <h1 className="authTitle">Sign in to Azora</h1>
+      <p className="authSubtitle">Continue to access your account.</p>
 
-      <button
-        type="button"
-        className="authOauthBtn"
-        onClick={signInWithGoogle}
-        disabled={pending !== null}
-      >
-        <GoogleIcon />
-        {pending === "google" ? "Redirecting…" : "Continue with Google"}
-      </button>
+      <div className="authOauthGroup">
+        <button
+          type="button"
+          className="authOauthBtn"
+          onClick={() => signInWithProvider("apple")}
+          disabled={pending !== null}
+        >
+          <AppleIcon />
+          {pending === "apple" ? "Redirecting…" : "Continue with Apple"}
+        </button>
 
-      <div className="authDivider" aria-hidden>
-        or
+        <button
+          type="button"
+          className="authOauthBtn"
+          onClick={() => signInWithProvider("google")}
+          disabled={pending !== null}
+        >
+          <GoogleIcon />
+          {pending === "google" ? "Redirecting…" : "Continue with Google"}
+        </button>
       </div>
 
-      <form className="authForm" onSubmit={submitPassword}>
-        <div className="authField">
-          <label className="authLabel" htmlFor="auth-email">
-            Email
-          </label>
-          <input
-            id="auth-email"
-            className="authInput"
-            type="email"
-            autoComplete="email"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        <div className="authField">
-          <label className="authLabel" htmlFor="auth-password">
-            Password
-          </label>
-          <input
-            id="auth-password"
-            className="authInput"
-            type="password"
-            autoComplete={mode === "signup" ? "new-password" : "current-password"}
-            placeholder="••••••••"
-            minLength={8}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        {mode === "signup" ? (
-          <label className="authConsent">
-            <input
-              type="checkbox"
-              className="authConsentBox"
-              checked={acceptedTerms}
-              onChange={(e) => {
-                setAcceptedTerms(e.target.checked);
-                if (e.target.checked) setError(null);
-              }}
-            />
-            <span className="authConsentText">
-              I agree to the{" "}
-              <Link href="/terms" target="_blank">
-                Terms &amp; Conditions
-              </Link>{" "}
-              and{" "}
-              <Link href="/privacy" target="_blank">
-                Privacy Policy
-              </Link>
-              , and to receive product updates and marketing emails from Azora
-              (unsubscribe anytime).
-            </span>
-          </label>
-        ) : null}
-        <button type="submit" className="authSubmitBtn" disabled={pending !== null}>
-          {pending === "password"
-            ? "Working…"
-            : mode === "signup"
-              ? "Create account"
-              : "Sign in"}
-        </button>
-      </form>
-
-      {notice ? (
-        <p className="authMessage authNotice" role="status">
-          {notice}
-        </p>
-      ) : null}
       {error ? (
         <p className="authMessage authError" role="alert">
           {error}
         </p>
       ) : null}
 
-      <div className="authFooter">
-        {mode === "signup" ? "Already have an account?" : "New here?"}
-        <button
-          type="button"
-          className="authTextBtn"
-          onClick={() => {
-            setMode(mode === "signup" ? "signin" : "signup");
-            setError(null);
-            setNotice(null);
-          }}
-          disabled={pending !== null}
-        >
-          {mode === "signup" ? "Sign in" : "Create an account"}
-        </button>
-      </div>
-
-      {mode === "signin" ? (
-        <p className="authFinePrint">
-          By continuing, you agree to our{" "}
-          <Link href="/terms" target="_blank">
-            Terms &amp; Conditions
-          </Link>{" "}
-          and{" "}
-          <Link href="/privacy" target="_blank">
-            Privacy Policy
-          </Link>
-          .
-        </p>
-      ) : null}
+      <p className="authFinePrint">
+        By continuing, you agree to our{" "}
+        <Link href="/terms" target="_blank">
+          Terms &amp; Conditions
+        </Link>{" "}
+        and{" "}
+        <Link href="/privacy" target="_blank">
+          Privacy Policy
+        </Link>
+        .
+      </p>
     </div>
+  );
+}
+
+function AppleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M16.39 12.66c-.02-2.02 1.66-2.99 1.74-3.04-.95-1.38-2.42-1.57-2.93-1.59-1.23-.13-2.43.73-3.05.73-.64 0-1.61-.71-2.65-.69-1.34.02-2.6.8-3.29 2.02-1.42 2.46-.36 6.07 1 8.06.68.97 1.47 2.06 2.5 2.02 1.01-.04 1.39-.65 2.61-.65 1.21 0 1.56.65 2.62.63 1.09-.02 1.78-.98 2.43-1.96.79-1.11 1.1-2.21 1.11-2.27-.03-.01-2.07-.8-2.09-3.26zM14.39 6.73c.55-.69.93-1.62.82-2.56-.8.04-1.8.55-2.38 1.22-.52.6-.99 1.57-.86 2.47.9.07 1.85-.46 2.42-1.13z" />
+    </svg>
   );
 }
 

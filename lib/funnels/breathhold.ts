@@ -7,16 +7,26 @@ import type { FunnelConfig } from "./types";
   // calm-reset. The science (CO2 tolerance + dive reflex) is the quiet engine;
   // screens only speak in feelings: calmer, steadier, in control.
   //
+  // Two-act structure (diagnose → reveal → solve):
+  //   ACT 1 — DIAGNOSE: goal + branch + duration → reassurance → severity /
+  //     impact / triggers, breath-hold baseline, and lifestyle questions
+  //     (breath awareness, caffeine, movement) → what they've tried →
+  //     peace_time / body_signal / reset_blocker → agreement scales →
+  //     "analyzing" loader → nervous-system ARCHETYPE reveal (the hinge).
+  //   ACT 2 — SOLVE: what breath-hold training is, how a hold works, a live
+  //     hold to feel it, the science (dive reflex + studies), then
+  //     personalization (gender / age / name), the commitment-close, and the
+  //     building interstitial → result → projection → summary → account →
+  //     offer.
+  //
   // NO phone-camera / PPG heart-rate gimmick here (that's calm-reset's
   // mechanism). The "proof" is what you FEEL during a hold plus your hold
   // time growing day by day, a number/streak you watch climb in the app.
   //
-  // Structure mirrors high-converting web2app quiz funnels: outcome first,
-  // then symptom discovery, mechanism, routine fit, and only then profile
-  // fields. Every meaningful answer is followed by a short non-question beat
-  // when it helps the user understand why the next question matters. The flow
-  // avoids front-loading demographics so it feels like a personal plan is being
-  // built, not a form being completed.
+  // Branching: goal → reflect_understood → assess_intro carries the branch to
+  // the matching "when" question; all rejoin at `duration`. The "analyzing"
+  // loader branches on goal to the matching archetype, which converges into the
+  // solve act (mechanism) via nextId.
   //
   // Holds are framed gentle/never-forced on purpose: this audience is anxious,
   // and a forced max-hold is literally a panic trigger, "never forced, never
@@ -30,16 +40,15 @@ export const breathholdFunnel: FunnelConfig = {
     intro:
       "A few quick questions to build your personalized breath-hold plan, the gentle daily holds that train your body out of anxiety.",
     steps: [
-      // ── Q1: Goal FIRST, the engaging hook / aspiration. It branches into a
-      // goal-specific follow-up; the branch then flows into the demographics
-      // block (gender → age → name) before the rest of the discovery questions.
+      // ════════════════════════ ACT 1 — DIAGNOSE ════════════════════════
+
+      // ── Q1: Goal FIRST, the engaging hook / aspiration. Flows to the
+      // reassurance recap, which then branches to the goal-specific follow-up.
       {
         kind: "single_choice",
         id: "goal",
         question: "What do you want breath-hold training to help with?",
         subtext: "No wrong answer. Just pick what's closest to true right now.",
-        // No per-option nextId: goal flows to the reassurance recap next, which
-        // then branches to the goal-specific follow-up via its `branch` field.
         options: [
           { id: "calm", emoji: "😌", label: "To feel calm and steady" },
           { id: "anxiety", emoji: "🌊", label: "To stop anxiety in its tracks" },
@@ -50,8 +59,7 @@ export const breathholdFunnel: FunnelConfig = {
       },
 
       // ── RECAP: reassurance + social proof, shown right after the goal so
-      // trust is established before the goal-specific questions. Branches to
-      // the matching follow-up based on the goal answer.
+      // trust is established before the goal-specific questions.
       {
         kind: "info",
         id: "reflect_understood",
@@ -76,8 +84,8 @@ export const breathholdFunnel: FunnelConfig = {
       },
 
       // ── SEGUE 1: diagnostic framing for the opening assessment ────────
-      // Carries the goal→branch routing (moved off reflect_understood) so it
-      // sits in front of the "when" question it introduces.
+      // Carries the goal→branch routing so it sits in front of the "when"
+      // question it introduces.
       {
         kind: "info",
         id: "assess_intro",
@@ -199,8 +207,6 @@ export const breathholdFunnel: FunnelConfig = {
       },
 
       // ── Q2.5: How long they've been dealing with it ─────────────────
-      // Reached from all three goal branches (nextId: "duration"); flows
-      // straight into the "what is breath-hold training" teaching pair.
       {
         kind: "single_choice",
         id: "duration",
@@ -223,58 +229,45 @@ export const breathholdFunnel: FunnelConfig = {
         body: "However long it's been, you're in good hands. Breath-hold training is a perfect fit for what you're dealing with, and we'll build it around you, one gentle hold at a time.",
       },
 
-      // ── INFO: What breath-hold training is (taught early, within the
-      // first 5 screens) ───────────────────────────────────────────────
-      {
-        kind: "info",
-        id: "mechanism",
-        icon: "⏸️",
-        image: { src: "/clipart4175230.png", alt: "A person taking a calm, guided breath" },
-        title: "So what is breath-hold training?",
-        body: "The simplest practice there is: breathe in gently, then pause before your next breath. That short, comfortable pause, the hold, is where your nervous system learns to settle.",
-      },
-
-      // ── INFO: How one hold works (the actual practice, taught simply) ──
-      {
-        kind: "info",
-        id: "how_holds_work",
-        icon: "🫁",
-        title: "How a hold actually works",
-        body: "It looks like nothing. Inside, a gentle pause sets off a calming chain reaction:",
-        checklist: [
-          "CO2 **rises slightly**, your body's cue that it's safe to slow down.",
-          "That flips you out of **fight-or-flight** into rest-and-digest.",
-          "Your heart rate eases and the urge to breathe **loses its grip**.",
-        ],
-      },
-
-      // ── EXERCISE: try a gentle hold right now (feel it work) ──────────
-      {
-        kind: "breathing",
-        id: "try_hold",
-        title: "Let's try one gentle hold",
-        subtext: "Follow the orb. Nothing forced, and you can stop any time.",
-        // Expand on the inhale, stay full through the hold, contract on the
-        // exhale. Each round visibly grows from the previous round's exhale.
-        phases: [
-          { label: "Breathe in", seconds: 4, scale: 1 },
-          { label: "Hold, easy", seconds: 6, scale: 1 },
-          { label: "Let it out", seconds: 6, scale: 0.5 },
-        ],
-        rounds: 2,
-      },
-
-      // ── Q: How they felt after the exercise ──────────────────────────
+      // ── Q: Severity (how intense it gets) ─────────────────────────────
       {
         kind: "single_choice",
-        id: "after_hold",
-        question: "How do you feel after that?",
-        subtext: "Even one round can shift things. There's no wrong answer.",
+        id: "severity",
+        question: "When anxiety peaks, how intense does it get?",
+        subtext: "There's no wrong answer. This tells us how gentle to start.",
         options: [
-          { id: "calmer", emoji: "😌", label: "A little calmer already" },
-          { id: "settled", emoji: "🫁", label: "More settled in my body" },
-          { id: "same", emoji: "😐", label: "About the same for now" },
-          { id: "practice", emoji: "🌱", label: "I think I need more practice" },
+          { id: "low", emoji: "🌤️", label: "A low hum I can push through" },
+          { id: "strong", emoji: "🌥️", label: "Strong, but I usually manage" },
+          { id: "hijack", emoji: "🌧️", label: "It hijacks my whole body" },
+          { id: "panic", emoji: "⛈️", label: "Full panic, I can't think straight" },
+        ],
+      },
+
+      // ── Q: Life impact (what it costs them) ───────────────────────────
+      {
+        kind: "single_choice",
+        id: "life_impact",
+        question: "What does it cost you the most?",
+        subtext: "Knowing what it touches most helps us aim your plan.",
+        options: [
+          { id: "sleep", emoji: "😴", label: "My sleep" },
+          { id: "focus", emoji: "🎯", label: "Focus and work" },
+          { id: "confidence", emoji: "🗣️", label: "Confidence around people" },
+          { id: "presence", emoji: "🌅", label: "Just enjoying my day" },
+        ],
+      },
+
+      // ── Q: Triggers (what sets it off) ────────────────────────────────
+      {
+        kind: "single_choice",
+        id: "triggers",
+        question: "What usually triggers it?",
+        subtext: "Spotting your trigger helps us time your holds for when you need them.",
+        options: [
+          { id: "work", emoji: "💼", label: "Work and pressure" },
+          { id: "social", emoji: "👥", label: "Social situations" },
+          { id: "health", emoji: "🩺", label: "Health worries" },
+          { id: "nowhere", emoji: "🌫️", label: "It hits out of nowhere" },
         ],
       },
 
@@ -318,6 +311,48 @@ export const breathholdFunnel: FunnelConfig = {
         body: "Anxiety often reaches the breath first. That's exactly where we'll train.",
       },
 
+      // ── Q: Breath awareness (symptom frequency) ───────────────────────
+      {
+        kind: "single_choice",
+        id: "breath_awareness",
+        question: "How often does your breathing go shallow or tight?",
+        subtext: "Your breath is the first place tension shows up, so this tells us a lot.",
+        options: [
+          { id: "daily", emoji: "🌬️", label: "Many times a day" },
+          { id: "weekly", emoji: "📅", label: "A few times a week" },
+          { id: "night", emoji: "🌙", label: "Mostly at night or in bed" },
+          { id: "noticed", emoji: "❓", label: "Only when I stop to notice" },
+        ],
+      },
+
+      // ── Q: Caffeine (lifestyle) ───────────────────────────────────────
+      {
+        kind: "single_choice",
+        id: "caffeine",
+        question: "How's your caffeine intake?",
+        subtext: "Caffeine keeps your system primed, so it's useful for us to know.",
+        options: [
+          { id: "high", emoji: "☕", label: "High, and often late in the day" },
+          { id: "moderate", emoji: "🍵", label: "Moderate" },
+          { id: "low", emoji: "🚫", label: "Low to none" },
+          { id: "untracked", emoji: "🤷", label: "Don't really track it" },
+        ],
+      },
+
+      // ── Q: Movement (lifestyle) ───────────────────────────────────────
+      {
+        kind: "single_choice",
+        id: "movement",
+        question: "How active are you day to day?",
+        subtext: "Movement and breathing are linked, so this helps shape your plan.",
+        options: [
+          { id: "active", emoji: "🏃", label: "Active most days" },
+          { id: "light", emoji: "🚶", label: "Light, here and there" },
+          { id: "sedentary", emoji: "🪑", label: "Mostly sedentary" },
+          { id: "varies", emoji: "🔄", label: "It's all over the place" },
+        ],
+      },
+
       // ── Q3: Breathwork history (sets up the guidance screen) ──────────
       {
         kind: "single_choice",
@@ -346,16 +381,6 @@ export const breathholdFunnel: FunnelConfig = {
             label: "Nothing yet, this is my first real try",
           },
         ],
-      },
-
-      // ── INFO: Guidance beats going alone (comparison bars) ────────────
-      {
-        kind: "info",
-        id: "with_azora",
-        icon: "📊",
-        visual: "comparison_bars",
-        title: "Support makes it stick",
-        body: "It's tough to build a breath practice alone. Azora guides you with gentle, proven holds and daily progress you can see.",
       },
 
       // ── Q5: Peaceful moment / when ────────────────────────────────────
@@ -387,39 +412,6 @@ export const breathholdFunnel: FunnelConfig = {
         ],
       },
 
-      // ── INFO: The dive reflex, with real numbers + citation ──────────
-      // The "dive response" (bradycardia on breath-hold) is well documented;
-      // HR can fall ~10-30% during apnea. We cite the figure conservatively.
-      {
-        kind: "info",
-        id: "calm_switch",
-        icon: "🌊",
-        visual: "dive_reflex",
-        title: "Your body has a built-in calm switch",
-        body: "Hold your breath gently and the **dive reflex** kicks in: your heart rate can drop by **up to 25%** within seconds, no bigger breath required. It's the same brake elite freedivers rely on, and it's already wired into you.",
-        citation:
-          "The human diving response, Foster & Sheel, Scand. J. Med. Sci. Sports (2005).",
-      },
-
-      // ── INFO: Research-backed credibility strip (honest sourcing) ─────
-      // Findings are presented as a checklist, each grounded in a real,
-      // peer-reviewed study named in the citation. No institution logos: the
-      // cited work isn't from those brands, so claiming them would mislead.
-      {
-        kind: "info",
-        id: "backed_by_science",
-        icon: "🔬",
-        title: "What the science says",
-        body: "Breath-hold training isn't a trend. It's physiology, and it's well studied:",
-        checklist: [
-          "A gentle hold can slow your heart rate within seconds.",
-          "Slow breathing raises HRV, your body's built-in calm signal.",
-          "Better CO2 tolerance is linked to lower anxiety.",
-        ],
-        citation:
-          "Foster & Sheel (2005); Russo et al., Breathe (2017); Grassi et al., J. Psychiatr. Res. (2014).",
-      },
-
       // ── Q6: Session length (lean short, Breathwrk-style) ──────────────
       {
         kind: "single_choice",
@@ -443,109 +435,6 @@ export const breathholdFunnel: FunnelConfig = {
             label: "5 minutes, I want to go deeper",
           },
         ],
-      },
-
-      // ── SEGUE 2: diagnostic framing for the agreement scales ──────────
-      {
-        kind: "info",
-        id: "scales_intro",
-        icon: "📊",
-        title: "Now we'll measure your baseline",
-        body: "These are statements, not questions. Rate how true each one feels, so we can pinpoint your starting point and track exactly how far you've come.",
-      },
-
-      // ── Agreement section: rate how much each statement sounds like you ─
-      // 5-point agree/disagree Likert sliders, one statement per screen, each
-      // auto-advancing. Surfaces the user's self-perception before the recap
-      // reflects the pattern back to them.
-      {
-        kind: "scale",
-        id: "scale_breath",
-        emojis: ["👎", "🤔", "🤷", "👍", "🙌"],
-        statement: "My breathing changes the moment I get anxious.",
-        subtext:
-          "There are no right answers, just tell us how much this sounds like you.",
-      },
-      {
-        kind: "scale",
-        id: "scale_stuck",
-        emojis: ["👎", "🤔", "🤷", "👍", "🙌"],
-        statement: "I've tried breathing techniques before, but they didn't stick.",
-      },
-      {
-        kind: "scale",
-        id: "scale_control",
-        emojis: ["👎", "🤔", "🤷", "👍", "🙌"],
-        statement: "When anxiety hits, my body feels out of my control.",
-      },
-
-      // ── RECAP: "analyzing" loader → nervous-system archetype reveal ──
-      // The loader auto-advances and branches on `goal` to one of the three
-      // archetype screens below; each converges back to `progress` via nextId,
-      // so the others are skipped.
-      {
-        kind: "interstitial",
-        id: "analyzing",
-        title: "Analyzing your responses…",
-        body: "Mapping your answers to your nervous system's pattern right now.",
-        loadingItems: [
-          "Reading your breathing signals",
-          "Comparing to common patterns",
-          "Matching your training plan",
-        ],
-        branch: {
-          on: "goal",
-          to: {
-            calm: "arch_flight",
-            anxiety: "arch_flight",
-            explore: "arch_flight",
-            sleep: "arch_night",
-            focus: "arch_overdrive",
-          },
-        },
-      },
-      {
-        kind: "info",
-        id: "arch_flight",
-        visual: "impact_gauge",
-        title: "Your pattern: Flight Mode",
-        body: "Your breath shifts the moment stress hits, a sign your nervous system stays primed for threat. Next, gentle holds will teach your body the all-clear, so it can stand down on command.",
-        citation:
-          "This is an informational reflection based on your quiz answers, not a medical assessment.",
-        nextId: "progress",
-      },
-      {
-        kind: "info",
-        id: "arch_night",
-        visual: "impact_gauge",
-        title: "Your pattern: The Night Loop",
-        body: "Your system stays switched on at bedtime, so your breath stays shallow and rest won't come. Next, slow guided holds will walk your body down into the rhythm that invites sleep.",
-        citation:
-          "This is an informational reflection based on your quiz answers, not a medical assessment.",
-        nextId: "progress",
-      },
-      {
-        kind: "info",
-        id: "arch_overdrive",
-        visual: "impact_gauge",
-        title: "Your pattern: Overdrive",
-        body: "You run fast and scattered, your breath driving the pace instead of steadying it. Next, short holds will give your mind a reset button you can reach for any time.",
-        citation:
-          "This is an informational reflection based on your quiz answers, not a medical assessment.",
-        nextId: "progress",
-      },
-
-      // ── INFO: Projection teaser, the shape daily holds create ────────
-      // Noom-style "moving outcome" beat; the full personalized chart with
-      // their goal + date lands on the summary. Honest framing: this is the
-      // *design intent* of the practice, not a claim about measured results.
-      {
-        kind: "info",
-        id: "progress",
-        icon: "📈",
-        visual: "stress_projection",
-        title: "Two weeks from now, this is the goal",
-        body: "Daily holds are built to soften the spikes first, then settle your baseline.",
       },
 
       // ── Q7: Body signals ──────────────────────────────────────────────
@@ -607,16 +496,184 @@ export const breathholdFunnel: FunnelConfig = {
         ],
       },
 
-      // ── INFO: Social proof (honest soft, NO fabricated counts) ───────
-      // Deliberately number-free. When you have real, verifiable Azora
-      // figures or a member count, add them here. Never ship invented stats —
-      // that's an FTC / ad-platform violation.
+      // ── SEGUE 2: diagnostic framing for the agreement scales ──────────
       {
         kind: "info",
-        id: "social_proof",
-        icon: "🤝",
-        title: "You're in good company",
-        body: "People stick with this because the holds are short enough to keep doing.",
+        id: "scales_intro",
+        icon: "📊",
+        title: "Now we'll measure your baseline",
+        body: "These are statements, not questions. Rate how true each one feels, so we can pinpoint your starting point and track exactly how far you've come.",
+      },
+
+      // ── Agreement section: rate how much each statement sounds like you ─
+      // 5-point agree/disagree Likert sliders, one statement per screen, each
+      // auto-advancing. Surfaces the user's self-perception before the recap
+      // reflects the pattern back to them.
+      {
+        kind: "scale",
+        id: "scale_breath",
+        emojis: ["👎", "🤔", "🤷", "👍", "🙌"],
+        statement: "My breathing changes the moment I get anxious.",
+        subtext:
+          "There are no right answers, just tell us how much this sounds like you.",
+      },
+      {
+        kind: "scale",
+        id: "scale_stuck",
+        emojis: ["👎", "🤔", "🤷", "👍", "🙌"],
+        statement: "I've tried breathing techniques before, but they didn't stick.",
+      },
+      {
+        kind: "scale",
+        id: "scale_control",
+        emojis: ["👎", "🤔", "🤷", "👍", "🙌"],
+        statement: "When anxiety hits, my body feels out of my control.",
+      },
+
+      // ── REVEAL: "analyzing" loader → nervous-system archetype ─────────
+      // The hinge between diagnose and solve. The loader auto-advances and
+      // branches on `goal` to one of the three archetype screens; each
+      // converges into the solve act (mechanism) via nextId.
+      {
+        kind: "interstitial",
+        id: "analyzing",
+        title: "Analyzing your responses…",
+        body: "Mapping your answers to your nervous system's pattern right now.",
+        loadingItems: [
+          "Reading your breathing signals",
+          "Comparing to common patterns",
+          "Matching your training plan",
+        ],
+        branch: {
+          on: "goal",
+          to: {
+            calm: "arch_flight",
+            anxiety: "arch_flight",
+            explore: "arch_flight",
+            sleep: "arch_night",
+            focus: "arch_overdrive",
+          },
+        },
+      },
+      {
+        kind: "info",
+        id: "arch_flight",
+        visual: "impact_gauge",
+        title: "Your pattern: Flight Mode",
+        body: "Your breath shifts the moment stress hits, a sign your nervous system stays primed for threat. Here's the gentle practice that teaches a system stuck in Flight Mode to stand down.",
+        citation:
+          "This is an informational reflection based on your quiz answers, not a medical assessment.",
+        nextId: "mechanism",
+      },
+      {
+        kind: "info",
+        id: "arch_night",
+        visual: "impact_gauge",
+        title: "Your pattern: The Night Loop",
+        body: "Your system stays switched on at bedtime, so your breath stays shallow and rest won't come. Here's the gentle practice that walks a system stuck in the Night Loop down into rest.",
+        citation:
+          "This is an informational reflection based on your quiz answers, not a medical assessment.",
+        nextId: "mechanism",
+      },
+      {
+        kind: "info",
+        id: "arch_overdrive",
+        visual: "impact_gauge",
+        title: "Your pattern: Overdrive",
+        body: "You run fast and scattered, your breath driving the pace instead of steadying it. Here's the gentle practice that gives a system stuck in Overdrive a reset button.",
+        citation:
+          "This is an informational reflection based on your quiz answers, not a medical assessment.",
+        nextId: "mechanism",
+      },
+
+      // ════════════════════════ ACT 2 — SOLVE ════════════════════════
+
+      // ── INFO: What breath-hold training is (the solution, introduced
+      // right after the diagnosis reveal) ───────────────────────────────
+      {
+        kind: "info",
+        id: "mechanism",
+        icon: "⏸️",
+        image: { src: "/clipart4175230.png", alt: "A person taking a calm, guided breath" },
+        title: "So what is breath-hold training?",
+        body: "The simplest practice there is: breathe in gently, then pause before your next breath. That short, comfortable pause, the hold, is where your nervous system learns to settle.",
+      },
+
+      // ── INFO: How one hold works (the actual practice, taught simply) ──
+      {
+        kind: "info",
+        id: "how_holds_work",
+        icon: "🫁",
+        title: "How a hold actually works",
+        body: "It looks like nothing. Inside, a gentle pause sets off a calming chain reaction:",
+        checklist: [
+          "CO2 **rises slightly**, your body's cue that it's safe to slow down.",
+          "That flips you out of **fight-or-flight** into rest-and-digest.",
+          "Your heart rate eases and the urge to breathe **loses its grip**.",
+        ],
+      },
+
+      // ── EXERCISE: try a gentle hold right now (feel it work) ──────────
+      {
+        kind: "breathing",
+        id: "try_hold",
+        title: "Let's try one gentle hold",
+        subtext: "Follow the orb. Nothing forced, and you can stop any time.",
+        // Expand on the inhale, stay full through the hold, contract on the
+        // exhale. Each round visibly grows from the previous round's exhale.
+        phases: [
+          { label: "Breathe in", seconds: 4, scale: 1 },
+          { label: "Hold, easy", seconds: 6, scale: 1 },
+          { label: "Let it out", seconds: 6, scale: 0.5 },
+        ],
+        rounds: 2,
+      },
+
+      // ── Q: How they felt after the exercise ──────────────────────────
+      {
+        kind: "single_choice",
+        id: "after_hold",
+        question: "How do you feel after that?",
+        subtext: "Even one round can shift things. There's no wrong answer.",
+        options: [
+          { id: "calmer", emoji: "😌", label: "A little calmer already" },
+          { id: "settled", emoji: "🫁", label: "More settled in my body" },
+          { id: "same", emoji: "😐", label: "About the same for now" },
+          { id: "practice", emoji: "🌱", label: "I think I need more practice" },
+        ],
+      },
+
+      // ── INFO: The dive reflex, with real numbers + citation ──────────
+      // The "dive response" (bradycardia on breath-hold) is well documented;
+      // HR can fall ~10-30% during apnea. We cite the figure conservatively.
+      {
+        kind: "info",
+        id: "calm_switch",
+        icon: "🌊",
+        visual: "dive_reflex",
+        title: "Your body has a built-in calm switch",
+        body: "Hold your breath gently and the **dive reflex** kicks in: your heart rate can drop by **up to 25%** within seconds, no bigger breath required. It's the same brake elite freedivers rely on, and it's already wired into you.",
+        citation:
+          "The human diving response, Foster & Sheel, Scand. J. Med. Sci. Sports (2005).",
+      },
+
+      // ── INFO: Research-backed credibility strip (honest sourcing) ─────
+      // Findings are presented as a checklist, each grounded in a real,
+      // peer-reviewed study named in the citation. No institution logos: the
+      // cited work isn't from those brands, so claiming them would mislead.
+      {
+        kind: "info",
+        id: "backed_by_science",
+        icon: "🔬",
+        title: "What the science says",
+        body: "Breath-hold training isn't a trend. It's physiology, and it's well studied:",
+        checklist: [
+          "A gentle hold can slow your heart rate within seconds.",
+          "Slow breathing raises HRV, your body's built-in calm signal.",
+          "Better CO2 tolerance is linked to lower anxiety.",
+        ],
+        citation:
+          "Foster & Sheel (2005); Russo et al., Breathe (2017); Grassi et al., J. Psychiatr. Res. (2014).",
       },
 
       // ── SEGUE 3: diagnostic framing for the personalization block ─────
@@ -669,6 +726,16 @@ export const breathholdFunnel: FunnelConfig = {
         subtext: "We'll use your name on the plan we build next.",
         placeholder: "Your first name",
         maxLength: 30,
+      },
+
+      // ── INFO: Guidance beats going alone (comparison bars) ────────────
+      {
+        kind: "info",
+        id: "with_azora",
+        icon: "📊",
+        visual: "comparison_bars",
+        title: "Support makes it stick",
+        body: "It's tough to build a breath practice alone. Azora guides you with gentle, proven holds and daily progress you can see.",
       },
 
       // ── Motivation: commitment-close ──────────────────────────────────
@@ -755,14 +822,6 @@ export const breathholdFunnel: FunnelConfig = {
         body: "Your daily holds are built to soften the spikes first, then settle your baseline.",
       },
 
-      // ── Summary: personalized plan recap ──────────────────────────────
-      {
-        kind: "summary",
-        id: "summary",
-        title: "Here's your plan, {{name}}",
-        body: "Built from your answers. This is the daily practice we'll set up for you.",
-      },
-
       // ── Account (save the plan) ───────────────────────────────────────
       {
         kind: "account",
@@ -797,6 +856,12 @@ export const breathholdFunnel: FunnelConfig = {
         goal: ["goal"],
         branch_answer: ["anxiety_when", "sleep_when", "general_when"],
         duration: ["duration"],
+        severity: ["severity"],
+        life_impact: ["life_impact"],
+        triggers: ["triggers"],
+        breath_awareness: ["breath_awareness"],
+        caffeine: ["caffeine"],
+        movement: ["movement"],
         tried_before: ["tried_before"],
         hold_baseline: ["hold_baseline"],
         peace_time: ["peace_time"],
@@ -886,12 +951,16 @@ export const breathholdFunnel: FunnelConfig = {
             explore: "Calm",
           },
           fallbackEndLabel: "Calm",
+          // The chart curve trends DOWNWARD, so every metric here must be a
+          // burden that *falls* with Azora (less = better), never a "more is
+          // better" label like "Your calm"/"Your focus" — a downward line on
+          // those would read as Azora making them worse.
           metricLabels: {
-            calm: "Your calm",
+            calm: "Your tension",
             anxiety: "Your anxiety",
-            sleep: "Your sleep quality",
-            focus: "Your focus",
-            explore: "Your calm",
+            sleep: "Time to fall asleep",
+            focus: "Your brain fog",
+            explore: "Your tension",
           },
           fallbackMetricLabel: "Your anxiety",
           planLabel: "Azora",

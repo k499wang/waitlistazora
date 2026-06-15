@@ -27,6 +27,20 @@ function formatCountdown(ms: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+export function OfferRating() {
+  // NOTE: 5.0 / "2,000+ ratings" are PLACEHOLDERS. Replace with a real,
+  // verifiable App Store rating + count before running paid traffic (FTC /
+  // ad-platform requirement).
+  return (
+    <div className="offerRating" aria-label="Average member rating 5 out of 5">
+      <Stars />
+      <span className="offerRatingText">
+        <strong>5.0</strong> · 2,000+ ratings
+      </span>
+    </div>
+  );
+}
+
 export function OfferJourneySteps({ email }: { email: string | null }) {
   return (
     <ol className="offerSteps" aria-label="Checkout steps">

@@ -20,6 +20,7 @@ import {
   OfferDiscountBanner,
   OfferJourneySteps,
   OfferPlanToggle,
+  OfferRating,
   OfferTestimonials,
 } from "./offer-step-components";
 import { PlanRecap } from "./plan-recap";
@@ -108,6 +109,9 @@ export function OfferStep({
       {body ? (
         <p className="funnelSubtext">{body}</p>
       ) : null}
+
+      {/* Social proof: aggregate rating near the top, before the plan. */}
+      <OfferRating />
 
       {/* Results-first framing: the personalized plan the user just built,
           repeated at the point of payment so the value is in view at the CTA. */}
@@ -279,6 +283,16 @@ export function OfferStep({
           </button>
         </CheckoutForm>
 
+        {/* Risk-reversal line in the most-read spot, right under the CTA. */}
+        <p className="checkoutGuaranteeLine">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 1l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V4l8-3zm-1.2 14.2l5.5-5.5-1.4-1.4-4.1 4.1-1.9-1.9-1.4 1.4 3.3 3.3z" />
+          </svg>
+          {plan === "annual"
+            ? "Risk-free: you won't be charged until your trial ends, and you can cancel any time."
+            : "Cancel any time, no questions asked."}
+        </p>
+
         <p className="checkoutDueToday">{display.dueTodayLine}</p>
 
         {/* Account status: reassure signed-in users their plan is attached;
@@ -308,6 +322,27 @@ export function OfferStep({
           <span>Cancel anytime</span>
           <span>·</span>
           <span>Web &amp; app</span>
+        </div>
+
+        {/* Payment-method / secure icons for checkout legitimacy. */}
+        <div className="checkoutPayIcons" aria-label="Accepted payment methods">
+          <svg className="checkoutPayLock" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 1a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2h-1V6a5 5 0 0 0-5-5zm-3 8V6a3 3 0 1 1 6 0v3H9z" />
+          </svg>
+          <svg width="34" height="22" viewBox="0 0 34 22" fill="none" aria-hidden="true">
+            <rect x="0.5" y="0.5" width="33" height="21" rx="3.5" stroke="currentColor" opacity="0.35" />
+            <rect x="4" y="5" width="9" height="3" rx="1" fill="currentColor" opacity="0.7" />
+            <rect x="4" y="13" width="16" height="2" rx="1" fill="currentColor" opacity="0.45" />
+          </svg>
+          <svg width="34" height="22" viewBox="0 0 34 22" fill="none" aria-hidden="true">
+            <rect x="0.5" y="0.5" width="33" height="21" rx="3.5" stroke="currentColor" opacity="0.35" />
+            <circle cx="15" cy="11" r="6" fill="currentColor" opacity="0.7" />
+            <circle cx="21" cy="11" r="6" fill="currentColor" opacity="0.4" />
+          </svg>
+          <svg width="34" height="22" viewBox="0 0 34 22" fill="none" aria-hidden="true">
+            <rect x="0.5" y="0.5" width="33" height="21" rx="3.5" stroke="currentColor" opacity="0.35" />
+            <path d="M10 14l2-6h1.6l-2 6H10zm5.4 0l1.2-6h1.5l-1.2 6h-1.5z" fill="currentColor" opacity="0.7" />
+          </svg>
         </div>
 
         {/* Accuracy credibility block (e.g. PPG validation sources). */}

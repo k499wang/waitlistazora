@@ -3367,23 +3367,23 @@ body::after {
 
 .checkoutCardPrice { margin: 1.25rem 0 1.5rem; }
 
-/* Trial headline — the star of the card */
+/* Trial headline — clean, single-style paywall heading */
 .checkoutTrialHeadline {
-  font-size: 1.9rem;
-  font-weight: 800;
-  color: var(--brand);
-  margin-bottom: 0.5rem;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.4rem;
   letter-spacing: -0.01em;
-  line-height: 1.15;
+  line-height: 1.3;
 }
 
-/* "free" inside the headline — gold display-serif italic for visual weight */
+/* "free" inside the headline — same type as the rest, no separate flourish */
 .freeAccent {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-weight: 600;
-  color: var(--accent);
-  font-size: 1.12em;
+  font-family: inherit;
+  font-style: inherit;
+  font-weight: inherit;
+  color: inherit;
+  font-size: inherit;
 }
 
 /* Trial subline under the headline */
@@ -3672,8 +3672,8 @@ body::after {
     padding: 2rem 1.25rem 2rem;
   }
   .checkoutTrialHeadline {
-    font-size: 1.6rem;
-    margin-bottom: 0.5rem;
+    font-size: 1.35rem;
+    margin-bottom: 0.4rem;
   }
   .checkoutTrialSub {
     margin-bottom: 0.4rem;
@@ -4591,3 +4591,143 @@ body::after {
 }
 
 .authFinePrint a:hover { color: var(--brand); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Black & white paywall theme
+   Re-themes the offer step to a near-monochrome, single-accent look for a
+   calmer, more trustworthy paywall. Scoped to .funnelOffer so the rest of the
+   funnel keeps its brand palette. The theme works by remapping the palette
+   tokens the offer's existing classes already consume, plus a handful of
+   targeted overrides for hard-coded (teal/gold/red/green) colors and gradients.
+   To retune the single accent, change --pw-accent.
+   ═══════════════════════════════════════════════════════════════════════ */
+.funnelOffer {
+  --pw-ink: #14171a;
+  --pw-accent: #41525f; /* the one restrained accent (muted slate) */
+
+  /* Remap brand tokens used throughout the offer markup. */
+  --brand: var(--pw-ink);
+  --brand-hover: #000;
+  --brand-soft: #eef0f1;
+  --accent: var(--pw-accent);
+  --text-primary: #0f1216;
+  --text-secondary: #4b5560;
+  --text-muted: #79828c;
+  --border: #e6e8ea;
+  --border-strong: #d7dadd;
+}
+
+/* Surfaces: solid + neutral, no gradients, no teal/gold-tinted glows. */
+.funnelOffer .checkoutCard {
+  border-color: var(--border);
+  box-shadow: 0 1px 2px rgba(15, 18, 22, 0.04),
+    0 20px 44px -26px rgba(15, 18, 22, 0.2);
+}
+
+.funnelOffer .checkoutCta {
+  box-shadow: 0 8px 20px -10px rgba(15, 18, 22, 0.5);
+}
+
+.funnelOffer .planToggleBtnActive {
+  box-shadow: 0 4px 14px -4px rgba(15, 18, 22, 0.4);
+}
+.funnelOffer .checkoutCta:hover {
+  box-shadow: 0 12px 26px -12px rgba(15, 18, 22, 0.55);
+}
+
+/* Discount chip: ink, not gold; drop the colored glow. */
+.funnelOffer .priceDealChip {
+  background: var(--pw-ink);
+  box-shadow: none;
+}
+
+/* Strikethrough anchor in gray, not red. */
+.funnelOffer .checkoutHeroPrice .priceAnchor {
+  text-decoration-color: var(--text-muted);
+}
+
+/* Discount banner: flat neutral pill. */
+.funnelOffer .discountBanner {
+  background: #f4f5f6;
+  border-color: var(--border);
+}
+.funnelOffer .discountBannerTimer {
+  color: var(--pw-ink);
+  border-left-color: var(--border);
+}
+
+/* Spin overlay + wheel: monochrome with the single accent on the win wedge. */
+.funnelOffer .spinOverlay {
+  background: rgba(255, 255, 255, 0.9);
+}
+.funnelOffer .spinWheel {
+  box-shadow: 0 0 0 6px var(--bg-card), 0 0 0 7px var(--border),
+    0 18px 44px -16px rgba(15, 18, 22, 0.3);
+}
+.funnelOffer .spinWedgeA { fill: var(--pw-ink); }
+.funnelOffer .spinWedgeB { fill: #eceef0; }
+.funnelOffer .spinWedgeWin { fill: var(--pw-accent); }
+.funnelOffer .spinLabelLight { fill: #ffffff; }
+.funnelOffer .spinLabelDark { fill: var(--pw-ink); }
+.funnelOffer .spinPointer { border-top-color: var(--pw-ink); }
+.funnelOffer .spinHub { stroke: var(--border-strong); }
+.funnelOffer .spinHubText { fill: var(--pw-accent); }
+
+/* Prediction callout reused in the recap: neutral, no gold/teal gradient. */
+.funnelOffer .summaryPrediction {
+  background: #f6f7f8;
+  border-color: var(--border);
+}
+
+/* ── New trust elements ────────────────────────────────────────────── */
+
+/* Aggregate rating near the top of the paywall. */
+.offerRating {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0.85rem auto 0;
+}
+.offerRating .starRow {
+  color: var(--pw-ink);
+}
+.offerRatingText {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.offerRatingText strong {
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+/* Risk-reversal line under the CTA. */
+.checkoutGuaranteeLine {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text-secondary);
+}
+.checkoutGuaranteeLine svg {
+  flex-shrink: 0;
+  color: var(--pw-ink);
+}
+
+/* Payment-method + secure icons row. */
+.checkoutPayIcons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+  color: var(--text-muted);
+}
+.checkoutPayIcons .checkoutPayLock {
+  color: var(--pw-ink);
+}

@@ -586,6 +586,15 @@ export const calmResetFunnel: FunnelConfig = {
           "Comparing to common patterns",
           "Matching your reset plan",
         ],
+        // Mid-analysis curiosity beat — pops in the center to keep the user
+        // engaged while the pattern match resolves. Not stored.
+        loadingQuestions: [
+          {
+            prompt: "Be honest — when stress hits, what do you notice first?",
+            detail: "This helps us pin down exactly which pattern fits you.",
+            options: ["My body tightens up", "My mind starts racing"],
+          },
+        ],
         branch: {
           on: "goal",
           to: {
@@ -819,6 +828,21 @@ export const calmResetFunnel: FunnelConfig = {
           "Tuning your breath pace",
           "Matching your reset window",
           "Preparing your in-app trial plan",
+        ],
+        // Engagement beat while the plan "builds": a momentum tap, then a
+        // reassuring fact. Not stored — purely to keep the user active and
+        // primed through the dead time before the result.
+        loadingQuestions: [
+          {
+            prompt: "Be honest — how ready are you to start today?",
+            detail: "Your plan works best when you begin while it's fresh.",
+            options: ["Ready right now", "I need a little push"],
+          },
+          {
+            prompt: "What would make this actually stick for you?",
+            detail: "We'll weight your plan toward what keeps you coming back.",
+            options: ["A quick daily routine", "Feeling results fast"],
+          },
         ],
       },
 

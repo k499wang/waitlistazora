@@ -239,9 +239,12 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
     [defaultNext, effectiveAnswers],
   );
 
-  // Interstitial auto-advances after a short, intentional pause.
+  // Interstitial auto-advances after a short, intentional pause — unless it
+  // carries loading questions, in which case the user taps through the cards
+  // and the final tap drives the advance (see onInterstitialAdvance below).
   useEffect(() => {
     if (step.kind !== "interstitial") return;
+    if (step.loadingQuestions?.length) return;
     const nextId = resolveNext(step);
     if (!nextId) return;
     const t = setTimeout(() => {
@@ -322,6 +325,9 @@ export function FunnelRunner({ funnel }: { funnel: FunnelConfig }) {
             if (step.kind === "scale") selectScale(step, value);
           }}
           onSubmitText={submitText}
+          onInterstitialAdvance={() =>
+            advanceWith("loading_questions_complete")
+          }
           onAccountContinue={() => {
             const nextId = defaultNext(step.id);
             trackStepCompleted({

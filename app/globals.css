@@ -2309,6 +2309,104 @@ body::after {
   100% { opacity: 1; transform: scale(1); }
 }
 
+/* Single-button popup revealed during the loader — turns the "personalizing…"
+   wait into a micro-commitment / informational beat. Renders as a centered
+   modal over a dimmed backdrop (bars keep filling behind it); the card pops in
+   each time a new one in the sequence appears (re-keyed per card). */
+.funnelLoadingQuestionOverlay {
+  position: fixed;
+  /* Start below the fixed app header (3.25rem) + progress bar (6px) so the
+     grey backdrop dims the screen but leaves the top nav + progress untouched. */
+  top: calc(3.25rem + 6px);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(20, 30, 36, 0.42);
+  backdrop-filter: blur(2px);
+  animation: loadingQuestionFade 0.25s ease both;
+}
+
+.funnelLoadingQuestion {
+  width: 100%;
+  max-width: 22rem;
+  padding: 1.5rem 1.35rem 1.35rem;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface, #fff);
+  box-shadow: 0 28px 60px -24px rgba(20, 30, 36, 0.55);
+  text-align: center;
+  animation: loadingQuestionPop 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.funnelLoadingQuestionPrompt {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.funnelLoadingQuestionDetail {
+  margin: 0.5rem 0 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.funnelLoadingQuestionBtn {
+  margin-top: 1.1rem;
+  width: 100%;
+}
+
+/* Two-option (genuine question) layout — equal-weight choice buttons. */
+.funnelLoadingQuestionOptions {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 1.2rem;
+}
+
+.funnelLoadingQuestionOption {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+}
+
+.funnelLoadingQuestionOption:hover {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+
+.funnelLoadingQuestionOption:active {
+  transform: scale(0.98);
+}
+
+/* Freeze the progress animation while a popup is open. */
+.funnelLoadingList.isPaused .funnelLoadingFill,
+.funnelLoadingList.isPaused .funnelLoadingCheck {
+  animation-play-state: paused;
+}
+
+@keyframes loadingQuestionFade {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes loadingQuestionPop {
+  0% { opacity: 0; transform: scale(0.92) translateY(10px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
 .funnelResultBadge {
   width: 56px;
   height: 56px;

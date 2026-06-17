@@ -29,6 +29,7 @@ export function FunnelStepRenderer({
   onSelectScale,
   onSubmitText,
   onAccountContinue,
+  onInterstitialAdvance,
 }: {
   funnel: FunnelConfig;
   step: FunnelStep;
@@ -44,6 +45,7 @@ export function FunnelStepRenderer({
   onSelectScale: (stepId: string, value: string) => void;
   onSubmitText: (stepId: string, value: string) => void;
   onAccountContinue: () => void;
+  onInterstitialAdvance: () => void;
 }) {
   switch (step.kind) {
     case "single_choice":
@@ -89,7 +91,14 @@ export function FunnelStepRenderer({
         />
       );
     case "interstitial":
-      return <InterstitialStep step={step} title={title} body={body} />;
+      return (
+        <InterstitialStep
+          step={step}
+          title={title}
+          body={body}
+          onAdvance={onInterstitialAdvance}
+        />
+      );
     case "info":
       return (
         <InfoStep

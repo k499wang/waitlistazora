@@ -125,6 +125,29 @@ export type FunnelStep =
       /** Optional loading checklist rendered as animated progress rows. */
       loadingItems?: string[];
       /**
+       * Optional sequence of single-button cards revealed *during* the loader.
+       * Each card is shown one at a time; tapping its button advances to the
+       * next card, and the final tap advances the funnel. When present, the
+       * interstitial waits for the user's tap instead of auto-advancing — so
+       * dead "personalizing…" time becomes an engagement / micro-commitment
+       * beat (a question card, then an informational one, etc.). Answers are
+       * not stored; these are purely for momentum.
+       */
+      loadingQuestions?: {
+        /** Card heading, e.g. "Ready to actually stick with this?" */
+        prompt: string;
+        /** Optional supporting line under the prompt. */
+        detail?: string;
+        /** Single-button label that advances, e.g. "I'm ready" / "Got it". */
+        cta?: string;
+        /**
+         * Two-or-more option buttons for a genuine-feeling question. Tapping
+         * any option advances (the choice isn't stored — it's engagement). Use
+         * this OR `cta`.
+         */
+        options?: string[];
+      }[];
+      /**
        * Conditional next: route to a different step based on a prior answer,
        * same shape as the info-step `branch`. Lets an "analyzing…" loader fan
        * out to an answer-specific reveal (e.g. a nervous-system archetype).

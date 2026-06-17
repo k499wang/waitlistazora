@@ -544,6 +544,15 @@ export const breathholdFunnel: FunnelConfig = {
           "Comparing to common patterns",
           "Matching your training plan",
         ],
+        // Mid-analysis curiosity beat — pops in the center to keep the user
+        // engaged while the pattern match resolves. Not stored.
+        loadingQuestions: [
+          {
+            prompt: "Be honest — when stress hits, what happens to your breath?",
+            detail: "This helps us pin down exactly which pattern fits you.",
+            options: ["It gets short and shallow", "I catch myself holding it"],
+          },
+        ],
         branch: {
           on: "goal",
           to: {
@@ -795,6 +804,20 @@ export const breathholdFunnel: FunnelConfig = {
           "Tuning the daily ramp",
           "Matching your reset timing",
           "Preparing your in-app trial plan",
+        ],
+        // Engagement beat while the plan "builds" — two-option questions keep
+        // the user active through the dead time. Answers aren't stored.
+        loadingQuestions: [
+          {
+            prompt: "Be honest — how ready are you to start today?",
+            detail: "Your plan works best when you begin while it's fresh.",
+            options: ["Ready right now", "I need a little push"],
+          },
+          {
+            prompt: "What matters most for your plan?",
+            detail: "We'll weight your plan toward what you care about.",
+            options: ["Calmer breathing fast", "Building a daily habit"],
+          },
         ],
       },
 

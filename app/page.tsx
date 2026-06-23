@@ -339,7 +339,7 @@ export default function Home() {
       {/* ── FOOTER ── */}
       <footer className="siteFooter">
         <div className="container siteFooterInner">
-          <span>© {new Date().getFullYear()} Azora · Built for people who breathe.</span>
+          <span>© {new Date().getFullYear()} Azora · Owned by 300 Labs · Built for people who breathe.</span>
           <div className="footerLinks">
             <a href="/privacy">Privacy</a>
             <a href="/terms">Terms</a>

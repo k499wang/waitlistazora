@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import iconApp from "../assets/iconApp.png";
 import { AuthNav } from "./auth-nav";
 
 // Lightweight static header for non-landing pages (pricing, funnel, etc.).
@@ -13,7 +12,13 @@ export function TopBar({ next }: { next?: string }) {
       <div className="container topBarInner">
         <Link className="brand" href="/">
           <div className="brandIconWrapper">
-            <Image src={iconApp} alt="Azora logo" fill className="brandIcon" />
+            <Image
+              src="/azora-koala.png"
+              alt="Azora logo"
+              fill
+              sizes="30px"
+              className="brandIcon"
+            />
           </div>
           Azora
         </Link>

@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 
-import iconApp from "../../assets/iconApp.png";
 import { appStoreUrl } from "@/lib/client-attribution";
 import type { FunnelStep } from "@/lib/funnels/types";
 
@@ -75,7 +74,7 @@ export function InfoStep({
           rel="noopener noreferrer"
         >
           <span className="funnelAppNudgeIcon" aria-hidden>
-            <Image src={iconApp} alt="" fill sizes="44px" />
+            <Image src="/azora-koala.png" alt="" fill sizes="44px" />
           </span>
           <span className="funnelAppNudgeText">
             <span className="funnelAppNudgeHeader">

@@ -11,9 +11,10 @@ import { TopBar } from "@/app/components/top-bar";
 import { LivePrice } from "./live-price";
 
 export const metadata: Metadata = {
-  title: "Pricing — Azora Pro",
+  // Absolute so the root "%s | Azora" template doesn't double the brand name.
+  title: { absolute: "Pricing — Azora Pro" },
   description:
-    "Unlock unlimited camera heart-rate sessions, every guided breathwork program, and your stress & recovery trends with Azora Pro.",
+    "Unlock unlimited calm minutes — every guided session, live feedback as your body settles, and your stress & recovery trends. Cancel anytime.",
 };
 
 const APP_STORE_URL =
@@ -52,14 +53,14 @@ export default function PricingPage() {
               Azora Pro
             </span>
             <h1 className="headline" style={{ marginTop: "0.75rem" }}>
-              Start your practice today
+              Take care of yourself, one calm minute at a time
             </h1>
             <p
               className="subhead"
               style={{ marginTop: "0.5rem", color: "var(--text-secondary)" }}
             >
-              One subscription unlocks everything — on the web today and inside
-              the app the moment you sign in. Cancel anytime.
+              Everything Azora offers, unlocked — here on the web today and in
+              the app the moment you sign in. Cancel anytime, no hard feelings.
             </p>
           </div>
 
@@ -118,7 +119,7 @@ export default function PricingPage() {
           </div>
 
           <div className="pricingAppStore">
-            <p>Prefer to start in the app first?</p>
+            <p>Prefer to take your calm with you?</p>
             <AppStoreBadge height={44} href={APP_STORE_URL} />
           </div>
         </div>

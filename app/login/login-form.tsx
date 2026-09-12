@@ -47,7 +47,7 @@ export function LoginForm({ next, initialError }: { next: string; initialError?:
   return (
     <div className="authCard">
       <Link href="/" className="authBrand">
-        <Image src="/icon.png" alt="" width={26} height={26} />
+        <Image src="/azora-koala.png" alt="" width={26} height={26} />
         Azora
       </Link>
 

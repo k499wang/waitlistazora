@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
-import { faqData } from "./faq-data";
 import { MetaPixelEvents } from "./components/meta-pixel-events";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://azora.app";
@@ -10,6 +9,12 @@ const appStoreUrl =
   "https://apps.apple.com/us/app/azora-breathwork-for-wellness/id6763631574";
 
 const metaPixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim();
+
+// Marketing copy in one place so the page, the search snippet, and the social
+// cards can't drift apart.
+const siteTitle = "Azora — Your Self-Care Best Friend";
+const siteDescription =
+  "Find joy in taking care of yourself. Azora gives you a calm minute of guided breathing whenever your mind needs a reset.";
 
 const softwareApplicationLd = {
   "@context": "https://schema.org",
@@ -20,7 +25,7 @@ const softwareApplicationLd = {
   url: siteUrl,
   downloadUrl: appStoreUrl,
   description:
-    "Azora is a breathwork companion that measures your heart rate through your iPhone camera (PPG), guides evidence-based breathing techniques, and reveals patterns in your stress and recovery.",
+    "Azora is your self-care best friend: a breathing companion that measures your heart rate through your iPhone camera (PPG), guides calming sessions, and reveals patterns in your stress and recovery.",
   offers: {
     "@type": "Offer",
     price: "0",
@@ -28,27 +33,13 @@ const softwareApplicationLd = {
   },
 };
 
-const faqPageLd = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: faqData.map((item) => ({
-    "@type": "Question",
-    name: item.q,
-    acceptedAnswer: {
-      "@type": "Answer",
-      text: item.a,
-    },
-  })),
-};
-
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Azora - Breathwork & Heart Rate Guidance",
+    default: siteTitle,
     template: "%s | Azora"
   },
-  description:
-    "Azora helps you breathe with intention, track your heart rate through your iPhone camera, and build calmer recovery rituals with guided breathwork.",
+  description: siteDescription,
   applicationName: "Azora",
   keywords: [
     "Azora",
@@ -69,23 +60,21 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "Azora",
-    title: "Azora - Breathwork & Heart Rate Guidance",
-    description:
-      "Guided breathwork, live heart-rate feedback, and recovery insights from your iPhone camera.",
+    title: siteTitle,
+    description: siteDescription,
     images: [
       {
         url: "/icon.png",
-        width: 1254,
-        height: 1254,
-        alt: "Azora app icon"
+        width: 512,
+        height: 512,
+        alt: "Azora koala icon"
       }
     ]
   },
   twitter: {
     card: "summary",
-    title: "Azora - Breathwork & Heart Rate Guidance",
-    description:
-      "Guided breathwork, live heart-rate feedback, and recovery insights from your iPhone camera.",
+    title: siteTitle,
+    description: siteDescription,
     images: ["/icon.png"]
   }
 };
@@ -121,10 +110,6 @@ fbq('init', ${JSON.stringify(metaPixelId)});
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(softwareApplicationLd),
           }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqPageLd) }}
         />
         {children}
         {/* useSearchParams() inside requires a Suspense boundary or static
